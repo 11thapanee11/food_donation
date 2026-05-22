@@ -1,0 +1,1190 @@
+/* global globalThis */
+import React, { useEffect, useRef, useState } from "react";
+import Swal from "sweetalert2";
+import { useNavigate, useParams } from "react-router-dom";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+// import { useParams } from "react-router-dom";
+
+export default function FoodFormDonation() {
+    const token = localStorage.getItem("accessToken");
+
+    const navigate = useNavigate();
+
+    const { id } = useParams(); // ดึง id จาก URL (ถ้ามาจากการกด Edit จะมี id ติดมา)
+    const isEditMode = Boolean(id); // ถ้ามี id แปลว่าเป็นโหมดแก้ไข (true) ถ้าไม่มีแปลว่าสร้างใหม่ (false)
+    const [isEditable, setIsEditable] = useState(!isEditMode);
+
+    const [formData, setFormData] = useState({
+        foodImage: null,
+        foodName: "",
+        description: "",
+        expiryDate: "",
+        unitWeightKg: "",
+        totalUnit: "",
+        remainingUnit: "",
+        peopleCountPerMeal: "",
+        limitPerPerson: "",
+        address: "",
+        pickupDateStart: "",
+        pickupDateEnd: "",
+        pickupStartTime: "",
+        pickupEndTime: "",
+        latitude: "",
+        longitude: "",
+        foodStatus: "",
+        foodCategory: "",
+        donor: ""
+    });
+
+    const [errors, setErrors] = useState({});
+
+    // ฟังก์ชันจัดการการเปลี่ยนแปลงค่าใน Input
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        setErrors({ ...errors, [name]: "" }); // เคลียร์ error เมื่อมีการกรอก
+    };
+
+    // ฟังก์ชันจัดการรูปภาพ
+    const fileInputRef = useRef(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // setFormData({ ...formData, foodImage: file });
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+            setErrors({ ...errors, foodImage: "" });
+        }
+    };
+
+    const handleClickUpload = () => {
+        fileInputRef.current.click();
+    };
+
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState("");
+
+    useEffect(() => {
+        fetch("http://localhost:8082/food-categories", {
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+                }
+                return res.json();
+            })
+            .then(data => {
+                setCategories(data);
+            })
+            .catch(err => {
+                setFetchError(err.message);
+            })
+            .finally(() => setLoading(false));
+
+        if (isEditMode) {
+            // โหมดแก้ไข: ดึงข้อมูลเดิมจาก API หลังบ้านมาหยอดใส่ฟอร์ม
+            fetch(`http://localhost:8082/foods/${id}`)
+                .then(res => res.json())
+                // .then(data => setFormData(data));
+                .then(data => {
+                    console.log("=== ข้อมูลอาหารจาก API ===", data);
+                    // ปรับแก้ตรงจุดนี้: ใส่สเตตอันเดียวแบบเจาะคีย์ ID
+                    setFormData({
+                        ...data,
+                        // สกัดเอาเฉพาะ .id ข้างใน foodCategory ออกมาเซต (หรือปรับเป็น data.category?.id ตามจริงของหลังบ้าน)
+                        foodCategory: data.foodCategory?.foodCateId
+                    });
+                })
+        }
+    }, [id, isEditMode]);
+
+    // map ใหม่
+    // const [markerPos, setMarkerPos] = useState({ lat: 18.7883, lng: 98.9853 }); // ค่าเริ่มต้น (เชียงใหม่)
+
+    const { isLoaded } = useJsApiLoader({
+        googleMapsApiKey: "AIzaSyCz2II4Ff_LEqyvP03ls-0qb6-PVZWxw-0"
+    });
+    // เมื่อคลิกบนแผนที่ → ย้าย marker
+    // เมื่อคลิกบนแผนที่ → อัปเดตพิกัดใน formData
+    const handleMapClick = (e) => {
+        setFormData((prev) => ({
+            ...prev,
+            latitude: e.latLng.lat(),
+            longitude: e.latLng.lng(),
+        }));
+        setErrors((prev) => ({ ...prev, location: "" }));
+    };
+
+    // เมื่อใช้ตำแหน่งปัจจุบัน
+    const handleGetCurrentLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setFormData((prev) => ({
+                        ...prev,
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude,
+                    }));
+                    setErrors((prev) => ({ ...prev, location: "" }));
+                },
+                (error) => {
+                    alert("ไม่สามารถเข้าถึงตำแหน่งได้");
+                    console.error(error);
+                },
+                { enableHighAccuracy: true }
+            );
+        }
+    };
+
+    // เตรียมตัวแปร position เพื่อส่งให้ GoogleMap/Marker
+    // ป้องกัน error 'bq' โดยการเช็คว่าเป็นตัวเลขหรือไม่
+    const currentPos = {
+        lat: Number(formData.latitude) || 18.7883,
+        lng: Number(formData.longitude) || 98.9853
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        console.log("Check: คลิก Submit แล้ว!");
+
+        const skipFields = new Set([
+            "foodImage",
+            "description",
+            "peopleCountPerMeal",
+            "remainingUnit",
+            "donor",         // ถ้า donor จะไปดึงจาก Session ใน Backend ให้ข้ามตัวนี้ด้วย
+            "foodStatus",
+            "latitude",
+            "longitude"
+        ]);
+
+        const newErrors = {};
+        Object.keys(formData).forEach((key) => {
+            if (!skipFields.has(key)) {   // ใช้ .has() แทน .includes()
+                const value = formData[key];
+
+                // string
+                // if (typeof value === "string") {
+                //     if (!value || value.trim() === "") {
+                //         newErrors[key] = "กรุณากรอกข้อมูล";
+                //     }
+                // }
+
+                if (value === "" || value === null || value === undefined) {
+                    newErrors[key] = "กรุณากรอกข้อมูล";
+                }
+
+                // เช็คกรณีเป็นตัวเลขแต่ลืมใส่ค่า (เช่น 0 ในฟิลด์ที่ห้ามเป็น 0)
+                else if (typeof value === "number" && value <= 0 && key !== "remainingUnit") {
+                    // ถ้าฟิลด์ตัวเลขอื่นๆ ห้ามเป็น 0 ให้เช็คตรงนี้
+                }
+
+                // Date object (เช่น LocalDateTime ที่ parse มาแล้ว)
+                else if (value instanceof Date) {
+                    if (Number.isNaN(value.getTime())) {
+                        newErrors[key] = "กรุณาเลือกวันที่/เวลา";
+                    }
+                }
+
+                // image
+                // if (key === "foodImage" && !value && !isEditMode) {
+                //     newErrors[key] = "กรุณาเพิ่มรูปภาพ";
+                // }
+
+                // if (!isEditMode && !(formData.foodImage instanceof File)) {
+                //     newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+                // }
+
+                // if (!isEditMode) {
+                //     // ตรวจสอบว่ามีไฟล์รูปภาพจริง ๆ
+                //     if (!formData.foodImage || !(formData.foodImage instanceof File)) {
+                //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+                //     }
+                // }
+            }
+        });
+
+        if (isEditMode) {
+            if (!formData.foodImage && !imageFile) {
+                newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+            }
+        } else if (!imageFile) {
+            newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+        }
+
+        // if (!isEditMode) {
+        //     // 🆕 โหมดสร้างใหม่: เช็คโดยตรงที่ตัวแปร imageFile ว่ามีไฟล์อัปโหลดเข้ามาจริงไหม
+        //     if (!imageFile) {
+        //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+        //     }
+        // } else {
+        //     // ✏️ โหมดแก้ไข: ต้องไม่มีทั้งรูปภาพเดิมบนเซิร์ฟเวอร์ และไม่มีการเลือกรูปใหม่เข้ามาด้วย ถึงจะเตือน
+        //     if (!formData.foodImage && !imageFile) {
+        //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+        //     }
+        // }
+
+        // ตรวจสอบวันที่
+        const today = new Date();
+        const expiryDate = new Date(formData.expiryDate);
+        const pickupStartDate = new Date(formData.pickupDateStart);
+        const pickupEndDate = new Date(formData.pickupDateEnd);
+
+        // วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต
+        if (pickupStartDate.toDateString < today.toDateString) {
+            newErrors.pickupDateStart = "วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต";
+        }
+
+        // วันที่สิ้นสุดต้อง >= วันที่เริ่มรับ
+        if (pickupEndDate < pickupStartDate) {
+            newErrors.pickupDateEnd = "วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่มรับ";
+        }
+
+        // วันรับต้องไม่ตรงกับวันหมดอายุ
+        if (expiryDate) {
+            if (pickupStartDate.toDateString() === expiryDate.toDateString()) {
+                newErrors.pickupDateStart = "วันเริ่มรับต้องไม่ตรงกับวันหมดอายุ";
+            }
+            if (pickupEndDate.toDateString() === expiryDate.toDateString()) {
+                newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่ตรงกับวันหมดอายุ";
+            }
+        }
+
+        if (!formData.latitude || !formData.longitude) {
+            // หากค่าใดค่าหนึ่งเป็นว่าง ศูนย์ หรือไม่มีข้อมูล ให้แจ้งเตือนทันที
+            newErrors.location = "กรุณาเลือกพิกัดตำแหน่งบนแผนที่";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+
+
+        // ผ่าน validation
+        console.log("ส่งข้อมูล:", formData);
+
+        // สร้าง FormData สำหรับส่งไป backend
+        const data = new FormData();
+        // data.append("foodImage", formData.foodImage); // File
+
+        // ตรวจสอบรูปภาพ: ถ้าผู้ใช้เลือกรูปภาพใหม่ (จาก Event handleImageChange ที่คุณเก็บไฟล์จริงไว้)
+        // ให้ทำการ append ไฟล์ใหม่เข้าไปแทนที่ (สมมติว่าคุณเก็บไฟล์จริงไว้ในตัวแปรชื่อ imageFile)
+        // if (imageFile) {
+        //     data.delete("foodImage"); // เคลียร์ชื่อไฟล์เดิมออกก่อน
+        //     data.append("foodImage", imageFile); // ส่งไฟล์ดิบตัวใหม่ไปแทน
+        // }
+        if (imageFile) {
+            // เคสอัพเดตรูปใหม่: ส่งไฟล์ดิบก้อนใหม่เข้าไป
+            data.append("foodImage", imageFile);
+        }
+        // } else if (formData.foodImage) {
+        //     // เคสใช้รูปเดิม: ส่งชื่อไฟล์ String เดิมกลับไปบอกฐานข้อมูลหลังบ้าน
+        //     data.append("foodImage", formData.foodImage);
+        // }
+
+        data.append("foodName", formData.foodName);
+        data.append("description", formData.description);
+        data.append("expiryDate", formData.expiryDate); // yyyy-MM-dd'T'HH:mm
+        data.append("unitWeightKg", Number.parseFloat(formData.unitWeightKg));
+        data.append("totalUnit", Number.parseInt(formData.totalUnit, 10));
+        data.append("address", formData.address);
+        data.append("pickupDateStart", formData.pickupDateStart);
+        data.append("pickupDateEnd", formData.pickupDateEnd);
+        data.append("pickupStartTime", formData.pickupStartTime);
+        data.append("pickupEndTime", formData.pickupEndTime);
+        data.append("limitPerPerson", Number.parseInt(formData.limitPerPerson, 10));
+        data.append("latitude", Number.parseFloat(formData.latitude));
+        data.append("longitude", Number.parseFloat(formData.longitude));
+        data.append("foodCategory", Number.parseInt(formData.foodCategory, 10));
+        // data.append("remainingUnit", Number.parseInt(formData.totalUnit, 10));
+        // data.append("peopleCountPerMeal", 0);
+        data.append("foodStatus", formData.foodStatus);
+        if (formData.peopleCountPerMeal !== "" && formData.peopleCountPerMeal != null) {
+            data.append(
+                "peopleCountPerMeal",
+                Number.parseInt(formData.peopleCountPerMeal, 10)
+            );
+        }
+
+        // Object.keys(formData).forEach((key) => {
+        //     data.append(key, formData[key]);
+        // });
+
+        // fetch("http://localhost:8082/foods", {
+        //     method: "POST",
+        //     headers: {
+        //         "Authorization": `Bearer ${token}`,
+        //         // "Content-Type": "application/json"
+        //     },
+        //     // body: JSON.stringify(formData)
+        //     body: data
+        // })
+        //     .then((res) => {
+        //         if (!res.ok) {
+        //             throw new Error("ไม่สามารถบันทึกข้อมูลได้");
+        //         }
+        //         return res.json();
+        //     })
+        //     .then((result) => {
+        //         console.log("บันทึกสำเร็จ:", result);
+        //         // เคลียร์ error และ reset form ถ้าต้องการ
+        //         setErrors({});
+        //         Swal.fire({
+        //             title: "บันทึกข้อมูลเรียบร้อย!",
+        //             icon: "success",
+        //             confirmButtonColor: "#2ecc71"
+        //         }).then(() => {
+        //             navigate("/my-foods");
+        //         });
+        //     })
+        //     .catch((err) => {
+        //         console.error("ผิดพลาด:", err);
+        //     });
+
+        // แยก URL และ Method ตามสถานะโหมดการใช้งานในจังหวะกดเซฟ
+        const targetUrl = isEditMode
+            ? `http://localhost:8082/foods/${id}`  // โหมดแก้ไข
+            : "http://localhost:8082/foods";       // โหมดสร้างใหม่
+
+        const targetMethod = isEditMode ? "PUT" : "POST";
+
+        // ยิง API บันทึกข้อมูล (ดึงออกมาจาก useEffect นำมาวางตรงนี้แทน)
+        fetch(targetUrl, {
+            method: targetMethod,
+            headers: {
+                "Authorization": `Bearer ${token}`
+                // ไม่ต้องใส่ Content-Type ระบบจะจัดการให้เองครับ
+            },
+            body: data
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("ไม่สามารถบันทึกข้อมูลได้");
+                return res.json();
+            })
+            .then((result) => {
+                console.log("บันทึกสำเร็จ:", result);
+                setErrors({});
+
+                Swal.fire({
+                    title: isEditMode ? "อัปเดตข้อมูลเรียบร้อย!" : "บันทึกข้อมูลเรียบร้อย!",
+                    icon: "success",
+                    confirmButtonColor: "#2ecc71"
+                }).then(() => {
+                    navigate("/my-foods");
+                });
+            })
+            .catch((err) => {
+                console.error("ผิดพลาด:", err);
+                Swal.fire({
+                    title: "เกิดข้อผิดพลาด",
+                    text: err.message,
+                    icon: "error"
+                });
+            });
+
+
+    };
+
+    if (loading || !isLoaded) return <div style={styles.loading}>กำลังโหลด...</div>;
+
+    const renderFoodImage = () => {
+        // เคสแรก: มีการเลือกรูปภาพใหม่เข้ามา (โชว์รูป Preview ใหม่ทันที)
+        if (imagePreview) {
+            return (
+                <img
+                    src={imagePreview}
+                    alt="New Preview"
+                    style={styles.previewImg}
+                />
+            );
+        }
+
+        // เคสสอง: ไม่มีรูปใหม่ แต่มีรูปเดิมที่ดึงมาจากฐานข้อมูล (แสดงผลใน View Mode และ Edit Mode)
+        if (formData.foodImage) {
+            return (
+                <img
+                    src={`http://localhost:8082${formData.foodImage}`}
+                    alt="Food From Database"
+                    style={styles.previewImg}
+                    onError={(e) => {
+                        e.target.onerror = null; // ป้องกัน Loop พังกรณีรูปพังซ้ำซ้อน
+                        // เปลี่ยนมาใช้ภาพ SVG สำรองในเครื่องแทนการเรียกเว็บนอกตามที่เราตกลงกันไว้ครับ
+                        e.target.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 24 24" fill="%23ccc"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`;
+                    }}
+                />
+            );
+        }
+
+        // เคสสุดท้าย: ไม่มีทั้งรูปใหม่และรูปเก่าในฐานข้อมูล (ให้คืนค่าว่างไม่แสดงอะไรเลย)
+        return null;
+    };
+
+    const handleDeleteFood = async (id) => {
+        // แสดง confirm ก่อนลบ
+        const result = await Swal.fire({
+            title: "คุณแน่ใจหรือไม่?",
+            text: "หากลบแล้วจะไม่สามารถกู้คืนได้",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "ลบรายการอาหาร",
+            cancelButtonText: "ยกเลิก"
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`http://localhost:8082/foods/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`, // ถ้ามี JWT
+                    }
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        title: "ลบสำเร็จ!",
+                        text: "รายการอาหารถูกลบเรียบร้อยแล้ว",
+                        icon: "success",
+                        confirmButtonColor: "#2ecc71"
+                    }).then(() => {
+                        // redirect หรือ refresh หน้า
+                        navigate("/my-foods")
+                    });
+                } else {
+                    const errorData = await response.json();
+                    Swal.fire("เกิดข้อผิดพลาด", errorData.message || "ไม่สามารถลบได้", "error");
+                }
+            } catch (err) {
+                Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
+            }
+        }
+    };
+
+    const renderActionButtons = () => {
+        // เคสแรก: อยู่ในโหมดสร้างรายการอาหารใหม่ (ไม่มี id บน URL)
+        if (!id) {
+            return (
+                <>
+                    <button type="button" style={styles.cancelBtn} onClick={() => navigate("/my-foods")}>
+                        ยกเลิก
+                    </button>
+                    <button type="submit" style={styles.submitBtn}>
+                        สร้างรายการอาหาร
+                    </button>
+                </>
+            );
+        }
+
+        // เคสสอง: เข้ามาแก้ไขข้อมูล แต่เลือกที่จะเปิดรับข้อมูลแก้ไขแล้ว (Edit Mode - isEditable เป็น true)
+        if (isEditable) {
+            return (
+                <>
+                    {/* ปุ่มยกเลิก */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsEditable(false);
+                            // if (typeof setImageFile === "function") setImageFile(null);
+                            // if (typeof setImagePreview === "function") setImagePreview(null);
+                            // if (typeof fetchData === "function") fetchData();
+                        }}
+                        style={styles.cancelBtn}
+                    >
+                        ยกเลิก
+                    </button>
+
+                    {/* ปุ่มบันทึก */}
+                    <button
+                        type="submit"
+                        // style={{
+                        //     ...styles.submitBtn,
+                        //     backgroundColor: "#ff8c00",
+                        //     color: "#fff",
+                        //     border: "none",
+                        //     padding: "10px 24px",
+                        //     borderRadius: "12px",
+                        //     cursor: "pointer"
+                        // }}
+                        style={styles.submitBtn}
+                    >
+                        บันทึกรายการอาหาร
+                    </button>
+                </>
+            );
+        }
+
+        // เคสสุดท้าย: เข้ามาดูข้อมูลเดิมเฉย ๆ และยังไม่ได้กดแก้ไข (View Mode - isEditable เป็น false)
+        return (
+            <>
+                {/* ปุ่มลบ */}
+                <button
+                    type="button"
+                    onClick={() => handleDeleteFood(formData.foodId)}
+                    style={{
+                        ...styles.cancelBtn,
+                        backgroundColor: "#ff3333",
+                        color: "#fff",
+                        border: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        cursor: "pointer"
+                    }}
+                >
+                    <span className="material-icons-outlined" style={{ fontSize: "18px" }}>delete</span>{" "}
+                    ลบรายการอาหาร
+                </button>
+
+                {/* ปุ่มแก้ไข */}
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();  // หยุดการทำงานเริ่มต้นของฟอร์ม
+                        e.stopPropagation(); // ป้องกันไม่ให้ Event ลอยขึ้นไปหาแท็กฟอร์มด้านบน
+                        setIsEditable(true); // เปลี่ยนโหมดอย่างเดียวตามที่ต้องการ
+                        window.scrollTo({
+                            top: 0,
+                            behavior: "smooth" // "smooth" จะเลื่อนแบบสมูทละมุนตา / ถ้าอยากให้วาปไปทันทีให้ใช้ "auto" ครับ
+                        });
+                    }}
+                    style={{
+                        ...styles.submitBtn,
+                        backgroundColor: "#ff8c00",
+                        color: "#fff",
+                        border: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        cursor: "pointer"
+                    }}
+                >
+                    <span className="material-icons-outlined" style={{ fontSize: "18px" }}>edit</span>{" "}
+                    แก้ไขรายการอาหาร
+                </button>
+            </>
+        );
+    };
+
+    return (
+        <div style={styles.page}>
+            <div style={styles.container}>
+                <h1 style={styles.mainTitle}>
+                    {isEditMode ? "แก้ไขรายการอาหารบริจาค" : "สร้างรายการอาหารบริจาค"}
+                </h1>
+                {/* <h1 style={styles.mainTitle}>สร้างรายการอาหารบริจาค</h1> */}
+                {/* แสดง Dropdown สถานะเฉพาะตอน Edit Mode เท่านั้น ตามภาพต้นแบบ */}
+
+                <form onSubmit={handleSubmit}>
+
+                    {isEditMode && (
+                        <div style={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            alignItems: "center",
+                            width: "100%",
+                            marginBottom: "10px"
+                        }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <p style={{ ...styles.label, margin: 0, whiteSpace: "nowrap", fontSize: "18px", color: "#b4b4b4" }}>สถานะบริจาค :</p>
+                                <select
+                                    name="foodStatus"
+                                    value={formData.foodStatus || "AVAILABLE"}
+                                    onChange={handleChange}
+                                    // style={{ ...styles.input, width: "160px", marginBottom: 0 }}
+                                    disabled={!isEditable}
+                                    style={{
+                                        ...styles.input, width: "160px", marginBottom: 0,
+                                        backgroundColor: isEditable ? "#fffcf8" : "#fff",
+                                        border: isEditable ? "2px solid #00796b" : "2px solid #d9d9d9",
+                                        padding: "8px 16px",
+                                        color: isEditable ? "#00796b" : "#a6a6a6",
+                                        cursor: isEditable ? "pointer" : "not-allowed",
+                                    }}
+                                >
+                                    <option value="AVAILABLE">เปิดให้รับบริจาค</option>
+                                    <option value="CLOSED">ปิดให้รับบริจาค</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+
+                    {/* Section 1: รูปภาพ */}
+                    <div style={styles.sectionTitle}>
+                        <i className="material-icons-outlined" style={styles.iconHeader}>image</i>
+                        <p style={styles.textHeader}>รูปภาพ</p>
+                    </div>
+                    <div style={styles.imageUploadContainer}>
+                        <button
+                            type="button"
+                            onClick={handleClickUpload}
+                            // style={{
+                            //     ...styles.uploadBox,
+                            //     background: "none",
+                            //     cursor: "pointer",
+                            // }}
+                            disabled={!isEditable} // ล็อกไม่ให้คลิกเลือกรูปใหม่
+                            style={{
+                                ...styles.uploadBox,
+                                background: "none",
+                                cursor: isEditable ? "pointer" : "not-allowed",
+                            }}
+                        >
+                            <input
+                                type="file"
+                                name="foodImage"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                style={{ display: "none" }}
+                                ref={fileInputRef}
+                            />
+                            <div style={styles.uploadContent}>
+                                <i
+                                    className="material-symbols-outlined"
+                                    style={{ fontSize: "40px", color: "#ff8c00" }}
+                                >
+                                    upload
+                                </i>
+                                <p style={{ color: "#999", margin: "5px 0" }}>เพิ่มรูปภาพ</p>
+                            </div>
+                        </button>
+
+                        {/* {imagePreview && (
+                            <img src={imagePreview} alt="Preview" style={styles.previewImg} />
+                        )} */}
+
+
+                        {renderFoodImage()}
+
+                    </div>
+                    {errors.foodImage && (
+                        <div style={{ color: "red", marginBottom: "10px" }}>{errors.foodImage}</div>
+                    )}
+
+                    {/* Section 2: ข้อมูลอาหาร */}
+                    <div style={styles.sectionTitle}>
+                        <i className="material-icons-outlined" style={styles.iconHeader}>article</i>
+                        <p style={styles.textHeader}> ข้อมูลอาหาร </p>
+                    </div>
+                    <div style={styles.row}>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>ชื่ออาหาร</p>
+                            <input
+                                name="foodName"
+                                value={formData.foodName}
+                                placeholder="กรอกชื่ออาหาร"
+                                disabled={!isEditable} // ล็อกถ้ายังไม่กดปุ่มแก้ไข
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "text" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.foodName && <span style={{ color: "red" }}>{errors.foodName}</span>}
+                        </div>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>หมวดหมู่</p>
+                            <select
+                                name="foodCategory" // เปลี่ยนชื่อให้ตรงกับ state
+                                value={formData.foodCategory ? String(formData.foodCategory) : ""}
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            >
+                                <option value="">เลือกหมวดหมู่</option>
+                                {categories.map((item) => (
+                                    <option key={item.id} value={String(item.id)}>
+                                        {item.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.foodCategory && <span style={{ color: "red" }}>{errors.foodCategory}</span>}
+                        </div>
+                    </div>
+
+                    <div style={styles.inputGroupFull}>
+                        <p style={styles.label}>รายละเอียด</p>
+                        <textarea
+                            name="description"
+                            value={formData.description}
+                            placeholder="กรอกรายละเอียด"
+                            // style={{ ...styles.input, height: "80px", paddingTop: "10px", resize: "none" }}
+                            disabled={!isEditable}
+                            style={{
+                                ...styles.input,
+                                color: isEditable ? "#000" : "#a6a6a6",
+                                cursor: isEditable ? "text" : "not-allowed"
+                            }}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div style={styles.row}>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>วันหมดอายุ</p>
+                            <input
+                                type="datetime-local"
+                                name="expiryDate"
+                                value={formData.expiryDate}
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.expiryDate && <span style={{ color: "red" }}>{errors.expiryDate}</span>}
+                        </div>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>น้ำหนักต่อหน่วยที่บริจาค (Kg)</p>
+                            <input
+                                type="number"
+                                name="unitWeightKg"
+                                value={formData.unitWeightKg}
+                                placeholder="กรอกน้ำหนัก"
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "text" : "not-allowed"
+                                }}
+                                // บังคับที่คีย์บอร์ด ถ้าผู้ใช้พยายามพิมพ์เครื่องหมายลบ (-) หรือตัว e ให้ดีดออกทันที
+                                onKeyDown={(e) => {
+                                    if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.unitWeightKg && <span style={{ color: "red" }}>{errors.unitWeightKg}</span>}
+                        </div>
+                    </div>
+
+                    <div style={styles.row}>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>จำนวนที่บริจาค</p>
+                            <input
+                                type="number"
+                                name="totalUnit"
+                                value={formData.totalUnit}
+                                placeholder="กรอกจำนวน"
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "text" : "not-allowed"
+                                }}
+                                min="0"
+                                onKeyDown={(e) => {
+                                    if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.totalUnit && <span style={{ color: "red" }}>{errors.totalUnit}</span>}
+                        </div>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>จำนวนคนที่เหมาะสมต่อมื้อ</p>
+                            <input
+                                type="number"
+                                name="peopleCountPerMeal"
+                                value={formData.peopleCountPerMeal}
+                                placeholder="กรอกจำนวนคน"
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "text" : "not-allowed"
+                                }}
+                                min="0"
+                                onKeyDown={(e) => {
+                                    if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div style={{ ...styles.inputGroup, width: "48%" }}>
+                        <p style={styles.label}>จำนวนจำกัดบริจาคต่อคน</p>
+                        <input
+                            type="number"
+                            name="limitPerPerson"
+                            value={formData.limitPerPerson}
+                            placeholder="กรอกจำนวน"
+                            disabled={!isEditable}
+                            style={{
+                                ...styles.input,
+                                color: isEditable ? "#000" : "#a6a6a6",
+                                cursor: isEditable ? "text" : "not-allowed"
+                            }}
+                            min="0"
+                            onKeyDown={(e) => {
+                                if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
+                                    e.preventDefault();
+                                }
+                            }}
+                            onChange={handleChange}
+                        />
+                        {errors.limitPerPerson && <span style={{ color: "red" }}>{errors.limitPerPerson}</span>}
+                    </div>
+
+                    {/* Section 3: สถานที่และเวลา */}
+                    <div style={{ ...styles.sectionTitle, marginTop: "20px" }}>
+                        <i className="material-icons-outlined" style={styles.iconHeader}>location_on</i>
+                        <p style={styles.textHeader}> สถานที่และเวลารับอาหาร </p>
+                    </div>
+                    <div style={styles.inputGroupFull}>
+                        <p style={styles.label}> สถานที่รับ </p>
+                        <input
+                            name="address"
+                            value={formData.address}
+                            placeholder="กรอกสถานที่รับ"
+                            disabled={!isEditable}
+                            style={{
+                                ...styles.input,
+                                color: isEditable ? "#000" : "#a6a6a6",
+                                cursor: isEditable ? "text" : "not-allowed"
+                            }}
+                            onChange={handleChange}
+                        />
+                        {errors.address && <span style={{ color: "red" }}>{errors.address}</span>}
+                    </div>
+
+                    <div style={styles.row}>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>วันที่เริ่มรับได้</p>
+                            <input
+                                type="date"
+                                name="pickupDateStart"
+                                value={formData.pickupDateStart}
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.pickupDateStart && <span style={{ color: "red" }}>{errors.pickupDateStart}</span>}
+                        </div>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>วันที่สิ้นสุดการรับ</p>
+                            <input
+                                type="date"
+                                name="pickupDateEnd"
+                                value={formData.pickupDateEnd}
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.pickupDateEnd && <span style={{ color: "red" }}>{errors.pickupDateEnd}</span>}
+                        </div>
+                    </div>
+
+                    <div style={styles.row}>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>เวลาที่เริ่มรับได้</p>
+                            <input
+                                type="time"
+                                name="pickupStartTime"
+                                value={formData.pickupStartTime}
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.pickupStartTime && <span style={{ color: "red" }}>{errors.pickupStartTime}</span>}
+                        </div>
+                        <div style={styles.inputGroup}>
+                            <p style={styles.label}>เวลาสิ้นสุดการรับ</p>
+                            <input
+                                type="time"
+                                name="pickupEndTime"
+                                value={formData.pickupEndTime}
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.pickupEndTime && <span style={{ color: "red" }}>{errors.pickupEndTime}</span>}
+                        </div>
+                    </div>
+
+                    {/* Map Placeholder */}
+                    <div style={styles.mapContainer}>
+                        {/* ส่วนของ Google Map */}
+
+                        <GoogleMap
+                            mapContainerStyle={styles.mapCanvas} // ใช้ style จากเครื่อง
+                            center={currentPos}
+                            zoom={17}
+                            // onClick={handleMapClick}
+                            // ห้ามคลิกแผนที่ถ้าไม่ได้อยู่ในโหมดแก้ไข (ถ้า !isEditable ให้ค่าเป็น null)
+                            onClick={isEditable ? handleMapClick : null}
+                        >
+                            <Marker
+                                position={currentPos}
+                                // draggable={true}
+                                // onDragEnd={(e) =>
+                                //     setFormData((prev) => ({
+                                //         ...prev,
+                                //         latitude: e.latLng.lat(),
+                                //         longitude: e.latLng.lng(),
+                                //     }))
+                                // }
+                                // ห้ามลากหมุดถ้าไม่ได้อยู่ในโหมดแก้ไข
+                                draggable={isEditable}
+                                // ห้ามอัปเดตพิกัดจากการลากหมุด
+                                onDragEnd={(e) => {
+                                    if (!isEditable) return; // ดักจับเผื่อไว้เพื่อความปลอดภัย
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        latitude: e.latLng.lat(),
+                                        longitude: e.latLng.lng(),
+                                    }));
+                                    setErrors((prev) => ({ ...prev, location: "" }));
+                                }}
+                            />
+                        </GoogleMap>
+
+                        {/* ปุ่มใช้ตำแหน่งปัจจุบัน (ย้ายมาไว้ข้างใน Container เพื่อให้ลอยทับ) */}
+                        {isEditable && (
+                            <button
+                                type="button"
+                                style={styles.currentLocationBtn}
+                                onClick={handleGetCurrentLocation}
+                            >
+                                <span className="material-icons-outlined" style={{
+                                    fontSize: "20px",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    verticalAlign: "middle",
+                                    lineHeight: "1",
+                                }}>my_location</span>{" "}
+                                ใช้ตำแหน่งปัจจุบัน
+                            </button>
+                        )}
+
+                        {/* ค่าพิกัดแฝงสำหรับส่งฟอร์ม */}
+                        <input type="hidden" name="latitude" value={formData.latitude} />
+                        <input type="hidden" name="longitude" value={formData.longitude} />
+                    </div>
+
+                    {errors.location && (
+                        <p style={{
+                            color: "red",
+                            fontSize: "16px",
+                            marginTop: "8px",
+                            fontWeight: "500",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px"
+                        }}>
+                            <span className="material-icons-outlined" style={{ fontSize: "18px", verticalAlign: "middle" }}>
+                                error_outline
+                            </span>
+                            {errors.location}
+                        </p>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div style={styles.buttonGroup}>
+                        {renderActionButtons()}
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+const styles = {
+    container: {
+        maxWidth: "1100px",
+        margin: "0 auto",
+        padding: "20px 20px"
+    },
+    mainTitle: {
+        color: "#328d7d",
+        fontSize: "30px",
+        fontWeight: "bold",
+        marginBottom: "10px"
+    },
+    sectionTitle: {
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        marginBottom: "0px",
+        fontSize: "18px"
+    },
+    iconHeader: {
+        color: "#ff8c00",
+    },
+    textHeader: {
+        fontSize: "18px",
+        fontWeight: "500",
+        margin: "10px",
+    },
+    imageUploadContainer: {
+        display: "flex",
+        gap: "20px",
+        marginBottom: "10px"
+    },
+    uploadBox: {
+        width: "180px",
+        height: "180px",
+        border: "2px dashed #999",
+        borderRadius: "20px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        cursor: "pointer",
+        backgroundColor: "none"
+    },
+    uploadContent: {
+        textAlign: "center"
+    },
+    previewImg: {
+        width: "180px",
+        height: "180px",
+        borderRadius: "20px",
+        objectFit: "cover",
+    },
+    row: {
+        display: "flex",
+        gap: "20px",
+        marginBottom: "0px",
+        marginTop: "0px"
+    },
+    inputGroup: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px"
+    },
+    inputGroupFull: {
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+    },
+    label: {
+        fontSize: "16px",
+        fontWeight: "400",
+        color: "#333",
+        marginBottom: "0px"
+    },
+    input: {
+        padding: "12px 18px",
+        borderRadius: "15px",
+        border: "none",
+        backgroundColor: "#FFEEDD",
+        fontSize: "15px",
+        outline: "none",
+        fontFamily: "inherit"
+    },
+    mapPlaceholder: {
+        position: "relative",
+        marginTop: "20px",
+        borderRadius: "20px",
+        overflow: "hidden"
+    },
+    mapImg: {
+        width: "100%",
+        height: "250px",
+        objectFit: "cover"
+    },
+    currentLocationBtn: {
+        position: "absolute",
+        bottom: "20px",
+        right: "20px",
+        padding: "10px 15px",
+        backgroundColor: "#fff",
+        border: "none",
+        borderRadius: "10px",
+        boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+        cursor: "pointer"
+    },
+    mapContainer: {
+        position: "relative",
+        width: "100%",
+        marginTop: "15px",
+    },
+    mapCanvas: {
+        width: "100%",
+        height: "420px",
+        borderRadius: "20px",
+        border: "1px solid #ddd",
+    },
+    // currentLocationBtn: {
+    //     position: "absolute",
+    //     bottom: "20px",
+    //     right: "20px",
+    //     padding: "10px 15px",
+    //     backgroundColor: "#fff",
+    //     border: "none",
+    //     borderRadius: "10px",
+    //     boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+    //     cursor: "pointer",
+    //     zIndex: 5,
+    //     fontFamily: "inherit"
+    // },
+    buttonGroup: {
+        display: "flex",
+        justifyContent: "center",
+        gap: "20px",
+        marginTop: "40px"
+    },
+    cancelBtn: {
+        padding: "12px 60px",
+        borderRadius: "12px",
+        border: "2px solid #328d7d",
+        backgroundColor: "#fffcf8",
+        color: "#328d7d",
+        fontSize: "17px",
+        cursor: "pointer"
+    },
+    submitBtn: {
+        padding: "12px 60px",
+        borderRadius: "15px",
+        border: "none",
+        backgroundColor: "#ff8c00",
+        color: "#fff",
+        fontSize: "17px",
+        cursor: "pointer"
+    },
+    loading: {
+        textAlign: "center",
+        padding: "100px",
+        color: "#F97316",
+        fontSize: "20px"
+    },
+};

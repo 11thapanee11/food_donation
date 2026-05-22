@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+
+body {
+    margin: 0;
+    font-family: "Noto Sans Thai", sans-serif;
+    background-color: #fffcf8;
+}
+
+input,
+button {
+    font-family: inherit;
+}
+
+/* .register-header {
+    background-color: #fffcf8;
+    padding: 15px 30px;
+    font-weight: bold;
+    color: #ff8c00;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+} */
+
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    gap: 100px;
+}
+
+.register-form-section {
+    width: 500px;
+}
+
+.register-title {
+    color: #328d7d;
+    margin-bottom: 5px;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 30px;
+}
+
+.register-label {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.register-row {
+    display: flex;
+    gap: 30px;
+}
+
+.register-row .register-input-box {
+    flex: 1;
+}
+
+.register-input-box input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #ffe8cc;
+    outline: none;
+    margin: 0px;
+}
+
+.register-input-box input::placeholder {
+    color: #ff8c00;
+    font-size: 14px;
+}
+
+.register-error {
+    color: red;
+    font-size: 13px;
+    margin-top: 4px;
+    display: block;
+}
+
+.register-button {
+    width: 250px;
+    display: block;
+    margin: 25px auto 0 auto;
+    padding: 12px;
+    background-color: #ff8c00;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.register-button:hover {
+    background-color: #ff8c00;
+}
+
+.register-image-section img {
+    width: 460px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    margin-top: 30px;
+}

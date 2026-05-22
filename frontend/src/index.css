@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+@import url('https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined');
+@import url('https://fonts.googleapis.com/icon?family=Material+Symbols');
+
+body {
+  margin: 0;
+  font-family: "Noto Sans Thai", sans-serif;
+  background-color: #fffcf8;
+}
+
+body,
+input,
+button,
+p,
+div {
+  font-family: "Noto Sans Thai", sans-serif;
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #ffe8cc inset;
+  /* ใส่สีพื้นหลังที่คุณต้องการ */
+  box-shadow: 0 0 0px 1000px #ffe8cc inset;
+  -webkit-text-fill-color: #000;
+  /* ให้ตัวหนังสือเป็นสีดำ */
+}
+
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+} */
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* ล้างเส้นขอบและเงาทั้งหมดที่เกิดขึ้นเวลาคลิก */
+button,
+button:focus,
+button:active,
+button:focus-visible,
+.categoryBtn,
+/* ใส่ชื่อคลาสถ้าคุณมีการระบุคลาสไว้ */
+[role="button"] {
+  outline: none !important;
+  outline-style: none !important;
+  box-shadow: none !important;
+  border-color: inherit;
+  /* ป้องกันการเปลี่ยนสีขอบอัตโนมัติ */
+  -webkit-tap-highlight-color: transparent !important;
+  /* ปิดสีไฮไลท์ในมือถือ */
+}
+
+/* สำหรับ Chrome รุ่นใหม่ที่ใช้ focus-visible */
+*:focus-visible {
+  outline: none !important;
+}
+
+/* เปลี่ยนสีไอคอนปฏิทินและนาฬิกาใน Input */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(50%) sepia(0%) saturate(0%) brightness(100%) contrast(100%);
+  /* โค้ด filter ด้านบนจะพยายามเปลี่ยนสีไอคอนให้เป็นเขียว #328d7d */
+}
+
+/* ปรับแต่ง Dropdown สำหรับบาง Browser */
+select {
+  appearance: none;
+  /* เปลี่ยน %23328d7d เป็น %23888888 เพื่อให้เป็นสีเทา */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 14px;
+}
+
+textarea {
+  /* เอาขีดที่มุมขวา (Resize Handle) ออก */
+  resize: none;
+
+  /* เพิ่มเติมเพื่อให้ดูคลีนขึ้น */
+  outline: none;
+  /* เอาเส้นขอบสีดำ/ฟ้า เวลาคลิกออก */
+}
+
+/*input number*/
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* เปลี่ยนสีพื้นหลังและตัวหนังสือของ option */
+select option {
+  background-color: #fff;
+}

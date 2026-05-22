@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+
+body {
+    margin: 0;
+    font-family: "Noto Sans Thai", sans-serif;
+    background-color: #fffcf8;
+}
+
+input,
+button {
+    font-family: inherit;
+}
+
+/* .login-header {
+    background-color: #fffcf8;
+    padding: 15px 30px;
+    font-weight: bold;
+    color: #ff8c00;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+} */
+
+.login-container {
+    width: 350px;
+    margin: 80px auto;
+    text-align: center;
+}
+
+.login-icon {
+    color: #ff8c00;
+}
+
+.login-icon i {
+    font-size: 60px;
+}
+
+.login-title {
+    color: #328d7d;
+    margin-bottom: 25px;
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.login-form {
+    text-align: left;
+}
+
+.login-label {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.login-input-box {
+    display: flex;
+    align-items: center;
+    background: #f7d8b5;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.login-input-box i {
+    color: #ff8c00;
+    margin-right: 10px;
+}
+
+.login-input-box input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+}
+
+.login-input-box input::placeholder {
+    color: #ff8c00;
+    font-size: 14px;
+}
+
+.login-error {
+    color: red;
+    font-size: 13px;
+    margin-top: 4px;
+    display: block;
+}
+
+.login-button {
+    width: 200px;
+    display: block;
+    margin: 30px auto 0 auto;
+    padding: 10px;
+    background-color: #ff8c00;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.login-button:hover {
+    background-color: #ff8c00;
+}
+
+.login-register {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.login-register a {
+    color: #328d7d;
+    text-decoration: none;
+}
