@@ -28,6 +28,8 @@ export default function Home() {
 
     // โหลดอาหารตามหมวดหมู่ที่เลือก
     useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+
         let url = "http://localhost:8082/foods";
         if (selectedCategory !== "ทั้งหมด") {
             const category = categories.find(c => c.name === selectedCategory);
@@ -36,7 +38,13 @@ export default function Home() {
             }
         }
 
-        fetch(url)
+        fetch(url, {
+            method: "GET",
+            headers: {
+                "Authorization": token ? `Bearer ${token}` : "", // ถ้ามี Token ให้แปะไปด้วย ถ้าไม่มีส่งว่าง (สิทธิ์คนนอก)
+                "Content-Type": "application/json"
+            }
+        })
             .then(res => {
                 if (!res.ok) throw new Error("โหลดข้อมูลอาหารไม่สำเร็จ");
                 return res.json();

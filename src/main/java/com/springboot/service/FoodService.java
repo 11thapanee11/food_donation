@@ -41,6 +41,10 @@ public class FoodService {
         return foodRepository.findAll();
     }
 
+    public List<Food> getFoodsExceptMe(String email) {
+        return foodRepository.findByDonor_EmailNot(email);
+    }
+
     // ดึงตาม id
     public Food getFoodById(Integer id) {
         return foodRepository.findById(id)
@@ -50,6 +54,10 @@ public class FoodService {
     // ดึงตามหมวดหมู่
     public List<Food> getFoodsByCategory(Integer foodCateId) {
         return foodRepository.findByFoodCategory_FoodCateId(foodCateId);
+    }
+
+    public List<Food> getFoodsByCategoryExceptMe(Integer categoryId, String email) {
+        return foodRepository.findByFoodCategory_FoodCateIdAndDonor_EmailNot(categoryId, email);
     }
 
     // เพิ่มอาหารใหม่

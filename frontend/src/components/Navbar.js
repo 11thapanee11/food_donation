@@ -8,102 +8,6 @@ export default function Navbar() {
     const [openNotifications, setOpenNotifications] = useState(false);
     const dropdownRef = useRef(null);
 
-    // --- รวม Styles ทั้งหมดไว้ที่นี่ ---
-    const styles = {
-        loginHeader: {
-            backgroundColor: "#fffcf8",
-            padding: "15px 30px",
-            fontWeight: "bold",
-            color: "#ff8c00",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "20px",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
-            fontFamily: "'Noto Sans Thai', sans-serif"
-        },
-        logoSection: {
-            display: "flex",
-            alignItems: "center",
-            gap: "20px",
-            color: "#ff8c00"
-        },
-        menuSection: {
-            display: "flex",
-            gap: "40px",
-            cursor: "pointer",
-            fontWeight: "500"
-        },
-        activeMenu: {
-            color: "#ff8c00",
-            textDecoration: "none",
-            paddingBottom: "1px",
-            boxShadow: "0 3px 0 #ff8c00"
-        },
-        inactiveMenu: {
-            color: "#737373",
-            textDecoration: "none",
-            paddingBottom: "1px"
-        },
-        iconBase: {
-            fontSize: "28px",
-            cursor: "pointer",
-            background: "none",
-            border: "none",
-            padding: 0,
-            display: "flex",
-            alignItems: "center"
-        },
-        notificationBadge: {
-            position: "absolute",
-            right: 0,
-            top: "40px",
-            backgroundColor: "#fff",
-            boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-            borderRadius: "5px",
-            width: "250px",
-            zIndex: 1000,
-            padding: "10px"
-        },
-        profileDropdown: {
-            position: "absolute",
-            right: 0,
-            top: "40px",
-            backgroundColor: "#fff",
-            boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-            borderRadius: "5px",
-            width: "150px",
-            zIndex: 1000,
-            overflow: "hidden"
-        },
-        dropdownItem: {
-            display: "block",
-            padding: "10px",
-            width: "100%",
-            textAlign: "left",
-            fontSize: "14px",
-            fontWeight: "normal",
-            color: "#333",
-            textDecoration: "none",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            transition: "0.2s"
-        },
-        logoutItem: {
-            color: "#e74c3c",
-            borderTop: "1px solid #eee"
-        },
-        profileImg: (isActive) => ({
-            width: "32px",
-            height: "32px",
-            borderRadius: "50%",
-            objectFit: "cover",
-            border: isActive ? "2px solid #ff8c00" : "2px solid transparent",
-            transition: "0.2s"
-        })
-    };
-
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -127,7 +31,7 @@ export default function Navbar() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
         setOpenDropdown(false);
         navigate("/login");
     };
@@ -223,3 +127,98 @@ export default function Navbar() {
         </nav>
     );
 }
+
+const styles = {
+    loginHeader: {
+        backgroundColor: "#fffcf8",
+        padding: "15px 30px",
+        fontWeight: "bold",
+        color: "#ff8c00",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "20px",
+        boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
+        fontFamily: "'Noto Sans Thai', sans-serif"
+    },
+    logoSection: {
+        display: "flex",
+        alignItems: "center",
+        gap: "20px",
+        color: "#ff8c00"
+    },
+    menuSection: {
+        display: "flex",
+        gap: "40px",
+        cursor: "pointer",
+        fontWeight: "500"
+    },
+    activeMenu: {
+        color: "#ff8c00",
+        textDecoration: "none",
+        paddingBottom: "1px",
+        boxShadow: "0 3px 0 #ff8c00"
+    },
+    inactiveMenu: {
+        color: "#737373",
+        textDecoration: "none",
+        paddingBottom: "1px"
+    },
+    iconBase: {
+        fontSize: "28px",
+        cursor: "pointer",
+        background: "none",
+        border: "none",
+        padding: 0,
+        display: "flex",
+        alignItems: "center"
+    },
+    notificationBadge: {
+        position: "absolute",
+        right: 0,
+        top: "40px",
+        backgroundColor: "#fff",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+        borderRadius: "5px",
+        width: "250px",
+        zIndex: 1000,
+        padding: "10px"
+    },
+    profileDropdown: {
+        position: "absolute",
+        right: 0,
+        top: "40px",
+        backgroundColor: "#fff",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+        borderRadius: "5px",
+        width: "150px",
+        zIndex: 1000,
+        overflow: "hidden"
+    },
+    dropdownItem: {
+        display: "block",
+        padding: "10px",
+        width: "100%",
+        textAlign: "left",
+        fontSize: "14px",
+        fontWeight: "normal",
+        color: "#333",
+        textDecoration: "none",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        transition: "0.2s"
+    },
+    logoutItem: {
+        color: "#e74c3c",
+        borderTop: "1px solid #eee"
+    },
+    profileImg: (isActive) => ({
+        width: "32px",
+        height: "32px",
+        borderRadius: "50%",
+        objectFit: "cover",
+        border: isActive ? "2px solid #ff8c00" : "2px solid transparent",
+        transition: "0.2s"
+    })
+};

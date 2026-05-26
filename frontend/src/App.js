@@ -8,7 +8,7 @@ import Profile from './components/Profile';
 import MyFoods from './components/MyFoods';
 import FoodForm from './components/FoodForm';
 import FoodDetail from './components/FoodDetail';
-
+import MapPage from './components/MapPage';
 
 function App() {
   return (
@@ -23,6 +23,7 @@ function App() {
         <Route path='/food-form' element={<FoodForm/>} />
         <Route path='/food-form/:id' element={<FoodForm/>} />
         <Route path='/food-detail/:id' element={<FoodDetail/>} />
+        <Route path='/map' element={<MapPage/>} />
       </Routes>
     </Router>
   );
