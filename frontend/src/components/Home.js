@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
@@ -178,7 +177,7 @@ export default function Home() {
                                         <span style={{ color: "#328d7d", fontSize: "15px" }}>{food.limitPerPerson}</span>
                                     </div>
                                     <button
-                                        onClick={() => navigate(`/food-detail/${food.foodId}`)}
+                                        onClick={() => navigate('/food-detail', { state: { id: food.foodId } })}
                                         style={styles.detailBtn}
                                     >
                                         ดูรายละเอียด

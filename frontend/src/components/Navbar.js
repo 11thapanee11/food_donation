@@ -57,7 +57,7 @@ export default function Navbar() {
                 {isLoggedIn && (
                     <>
                         <Link to="/receive" style={location.pathname === "/receive" ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
-                        <Link to="/my-foods" style={location.pathname === "/my-foods" ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
+                        <Link to="/my-foods" style={location.pathname === "/my-foods" || location.pathname === "/food-form" ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
                         <Link to="/impact-dashboard" style={location.pathname === "/impact-dashboard" ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
                     </>
                 )}

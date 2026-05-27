@@ -229,7 +229,7 @@ export default function MyFoods() {
                                 <button
                                     style={styles.detailBtn}
                                     // onClick={() => navigate(`/food-detail/${food.foodId}`)}
-                                    onClick={() => navigate(`/food-form/${food.foodId}`)}
+                                    onClick={() => navigate('/food-form', { state: { id: food.foodId } })}
                                 >
                                     ดูรายละเอียด
                                 </button>
@@ -280,7 +280,7 @@ const styles = {
         color: "#328d7d",
         fontSize: "30px",
         fontWeight: "bold",
-        marginBottom: "20px"
+        marginBottom: "15px",
     },
     createBtn: {
         backgroundColor: "#ff8c00",
@@ -293,6 +293,7 @@ const styles = {
         display: "flex",
         alignItems: "center",
         outline: "none",
+        margin: "0px"
     },
     list: {
         display: "flex",
@@ -306,7 +307,8 @@ const styles = {
         borderRadius: "20px",
         padding: "20px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
-        alignItems: "stretch"
+        alignItems: "stretch",
+        // marginTop: "0px"
     },
     imageWrapper: {
         width: "220px",
@@ -336,7 +338,7 @@ const styles = {
         fontSize: "24px",
         fontWeight: "bold",
         color: "#000",
-        marginTop: "5px",
+        marginTop: "10px",
         marginBottom: "0px",
     },
     /* แก้ไข: ปรับสีของ Badge สถานะตามแบบ (เขียวละมุน ขอบมนโค้ง) */

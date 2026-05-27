@@ -29,6 +29,7 @@ public class Notification {
 
     @ManyToOne
     @JoinColumn(name = "booking_booking_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Booking booking;
 
     @ManyToOne

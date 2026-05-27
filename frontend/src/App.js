@@ -9,6 +9,8 @@ import MyFoods from './components/MyFoods';
 import FoodForm from './components/FoodForm';
 import FoodDetail from './components/FoodDetail';
 import MapPage from './components/MapPage';
+import RankingPage from './components/RankingPage';
+import FoodReceive from './components/FoodReceive';
 
 function App() {
   return (
@@ -21,9 +23,12 @@ function App() {
         <Route path='/profile' element={<Profile/>} />
         <Route path='/my-foods' element={<MyFoods/>} />
         <Route path='/food-form' element={<FoodForm/>} />
-        <Route path='/food-form/:id' element={<FoodForm/>} />
-        <Route path='/food-detail/:id' element={<FoodDetail/>} />
+        {/* <Route path='/food-form/:id' element={<FoodForm/>} /> */}
+        <Route path='/food-detail' element={<FoodDetail/>} />
+        {/* <Route path='/food-detail/:id' element={<FoodDetail/>} /> */}
         <Route path='/map' element={<MapPage/>} />
+        <Route path='/ranking' element={<RankingPage/>} />
+        <Route path='/receive' element={<FoodReceive/>} />
       </Routes>
     </Router>
   );

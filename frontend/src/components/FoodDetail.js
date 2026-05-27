@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import Swal from "sweetalert2";
 
 export default function FoodDetail() {
-    const { id } = useParams();
+    // const { id } = useParams();
+    const location = useLocation();
+    const foodId = location.state?.id;
     const navigate = useNavigate();
 
     const [food, setFood] = useState(null);
@@ -13,7 +16,7 @@ export default function FoodDetail() {
 
     useEffect(() => {
         // ดึงข้อมูลรายละเอียดอาหารตาม ID รายการ
-        fetch(`http://localhost:8082/foods/${id}`)
+        fetch(`http://localhost:8082/foods/${foodId}`)
             .then((res) => {
                 if (!res.ok) throw new Error("ไม่พบข้อมูลอาหารรายการนี้");
                 return res.json();
@@ -21,7 +24,7 @@ export default function FoodDetail() {
             .then((data) => setFood(data))
             .catch((err) => console.error("Error:", err))
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [foodId]);
 
     // ฟังก์ชันฟอร์แมตวันที่ไทย
     const formatExpiryDate = (dateString) => {
@@ -76,6 +79,102 @@ export default function FoodDetail() {
 
     if (!food) {
         return <div style={styles.centerPage}>ไม่พบข้อมูล</div>;
+    }
+
+    const handleReserveClick = () => {
+        Swal.fire({
+            title: 'จองรายการอาหารบริจาาค',
+            // text: 'กรุณากรอกจำนวนที่ต้องการจอง (ชิ้น/กล่อง):',
+            html: `กรุณากรอกจำนวนที่ต้องการ จำกัดไม่เกิน ${food.limitPerPerson} <br />สามารถดูรหัสยืนยันได้รับที่รายการรับบริจาค`,
+            input: 'number',
+            inputAttributes: {
+                min: '1',
+                step: '1'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#2d7d71',
+            cancelButtonColor: '#a0a0a0',
+            buttonsStyling: true,
+            reverseButtons: true,
+            inputValidator: (value) => {
+                // เขียนฟังก์ชันดักจับค่าว่างหรือเลข 0 ด้านในได้เลย
+                if (!value || Number.parseInt(value) <= 0) {
+                    return 'กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0';
+                }
+
+                const quantity = Number.parseInt(value);
+
+                // ดักจับ: ห้ามกรอกเกิน Limit ที่กำหนดต่อคน
+                if (food.limitPerPerson && quantity > food.limitPerPerson) {
+                    return `ขออภัยครับ รายการนี้จำกัดสิทธิ์การจองไม่เกิน ${food.limitPerPerson} ชิ้นต่อคน`;
+                }
+
+                // ดักจับแถมให้อีกชั้น: ห้ามกรอกเกินยอดของที่มีอยู่จริงในคลังอาหารตอนนี้
+                if (quantity > food.remainingUnit) {
+                    return `ขออภัยครับ อาหารรายการนี้เหลือให้จองได้อีกเพียง ${food.remainingUnit} ชิ้นเท่านั้น`;
+                }
+            }
+        }).then((result) => {
+            // ถ้าผู้ใช้กรอกผ่านและกด "ยืนยัน"
+            if (result.isConfirmed) {
+                const quantity = Number.parseInt(result.value);
+
+                // ดึง Token มาเพื่อระบุตัวตนคนจอง (ถ้าหลังบ้านระบบระบุตัวตนต้องการตรวจสอบสิทธิ์)
+                const token = localStorage.getItem("accessToken");
+
+                // แสดง Loading ป๊อปอัพหมุน ๆ ระหว่างส่งข้อมูลไปหลังบ้าน
+                Swal.fire({
+                    title: 'กำลังบันทึกการจอง...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // ยิง API ไปหา Spring Boot หลังบ้านโดยตรง
+                fetch(`http://localhost:8082/bookings`, { // เปลี่ยน URL เส้นทางของ API จองให้ตรงกับหลังบ้านของคุณนะครับ
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token ? `Bearer ${token}` : "" // แนบพาสปอร์ตยืนยันตัวตนคนกดจอง
+                    },
+                    body: JSON.stringify({
+                        foodId: food.foodId,       // ไอดีอาหารที่จอง
+                        quantity: quantity         // จำนวนอาหารที่กรอกเข้ามาจากป๊อปอัพ
+                    })
+                })
+                    .then(async (res) => {
+                        if (!res.ok) {
+                            throw new Error("ไม่สามารถบันทึกข้อมูลการจองได้ กรุณาลองใหม่อีกครั้ง");
+                        }
+                        return res.json();
+                    })
+                    .then((data) => {
+                        // แจ้งเตือนเมื่อจองอาหารสำเร็จ สไตล์พาสเทลน่ารัก
+                        Swal.fire({
+                            title: 'จองสำเร็จเรียบร้อย!',
+                            text: 'รายการอาหารของคุณถูกล็อกสิทธิ์เรียบร้อยแล้ว',
+                            icon: 'success',
+                            confirmButtonColor: '#2d7d71', // สีเขียวพาสเทลคู่ใจ
+                        }).then(() => {
+                            // หลังกดรับทราบ สามารถเลือกสั่งรีเฟรชหน้าจอ หรือเปลี่ยนหน้าไปดูประวัติการจองได้ครับ
+                            // window.location.reload(); // ตัวอย่าง: รีเฟรชข้อมูลอาหารใหม่
+                            navigate('/my-bookings');  // ตัวอย่าง: วาร์ปไปหน้าประวัติการจองของผู้ใช้
+                        });
+                    })
+                    .catch((err) => {
+                        // แจ้งเตือนเมื่อเกิดข้อผิดพลาด (เช่น ของหมด หรือระบบหลังบ้านขัดข้อง)
+                        Swal.fire({
+                            title: 'เกิดข้อผิดพลาด',
+                            text: err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#e57373', // สีแดงพาสเทลซอฟต์ ๆ
+                        });
+                    });
+            }
+        });
     }
 
     return (
@@ -223,9 +322,15 @@ export default function FoodDetail() {
                     </div>
 
                     {/* ปุ่มกดจอง */}
-                    <button
+                    {/* <button
                         style={styles.reserveBtn}
                         onClick={() => navigate(`/reserve-confirm/${food.foodId}`)}
+                    >
+                        จองรายการอาหาร
+                    </button> */}
+                    <button
+                        style={styles.reserveBtn}
+                        onClick={handleReserveClick} // เรียกใช้ฟังก์ชันด้านบน
                     >
                         จองรายการอาหาร
                     </button>

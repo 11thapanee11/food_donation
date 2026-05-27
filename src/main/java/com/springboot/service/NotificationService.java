@@ -15,7 +15,8 @@ public class NotificationService {
     private FoodRepository foodRepository;
     private BookingRepository bookingRepository;
 
-    public NotificationService(NotificationRepository notificationRepository, FoodRepository foodRepository, BookingRepository bookingRepository) {
+    public NotificationService(NotificationRepository notificationRepository, FoodRepository foodRepository,
+            BookingRepository bookingRepository) {
         this.notificationRepository = notificationRepository;
         this.foodRepository = foodRepository;
         this.bookingRepository = bookingRepository;
@@ -29,6 +30,27 @@ public class NotificationService {
         notification.setIsRead(false);
         notification.setFood(food);
 
+        return notificationRepository.save(notification);
+    }
+
+    public Notification createBookingNotification(Booking booking) {
+        Notification notification = new Notification();
+
+        // ดึงชื่ออาหารและจำนวนที่จองมาสร้างข้อความพาสเทลน่ารักๆ แจ้งเตือนผู้ให้
+        String message = "มีคนสนใจอาหารของคุณ! รายการ: " + booking.getFood().getFoodName()
+                + " จำนวน " + booking.getBookingUnit();
+
+        notification.setNotificationMessage(message);
+        notification.setNotificationDate(LocalDateTime.now());
+        notification.setNotificationType("booking"); // กำหนดประเภทแยกชัดเจนว่าเป็นฝั่ง booking
+        notification.setIsRead(false);
+
+        // เชื่อมความสัมพันธ์ของ Object ตามโครงสร้างตาราง
+        notification.setFood(booking.getFood());
+        notification.setBooking(booking); // (ถ้าใน Entity ตาราง Notification
+        // ของคุณมีฟิลด์ผูกกับ Booking ให้เอาคอมเมนต์ออกได้ครับ)
+
+        // บันทึกลงฐานข้อมูลและส่งวัตถุที่เซฟแล้วกลับออกไป
         return notificationRepository.save(notification);
     }
 

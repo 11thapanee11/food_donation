@@ -4,6 +4,7 @@ import com.springboot.dto.FoodDto;
 import com.springboot.model.*;
 import com.springboot.repository.*;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
@@ -20,6 +21,8 @@ import java.io.IOException;
 
 import com.springboot.service.*;
 
+import org.slf4j.Logger;
+
 @Service
 public class FoodService {
 
@@ -35,6 +38,8 @@ public class FoodService {
         this.foodCategoryRepository = foodCategoryRepository;
         this.notificationService = notificationService;
     }
+
+    private static final Logger log = LoggerFactory.getLogger(FoodService.class);
 
     // ดึงทั้งหมด
     public List<Food> getAllFoods() {
@@ -121,27 +126,27 @@ public class FoodService {
         food.setDonor(donor);
 
         // print ค่าออก console
-        System.out.println("=== Food Entity ===");
-        System.out.println("Name: " + foodDto.getFoodName());
-        System.out.println("Description: " + food.getDescription());
-        System.out.println("ExpiryDate: " + food.getExpiryDate());
-        System.out.println("UnitWeightKg: " + food.getUnitWeightKg());
-        System.out.println("TotalUnit: " + food.getTotalUnit());
-        System.out.println("RemainingUnit: " + food.getRemainingUnit());
-        System.out.println("PeopleCountPerMeal: " + food.getPeopleCountPerMeal());
-        System.out.println("Address: " + food.getAddress());
-        System.out.println("PickupDateStart: " + food.getPickupDateStart());
-        System.out.println("PickupDateEnd: " + food.getPickupDateEnd());
-        System.out.println("PickupStartTime: " + food.getPickupStartTime());
-        System.out.println("PickupEndTime: " + food.getPickupEndTime());
-        System.out.println("LimitPerPerson: " + food.getLimitPerPerson());
-        System.out.println("Latitude: " + food.getLatitude());
-        System.out.println("Longitude: " + food.getLongitude());
-        System.out.println("FoodStatus: " + food.getFoodStatus());
-        System.out.println("FoodImage: " + food.getFoodImage());
-        System.out.println("Category: " + category.getFoodCateName());
-        System.out.println("Donor: " + donor.getEmail());
-        System.out.println("===================");
+        log.info("=== Food Entity ===");
+        log.info("Name: {}", foodDto.getFoodName());
+        log.info("Description: {}", food.getDescription());
+        log.info("ExpiryDate: {}", food.getExpiryDate());
+        log.info("UnitWeightKg: {}", food.getUnitWeightKg());
+        log.info("TotalUnit: {}", food.getTotalUnit());
+        log.info("RemainingUnit: {}", food.getRemainingUnit());
+        log.info("PeopleCountPerMeal: {}", food.getPeopleCountPerMeal());
+        log.info("Address: {}", food.getAddress());
+        log.info("PickupDateStart: {}", food.getPickupDateStart());
+        log.info("PickupDateEnd: {}", food.getPickupDateEnd());
+        log.info("PickupStartTime: {}", food.getPickupStartTime());
+        log.info("PickupEndTime: {}", food.getPickupEndTime());
+        log.info("LimitPerPerson: {}", food.getLimitPerPerson());
+        log.info("Latitude: {}", food.getLatitude());
+        log.info("Longitude: {}", food.getLongitude());
+        log.info("FoodStatus: {}", food.getFoodStatus());
+        log.info("FoodImage: {}", food.getFoodImage());
+        log.info("Category: {}", category.getFoodCateName());
+        log.info("Donor: {}", donor.getEmail());
+        log.info("===================");
 
         // บันทึกลง DB
         // foodRepository.save(food);
@@ -165,13 +170,13 @@ public class FoodService {
 
         // ดึงข้อมูลอาหารจานเดิมขึ้นมาจากฐานข้อมูล
         Food food = foodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหารรหัส: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("ไม่พบรายการอาหารรหัส: " + id));
 
         // ค้นหาหมวดหมู่
         if (foodDto.getFoodCategory() != null) {
             Integer cateId = foodDto.getFoodCategory();
             FoodCategory category = foodCategoryRepository.findById(cateId)
-                    .orElseThrow(() -> new RuntimeException("ไม่พบหมวดหมู่รหัส: " + cateId));
+                    .orElseThrow(() -> new IllegalArgumentException("ไม่พบหมวดหมู่รหัส: " + cateId));
             food.setFoodCategory(category);
         }
 
@@ -196,7 +201,7 @@ public class FoodService {
         food.setLatitude(foodDto.getLatitude());
         food.setLongitude(foodDto.getLongitude());
 
-        System.out.println("Status received in DTO: " + foodDto.getFoodStatus());
+        log.info("Status received in DTO: {}" , foodDto.getFoodStatus());
         // อัปเดตสถานะ
         if (foodDto.getFoodStatus() != null) {
             
@@ -217,14 +222,14 @@ public class FoodService {
         }
 
         // บันทึกความเปลี่ยนแปลง
-        System.out.println("=== Updating Food Entity ID: " + id + " ===");
+        log.info("=== Updating Food Entity ID: {} ===" , id);
         return foodRepository.save(food);
     }
 
     // ลบอาหาร
     public void deleteFood(Integer id) {
         if (!foodRepository.existsById(id)) {
-            throw new RuntimeException("ไม่พบรายการอาหาร id=" + id);
+            throw new IllegalArgumentException("ไม่พบรายการอาหาร id=" + id);
         }
         foodRepository.deleteById(id);
     }

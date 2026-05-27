@@ -1,7 +1,7 @@
 /* global globalThis */
 import React, { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 // import { useParams } from "react-router-dom";
 
@@ -10,8 +10,11 @@ export default function FoodFormDonation() {
 
     const navigate = useNavigate();
 
-    const { id } = useParams(); // ดึง id จาก URL (ถ้ามาจากการกด Edit จะมี id ติดมา)
-    const isEditMode = Boolean(id); // ถ้ามี id แปลว่าเป็นโหมดแก้ไข (true) ถ้าไม่มีแปลว่าสร้างใหม่ (false)
+    const location = useLocation();
+    const foodId = location.state?.id;
+
+    // const { id } = useParams(); // ดึง id จาก URL (ถ้ามาจากการกด Edit จะมี id ติดมา)
+    const isEditMode = Boolean(foodId); // ถ้ามี id แปลว่าเป็นโหมดแก้ไข (true) ถ้าไม่มีแปลว่าสร้างใหม่ (false)
     const [isEditable, setIsEditable] = useState(!isEditMode);
 
     const [formData, setFormData] = useState({
@@ -90,7 +93,7 @@ export default function FoodFormDonation() {
 
         if (isEditMode) {
             // โหมดแก้ไข: ดึงข้อมูลเดิมจาก API หลังบ้านมาหยอดใส่ฟอร์ม
-            fetch(`http://localhost:8082/foods/${id}`)
+            fetch(`http://localhost:8082/foods/${foodId}`)
                 .then(res => res.json())
                 // .then(data => setFormData(data));
                 .then(data => {
@@ -103,7 +106,7 @@ export default function FoodFormDonation() {
                     });
                 })
         }
-    }, [id, isEditMode]);
+    }, [foodId, isEditMode]);
 
     // map ใหม่
     // const [markerPos, setMarkerPos] = useState({ lat: 18.7883, lng: 98.9853 }); // ค่าเริ่มต้น (เชียงใหม่)
@@ -352,7 +355,7 @@ export default function FoodFormDonation() {
 
         // แยก URL และ Method ตามสถานะโหมดการใช้งานในจังหวะกดเซฟ
         const targetUrl = isEditMode
-            ? `http://localhost:8082/foods/${id}`  // โหมดแก้ไข
+            ? `http://localhost:8082/foods/${foodId}`  // โหมดแก้ไข
             : "http://localhost:8082/foods";       // โหมดสร้างใหม่
 
         const targetMethod = isEditMode ? "PUT" : "POST";
@@ -428,22 +431,24 @@ export default function FoodFormDonation() {
         return null;
     };
 
-    const handleDeleteFood = async (id) => {
+    const handleDeleteFood = async (foodId) => {
         // แสดง confirm ก่อนลบ
         const result = await Swal.fire({
-            title: "คุณแน่ใจหรือไม่?",
-            text: "หากลบแล้วจะไม่สามารถกู้คืนได้",
-            icon: "warning",
+            title: "ยืนยันการลบรายการบริจาค?",
+            // text: "หากลบแล้วจะไม่สามารถกู้คืนได้",
+            html: 'คุณแน่ใจหรือไม่ที่จะลบรายการนี้ <br /> ผู้รับไม่สามารถมองเห็นหรือจองรายการนี้ได้อีก <br /> และจะไม่สามารถกู้ข้อมูลคืนได้',
+            // icon: "warning",
             showCancelButton: true,
+            cancelButtonColor: "#a0a0a0",
             confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "ลบรายการอาหาร",
-            cancelButtonText: "ยกเลิก"
+            cancelButtonText: "ยกเลิก",
+            confirmButtonText: "ยืนยันการลบ",
+            reverseButtons: true,
         });
 
         if (result.isConfirmed) {
             try {
-                const response = await fetch(`http://localhost:8082/foods/${id}`, {
+                const response = await fetch(`http://localhost:8082/foods/${foodId}`, {
                     method: "DELETE",
                     headers: {
                         "Authorization": `Bearer ${localStorage.getItem("token")}`, // ถ้ามี JWT
@@ -472,7 +477,7 @@ export default function FoodFormDonation() {
 
     const renderActionButtons = () => {
         // เคสแรก: อยู่ในโหมดสร้างรายการอาหารใหม่ (ไม่มี id บน URL)
-        if (!id) {
+        if (!foodId) {
             return (
                 <>
                     <button type="button" style={styles.cancelBtn} onClick={() => navigate("/my-foods")}>
