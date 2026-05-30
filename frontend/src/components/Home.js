@@ -10,37 +10,136 @@ export default function Home() {
     const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
     const navigate = useNavigate();
 
-    // โหลดหมวดหมู่จาก Database
+    // // โหลดหมวดหมู่จาก Database
+    // useEffect(() => {
+    //     fetch("http://localhost:8082/food-categories")
+    //         .then(res => {
+    //             if (!res.ok) throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+    //             return res.json();
+    //         })
+    //         .then(resData => {
+    //             if (resData.success) {
+    //                 const allOption = { id: 0, name: "ทั้งหมด" };
+    //                 setCategories([allOption, ...resData.data]);
+    //             } else {
+    //                 throw new Error(resData.message || "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+    //             }
+    //         })
+    //         .catch(err => setError(err.message))
+    //         .finally(() => setLoading(false));
+    // }, []);
+    // // useEffect(() => {
+    // //     fetch("http://localhost:8082/food-categories")
+    // //         .then(res => {
+    // //             if (!res.ok) throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+    // //             return res.json();
+    // //         })
+    // //         .then(data => {
+    // //             const allOption = { id: 0, name: "ทั้งหมด" };
+    // //             setCategories([allOption, ...data]);
+    // //         })
+    // //         .catch(err => setError(err.message))
+    // //         .finally(() => setLoading(false));
+    // // }, []);
+
+    // // โหลดอาหารตามหมวดหมู่ที่เลือก
+    // useEffect(() => {
+    //     const token = localStorage.getItem("accessToken");
+
+    //     let url = "http://localhost:8082/foods";
+    //     if (selectedCategory !== "ทั้งหมด") {
+    //         const category = categories.find(c => c.name === selectedCategory);
+    //         if (category) {
+    //             url = `http://localhost:8082/foods/category/${category.id}`;
+    //         }
+    //     }
+
+    //     fetch(url, {
+    //         method: "GET",
+    //         headers: {
+    //             "Authorization": token ? `Bearer ${token}` : "",
+    //             "Content-Type": "application/json"
+    //         }
+    //     })
+    //         .then(res => {
+    //             if (!res.ok) throw new Error("โหลดข้อมูลอาหารไม่สำเร็จ");
+    //             return res.json();
+    //         })
+    //         .then(resData => {
+    //             if (resData.success) {
+    //                 setFoods(resData.data);
+    //             } else {
+    //                 throw new Error(resData.message || "โหลดข้อมูลอาหารไม่สำเร็จ");
+    //             }
+    //         })
+    //         .catch(err => setError(err.message));
+    // }, [selectedCategory, categories]);
+    // useEffect(() => {
+    //     const token = localStorage.getItem("accessToken");
+
+    //     let url = "http://localhost:8082/foods";
+    //     if (selectedCategory !== "ทั้งหมด") {
+    //         const category = categories.find(c => c.name === selectedCategory);
+    //         if (category) {
+    //             url = `http://localhost:8082/foods/category/${category.id}`;
+    //         }
+    //     }
+
+    //     fetch(url, {
+    //         method: "GET",
+    //         headers: {
+    //             "Authorization": token ? `Bearer ${token}` : "", // ถ้ามี Token ให้แปะไปด้วย ถ้าไม่มีส่งว่าง (สิทธิ์คนนอก)
+    //             "Content-Type": "application/json"
+    //         }
+    //     })
+    //         .then(res => {
+    //             if (!res.ok) throw new Error("โหลดข้อมูลอาหารไม่สำเร็จ");
+    //             return res.json();
+    //         })
+    //         .then(data => setFoods(data))
+    //         .catch(err => setError(err.message));
+    // }, [selectedCategory, categories]);
+
+    const BASE_URL = "http://localhost:8082";
+
+    // 1. โหลดหมวดหมู่จาก Database (ทำงานครั้งเดียวตอนเปิดหน้าเว็บ)
     useEffect(() => {
-        fetch("http://localhost:8082/food-categories")
+        fetch(`${BASE_URL}/food-categories`)
             .then(res => {
                 if (!res.ok) throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
                 return res.json();
             })
-            .then(data => {
-                const allOption = { id: 0, name: "ทั้งหมด" };
-                setCategories([allOption, ...data]);
+            .then(resData => {
+                if (resData.success) {
+                    const allOption = { id: 0, name: "ทั้งหมด" };
+                    setCategories([allOption, ...resData.data]);
+                } else {
+                    throw new Error(resData.message || "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+                }
             })
             .catch(err => setError(err.message))
             .finally(() => setLoading(false));
     }, []);
 
-    // โหลดอาหารตามหมวดหมู่ที่เลือก
+    // 2. โหลดอาหารตามหมวดหมู่ที่เลือก
     useEffect(() => {
-        const token = localStorage.getItem("accessToken");
+        // ดักจับ: ถ้า categories ยังโหลดไม่เสร็จ (มีความยาวแค่ 0) ให้แตกแถวออกไปก่อน ไม่ต้องยิง API
+        if (categories.length === 0) return;
 
-        let url = "http://localhost:8082/foods";
+        const token = localStorage.getItem("accessToken");
+        let url = `${BASE_URL}/foods`;
+
         if (selectedCategory !== "ทั้งหมด") {
             const category = categories.find(c => c.name === selectedCategory);
             if (category) {
-                url = `http://localhost:8082/foods/category/${category.id}`;
+                url = `${BASE_URL}/foods/category/${category.id}`;
             }
         }
 
         fetch(url, {
             method: "GET",
             headers: {
-                "Authorization": token ? `Bearer ${token}` : "", // ถ้ามี Token ให้แปะไปด้วย ถ้าไม่มีส่งว่าง (สิทธิ์คนนอก)
+                "Authorization": token ? `Bearer ${token}` : "",
                 "Content-Type": "application/json"
             }
         })
@@ -48,8 +147,15 @@ export default function Home() {
                 if (!res.ok) throw new Error("โหลดข้อมูลอาหารไม่สำเร็จ");
                 return res.json();
             })
-            .then(data => setFoods(data))
+            .then(resData => {
+                if (resData.success) {
+                    setFoods(resData.data);
+                } else {
+                    throw new Error(resData.message || "โหลดข้อมูลอาหารไม่สำเร็จ");
+                }
+            })
             .catch(err => setError(err.message));
+            
     }, [selectedCategory, categories]);
 
     const filteredFoods = foods.filter(f =>
@@ -77,9 +183,6 @@ export default function Home() {
 
     if (loading) return <div style={styles.loading}>กำลังโหลด...</div>;
     if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
-
-    // กำหนด Base URL ของฝั่ง Backend
-    const BASE_URL = "http://localhost:8082";
 
     const formatDate = (dateString) => {
         if (!dateString) return "-";
@@ -177,7 +280,14 @@ export default function Home() {
                                         <span style={{ color: "#328d7d", fontSize: "15px" }}>{food.limitPerPerson}</span>
                                     </div>
                                     <button
-                                        onClick={() => navigate('/food-detail', { state: { id: food.foodId } })}
+                                        type="button"
+                                        onClick={() => {
+                                            // window.scrollTo({
+                                            //     top: 0,
+                                            //     // behavior: "smooth"
+                                            // });
+                                            navigate('/food-detail', { state: { id: food.foodId, fromPage: '/home' } });
+                                        }}
                                         style={styles.detailBtn}
                                     >
                                         ดูรายละเอียด

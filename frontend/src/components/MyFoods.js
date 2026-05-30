@@ -37,9 +37,25 @@ export default function MyFoods() {
     // const handlePress = (e) => e.target.blur();
 
 
-    const IMAGE_BASE_URL = "http://localhost:8082";
+    const BASE_URL = "http://localhost:8082";
 
     //
+    // useEffect(() => {
+    //     const token = localStorage.getItem("accessToken");
+
+    //     fetch("http://localhost:8082/foods/my-donations", {
+    //         headers: {
+    //             "Authorization": `Bearer ${token}`
+    //         }
+    //     })
+    //         .then((res) => {
+    //             if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลได้");
+    //             return res.json();
+    //         })
+    //         .then((data) => setMyFoods(data))
+    //         .catch((err) => console.error("Error:", err))
+    //         .finally(() => setLoading(false));
+    // }, []);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
 
@@ -49,10 +65,16 @@ export default function MyFoods() {
             }
         })
             .then((res) => {
-                if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลได้");
+                if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการบริจาคได้");
                 return res.json();
             })
-            .then((data) => setMyFoods(data))
+            .then((resData) => {
+                if (resData.success) {
+                    setMyFoods(resData.data);
+                } else {
+                    throw new Error(resData.message || "ไม่สามารถโหลดข้อมูลได้");
+                }
+            })
             .catch((err) => console.error("Error:", err))
             .finally(() => setLoading(false));
     }, []);
@@ -164,7 +186,7 @@ export default function MyFoods() {
                             {/* ฝั่งซ้าย: รูปภาพอาหาร */}
                             <div style={styles.imageWrapper}>
                                 <img
-                                    src={`${IMAGE_BASE_URL}${food.foodImage}`}
+                                    src={`${BASE_URL}${food.foodImage}`}
                                     alt={food.foodName}
                                     style={styles.image}
                                 />

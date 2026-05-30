@@ -30,6 +30,54 @@ const MapPage = () => {
     // สร้าง State สำหรับคุมจุดกึ่งกลางของแผนที่
     const [centerPos, setCenterPos] = useState(defaultCenter);
 
+    // // ดึงพิกัดปัจจุบันจากเบราว์เซอร์ทันทีที่เปิดหน้านี้
+    // useEffect(() => {
+    //     if (navigator.geolocation) {
+    //         navigator.geolocation.getCurrentPosition(
+    //             (position) => {
+    //                 const currentCoords = {
+    //                     lat: position.coords.latitude,
+    //                     lng: position.coords.longitude
+    //                 };
+    //                 setCenterPos(currentCoords); // อัปเดตศูนย์กลางแผนที่ตามตำแหน่งปัจจุบันจริง
+    //             },
+    //             (error) => {
+    //                 console.error("Error getting geolocation: ", error);
+    //                 // ถ้าดึงพิกัดไม่ได้ หรือผู้ใช้ปฏิเสธ ระบบจะใช้ค่า defaultCenter อัตโนมัติ ไม่แครชครับ
+    //             },
+    //             { enableHighAccuracy: true } // ใช้โหมดความแม่นยำสูง
+    //         );
+    //     }
+    // }, []);
+
+    // // ดึงพิกัดอาหารทั้งหมดมาจากหลังบ้าน Spring Boot
+    // useEffect(() => {
+    //     setIsPageLoading(true);
+    //     // สั่งเปิดหน้าดาวน์โหลดรอไว้ก่อน
+    //     const token = localStorage.getItem("accessToken");
+
+    //     fetch("http://localhost:8082/foods", {
+    //         method: "GET",
+    //         headers: {
+    //             "Authorization": token ? `Bearer ${token}` : "",
+    //             "Content-Type": "application/json"
+    //         }
+    //     })
+    //         .then((res) => {
+    //             if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่สำเร็จ");
+    //             return res.json();
+    //         })
+    //         .then((data) => {
+    //             const validFoods = data.filter(item => item.latitude && item.longitude);
+    //             setFoods(validFoods);
+    //             setIsPageLoading(false); 
+    //         })
+    //         .catch((err) => {
+    //             console.error("Error fetching map coordinates:", err);
+    //             setIsPageLoading(false);
+    //         });
+    // }, []);
+    
     // ดึงพิกัดปัจจุบันจากเบราว์เซอร์ทันทีที่เปิดหน้านี้
     useEffect(() => {
         if (navigator.geolocation) {
@@ -53,7 +101,6 @@ const MapPage = () => {
     // ดึงพิกัดอาหารทั้งหมดมาจากหลังบ้าน Spring Boot
     useEffect(() => {
         setIsPageLoading(true);
-        // สั่งเปิดหน้าดาวน์โหลดรอไว้ก่อน
         const token = localStorage.getItem("accessToken");
 
         fetch("http://localhost:8082/foods", {
@@ -64,13 +111,20 @@ const MapPage = () => {
             }
         })
             .then((res) => {
-                if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่สำเร็จ");
+                // 💡 แก้คำผิดตรงนี้ จาก "สำเร็จ" เป็น "ไม่สำเร็จ" 
+                if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่ไม่สำเร็จ");
                 return res.json();
             })
-            .then((data) => {
-                const validFoods = data.filter(item => item.latitude && item.longitude);
-                setFoods(validFoods);
-                setIsPageLoading(false); 
+            .then((resData) => { // 💡 1. รับค่าเป็น resData ตามโครงสร้าง ApiResponse
+                // 💡 2. เช็คตัวแปร success จากหลังบ้าน
+                if (resData.success) {
+                    // 💡 3. แงะข้อมูลออกจาก resData.data เพื่อเอาไปกรองหาตัวที่มีละติจูด/ลองจิจูด
+                    const validFoods = resData.data.filter(item => item.latitude && item.longitude);
+                    setFoods(validFoods);
+                } else {
+                    throw new Error(resData.message || "โหลดข้อมูลพิกัดแผนที่ไม่สำเร็จ");
+                }
+                setIsPageLoading(false);
             })
             .catch((err) => {
                 console.error("Error fetching map coordinates:", err);
@@ -133,7 +187,7 @@ const MapPage = () => {
                         onMouseOut={() => setSelectedFood(null)}
 
                         // 3: เมื่อกดคลิก (Click) -> ให้เปลี่ยนหน้าไปยังหน้ารายละเอียดอาหารชิ้นนั้น
-                        onClick={() => navigate(`/food-detail/${food.foodId}`)}
+                        onClick={() => navigate('/food-detail', { state: { id: food.foodId, fromPage: '/map' } })}
                         icon={{
                             // แต่งไอคอนหมุดเป็นจุดกลมๆ สีส้มพาสเทลตามดีไซน์เว็บของคุณ
                             url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='8' cy='8' r='6' fill='%23ff8c00' stroke='white' stroke-width='2'/></svg>",

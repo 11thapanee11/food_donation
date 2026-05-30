@@ -41,6 +41,19 @@ export default function Navbar() {
         setOpenDropdown(false);
     };
 
+    // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า (เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร)
+    const currentPath = location.pathname;
+    const originPath = location.state?.fromPage || '';
+
+    // ดึงลอจิกเช็กสถานะเมนูสว่าง (Active) ออกมาด้านบน (เคลียร์เกณฑ์ SonarQube S6766)
+    const isHomeActive = currentPath === "/home" || (currentPath === "/food-detail" && originPath === "/home");
+    const isRankingActive = currentPath === "/ranking";
+    const isMapActive = currentPath === "/map" || (currentPath === "/food-detail" && originPath === "/map");
+    const isReceiveActive = currentPath === "/receive" || (currentPath === "/food-detail" && originPath === "/receive");
+    const isMyFoodsActive = currentPath === "/my-foods" || currentPath === "/food-form";
+    const isDashboardActive = currentPath === "/impact-dashboard";
+    // const isAuthActive = currentPath === "/login" || currentPath === "/register";
+
     return (
         <nav style={styles.loginHeader}>
             {/* ฝั่งซ้าย: Logo */}
@@ -51,6 +64,18 @@ export default function Navbar() {
 
             {/* ตรงกลาง: Menu Links */}
             <div style={styles.menuSection}>
+                <Link to="/home" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
+                <Link to="/ranking" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
+                <Link to="/map" style={isMapActive ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
+                {isLoggedIn && (
+                    <>
+                        <Link to="/receive" style={isReceiveActive ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
+                        <Link to="/my-foods" style={isMyFoodsActive ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
+                        <Link to="/impact-dashboard" style={isDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
+                    </>
+                )}
+            </div>
+            {/* <div style={styles.menuSection}>
                 <Link to="/home" style={location.pathname === "/home" ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
                 <Link to="/ranking" style={location.pathname === "/ranking" ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
                 <Link to="/map" style={location.pathname === "/map" ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
@@ -61,7 +86,7 @@ export default function Navbar() {
                         <Link to="/impact-dashboard" style={location.pathname === "/impact-dashboard" ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
                     </>
                 )}
-            </div>
+            </div> */}
 
             {/* ฝั่งขวา: Icons & Dropdowns */}
             <div ref={dropdownRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "20px" }}>
@@ -69,12 +94,12 @@ export default function Navbar() {
                 {isLoggedIn && (
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                         <button style={styles.iconBase} onClick={handleBellClick}>
-                            <i className="material-icons" style={{
+                            <span className="material-icons" style={{
                                 fontSize: "26px",
                                 color: openNotifications ? "#ff8c00" : "#737373"
                             }}>
                                 notifications
-                            </i>
+                            </span>
                         </button>
 
                         {openNotifications && (

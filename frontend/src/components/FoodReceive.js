@@ -12,13 +12,30 @@ export default function FoodReceive() {
     const currentBookings = bookings.filter(b => b.bookingStatus === 'PENDING');
     const historyBookings = bookings.filter(b => b.bookingStatus === 'COMPLETED' || b.bookingStatus === 'CANCELLED');
 
-    const IMAGE_BASE_URL = "http://localhost:8082";
+    const BASE_URL = "http://localhost:8082";
 
     // ดึงข้อมูลรายการจองของผู้รับบริจาคที่ล็อกอินอยู่
+    // useEffect(() => {
+    //     const token = localStorage.getItem("accessToken");
+
+    //     // เปลี่ยน URL ให้ยิงไปหา Controller ฝั่ง Booking ของคุณ
+    //     fetch("http://localhost:8082/bookings", {
+    //         headers: {
+    //             "Authorization": `Bearer ${token}`
+    //         }
+    //     })
+    //         .then((res) => {
+    //             if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการจองได้");
+    //             return res.json();
+    //         })
+    //         .then((data) => setBookings(data)) // บันทึกอาเรย์การจองลง state
+    //         .catch((err) => console.error("Error fetching bookings:", err))
+    //         .finally(() => setLoading(false));
+    // }, []);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
 
-        // เปลี่ยน URL ให้ยิงไปหา Controller ฝั่ง Booking ของคุณ
+        // ยิงไปหา Controller ฝั่ง Booking เพื่อดึงประวัติการจองทั้งหมด
         fetch("http://localhost:8082/bookings", {
             headers: {
                 "Authorization": `Bearer ${token}`
@@ -28,8 +45,18 @@ export default function FoodReceive() {
                 if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการจองได้");
                 return res.json();
             })
-            .then((data) => setBookings(data)) // บันทึกอาเรย์การจองลง state
-            .catch((err) => console.error("Error fetching bookings:", err))
+            .then((resData) => { // 💡 1. ปรับมารับเป็นวัตถุ resData ตามโครงสร้างสากล
+                // 💡 2. ตรวจสอบสถานะและแงะเอา Array รายการจองที่อยู่ข้างใน .data มาเซ็ตลง State
+                if (resData.success && Array.isArray(resData.data)) {
+                    setBookings(resData.data); // บันทึกอาเรย์การจองลง state
+                } else {
+                    setBookings([]); // หากหลังบ้านไม่มีข้อมูลหรือผิดพลาด ให้เคลียร์เป็นอาเรย์ว่างป้องกันการพังของ .map() ใน JSX
+                }
+            })
+            .catch((err) => {
+                console.error("Error fetching bookings:", err);
+                setBookings([]); // ป้องกันหน้าเว็บค้างหากเกิดข้อผิดพลาด
+            })
             .finally(() => setLoading(false));
     }, []);
 
@@ -74,7 +101,7 @@ export default function FoodReceive() {
         return timeString.substring(0, 5);
     };
 
-    // 🌟 2. กำหนดป้ายสถานะสำหรับ "ฝั่งการจอง (Booking)" ให้ตรงกับรูปภาพ Layout ของคุณ
+    // 2. กำหนดป้ายสถานะสำหรับ "ฝั่งการจอง (Booking)" ให้ตรงกับรูปภาพ Layout ของคุณ
     const STATUS_CONFIG = {
         PENDING: {
             text: "รอการเข้ารับ",
@@ -117,7 +144,7 @@ export default function FoodReceive() {
                             {/* ฝั่งซ้าย: รูปภาพอาหารที่ถูกจอง */}
                             <div style={styles.imageWrapper}>
                                 <img
-                                    src={`${IMAGE_BASE_URL}${food?.foodImage}`}
+                                    src={`${BASE_URL}${food?.foodImage}`}
                                     alt={food?.foodName}
                                     style={styles.image}
                                 />
@@ -183,8 +210,9 @@ export default function FoodReceive() {
 
                                 {/* ปุ่มกดเข้าไปดูหน้ารายละเอียดเพื่อโชว์ตั๋ว/รหัสยืนยันรับอาหาร */}
                                 <button
+                                    type="button"
                                     style={styles.detailBtn}
-                                    onClick={() => navigate('/booking-detail', { state: { id: booking.id } })}
+                                    onClick={() => navigate('/food-detail', { state: { id: booking.bookingId, fromPage: '/receive' } })}
                                 >
                                     ดูรายละเอียดการจอง
                                 </button>

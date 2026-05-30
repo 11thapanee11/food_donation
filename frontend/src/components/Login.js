@@ -32,41 +32,92 @@ export default function Login() {
         return valid;
     };
 
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+
+    //     if (!validateForm()) return;
+
+    //     const response = await fetch("http://localhost:8082/login", {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify({ email, password }),
+    //     });
+
+    //     const data = await response.json();
+
+    //     if (response.ok) {
+    //         //เก็บ token ลง localStorage
+    //         localStorage.setItem("accessToken", data.accessToken);
+    //         localStorage.setItem("refreshToken", data.refreshToken);
+    //         Swal.fire({
+    //             icon: 'success',
+    //             title: 'เข้าสู่ระบบสำเร็จ',
+    //             text: data.message,
+    //             confirmButtonColor: '#2ecc71'
+    //         }).then(() => {
+    //             // ไปหน้า HomePage หลังจากกด OK
+    //             navigate("/home");
+    //         });
+    //     } else {
+    //         Swal.fire({
+    //             icon: 'error',
+    //             title: 'เข้าสู่ระบบไม่สำเร็จ',
+    //             text: data.message || "username หรือ password ไม่ถูกต้อง",
+    //             confirmButtonColor: '#e74c3c'
+    //         });
+    //     }
+
+    // };
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
-        const response = await fetch("http://localhost:8082/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            //เก็บ token ลง localStorage
-            localStorage.setItem("accessToken", data.accessToken);
-            localStorage.setItem("refreshToken", data.refreshToken);
-            Swal.fire({
-                icon: 'success',
-                title: 'เข้าสู่ระบบสำเร็จ',
-                text: data.message,
-                confirmButtonColor: '#2ecc71'
-            }).then(() => {
-                // ไปหน้า HomePage หลังจากกด OK
-                navigate("/home");
+        try {
+            const response = await fetch("http://localhost:8082/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
             });
-        } else {
+
+            const resData = await response.json(); // 💡 เปลี่ยนชื่อเป็น resData เพื่อให้เห็นภาพโครงสร้างชัดเจน
+
+            // 💡 1. เปลี่ยนมาเช็คผ่าน resData.success
+            if (resData.success) {
+
+                // 💡 2. ดึง accessToken ออกมาจากชั้น resData.data
+                localStorage.setItem("accessToken", resData.data.accessToken);
+
+                // คีย์ refreshToken ใน Controller ล่าสุดถูกคอมเมนต์เอาไว้ 
+                // หากไม่ได้ใช้งาน แนะนำให้ลบหรือคอมเมนต์ออกฝั่งหน้าบ้านด้วยครับ
+                // localStorage.setItem("refreshToken", resData.data.refreshToken);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'เข้าสู่ระบบสำเร็จ',
+                    text: resData.message,
+                    confirmButtonColor: '#2ecc71'
+                }).then(() => {
+                    navigate("/home");
+                });
+            } else {
+                // 💡 3. กรณีอีเมลหรือรหัสผ่านผิดพลาด ดึงข้อความแจ้งเตือนจากหลังบ้านมาแสดงได้เลย
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เข้าสู่ระบบไม่สำเร็จ',
+                    text: resData.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+                    confirmButtonColor: '#e74c3c'
+                });
+            }
+        } catch (error) {
+            console.error("Login Error:", error);
             Swal.fire({
                 icon: 'error',
-                title: 'เข้าสู่ระบบไม่สำเร็จ',
-                text: data.message || "username หรือ password ไม่ถูกต้อง",
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
                 confirmButtonColor: '#e74c3c'
             });
         }
-
     };
 
     return (

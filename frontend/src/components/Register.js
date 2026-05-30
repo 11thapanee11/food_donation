@@ -17,82 +17,6 @@ function Register() {
 
     const [errors, setErrors] = useState({});
 
-    // ประกาศตัวแปร Styles
-    const styles = {
-        container: {
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "20px",
-            gap: "100px",
-            fontFamily: "'Noto Sans Thai', sans-serif",
-            backgroundColor: "#fffcf8",
-            // minHeight: "100vh"
-        },
-        formSection: {
-            width: "500px"
-        },
-        title: {
-            color: "#328d7d",
-            marginBottom: "5px",
-            fontWeight: "bold",
-            marginTop: "10px",
-            fontSize: "30px"
-        },
-        row: {
-            display: "flex",
-            gap: "30px"
-        },
-        inputBox: {
-            flex: 1,
-            marginBottom: "15px"
-        },
-        label: {
-            fontSize: "16px",
-            display: "block",
-            marginBottom: "5px",
-            color: "#333"
-        },
-        input: {
-            width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
-            border: "none",
-            backgroundColor: "#ffe8cc",
-            outline: "none",
-            boxSizing: "border-box",
-            fontSize: "14px"
-        },
-        errorText: {
-            color: "red",
-            fontSize: "13px",
-            marginTop: "4px",
-            display: "block"
-        },
-        button: {
-            width: "250px",
-            display: "block",
-            margin: "25px auto 0 auto",
-            padding: "12px",
-            backgroundColor: "#ff8c00",
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "16px",
-            cursor: "pointer",
-            transition: "0.3s"
-        },
-        imageSection: {
-            display: "block"
-        },
-        image: {
-            width: "460px",
-            borderRadius: "15px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-            marginTop: "30px"
-        }
-    };
-
     const handleChange = (e) => {
         setFormData({
             ...formData,
@@ -156,6 +80,57 @@ function Register() {
         return Object.keys(newErrors).length === 0;
     };
 
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+
+    //     if (!validateForm()) return;
+
+    //     try {
+    //         const response = await fetch("http://localhost:8082/register", {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify(formData)
+    //         });
+
+    //         const result = await response.json();
+
+    //         if (response.status === 409) {
+    //             Swal.fire({
+    //                 icon: 'error',
+    //                 title: 'สมัครสมาชิกไม่สำเร็จ',
+    //                 text: result.message,
+    //                 confirmButtonColor: '#d63031'
+    //             });
+    //         } else if (!response.ok) {
+    //             Swal.fire({
+    //                 icon: 'error',
+    //                 title: 'เกิดข้อผิดพลาด',
+    //                 text: 'ไม่สามารถบันทึกข้อมูลได้',
+    //                 confirmButtonColor: '#d63031'
+    //             });
+    //         } else {
+    //             Swal.fire({
+    //                 icon: 'success',
+    //                 title: 'สำเร็จ!',
+    //                 text: result.message,
+    //                 confirmButtonColor: '#2ecc71'
+    //             }).then(() => {
+    //                 // redirect หรือ refresh หน้า
+    //                 navigate("/login")
+    //             });
+    //         }
+
+    //         // alert(result.message);
+    //     } catch (error) {
+    //         console.error("Error:", error);
+    //         Swal.fire({
+    //             icon: 'error',
+    //             title: 'เกิดข้อผิดพลาด',
+    //             text: 'ไม่สามารถสมัครสมาชิกได้',
+    //             confirmButtonColor: '#d63031'
+    //         });
+    //     }
+    // };
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -168,41 +143,35 @@ function Register() {
                 body: JSON.stringify(formData)
             });
 
-            const result = await response.json();
+            const result = await response.json(); // บรรจุโครงสร้าง { success, message, data }
 
-            if (response.status === 409) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'สมัครสมาชิกไม่สำเร็จ',
-                    text: result.message,
-                    confirmButtonColor: '#d63031'
-                });
-            } else if (!response.ok) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถบันทึกข้อมูลได้',
-                    confirmButtonColor: '#d63031'
-                });
-            } else {
+            // 💡 เปลี่ยนมาเช็คจากตัวแปร success ที่ส่งมาจากหลังบ้านตรงๆ ได้เลยครับ
+            if (result.success) {
                 Swal.fire({
                     icon: 'success',
                     title: 'สำเร็จ!',
-                    text: result.message,
+                    text: result.message || 'สมัครสมาชิกสำเร็จเรียบร้อยแล้ว',
                     confirmButtonColor: '#2ecc71'
                 }).then(() => {
-                    // redirect หรือ refresh หน้า
-                    navigate("/login")
+                    navigate("/login");
+                });
+            } else {
+                // 💡 หาก success เป็น false (ไม่ว่าจะเกิดจากรหัสไม่ตรงกัน, อีเมลซ้ำ 409, หรือระบบล่ม 500)
+                // เราดึงข้อความแจ้งเตือนตรงๆ จากหลังบ้าน (result.message) มาแสดงผลได้ทันที
+                Swal.fire({
+                    icon: 'error',
+                    title: 'สมัครสมาชิกไม่สำเร็จ',
+                    text: result.message || 'เกิดข้อผิดพลาดภายในระบบ',
+                    confirmButtonColor: '#d63031'
                 });
             }
 
-            // alert(result.message);
         } catch (error) {
             console.error("Error:", error);
             Swal.fire({
                 icon: 'error',
                 title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถสมัครสมาชิกได้',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหมู่อีกครั้ง',
                 confirmButtonColor: '#d63031'
             });
         }
@@ -309,3 +278,80 @@ function Register() {
 }
 
 export default Register;
+
+// ประกาศตัวแปร Styles
+const styles = {
+    container: {
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px",
+        gap: "100px",
+        fontFamily: "'Noto Sans Thai', sans-serif",
+        backgroundColor: "#fffcf8",
+        // minHeight: "100vh"
+    },
+    formSection: {
+        width: "500px"
+    },
+    title: {
+        color: "#328d7d",
+        marginBottom: "5px",
+        fontWeight: "bold",
+        marginTop: "10px",
+        fontSize: "30px"
+    },
+    row: {
+        display: "flex",
+        gap: "30px"
+    },
+    inputBox: {
+        flex: 1,
+        marginBottom: "15px"
+    },
+    label: {
+        fontSize: "16px",
+        display: "block",
+        marginBottom: "5px",
+        color: "#333"
+    },
+    input: {
+        width: "100%",
+        padding: "12px",
+        borderRadius: "8px",
+        border: "none",
+        backgroundColor: "#ffe8cc",
+        outline: "none",
+        boxSizing: "border-box",
+        fontSize: "14px"
+    },
+    errorText: {
+        color: "red",
+        fontSize: "13px",
+        marginTop: "4px",
+        display: "block"
+    },
+    button: {
+        width: "250px",
+        display: "block",
+        margin: "25px auto 0 auto",
+        padding: "12px",
+        backgroundColor: "#ff8c00",
+        color: "white",
+        border: "none",
+        borderRadius: "10px",
+        fontSize: "16px",
+        cursor: "pointer",
+        transition: "0.3s"
+    },
+    imageSection: {
+        display: "block"
+    },
+    image: {
+        width: "460px",
+        borderRadius: "15px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+        marginTop: "30px"
+    }
+};
+
