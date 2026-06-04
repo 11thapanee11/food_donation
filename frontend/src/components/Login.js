@@ -80,17 +80,19 @@ export default function Login() {
                 body: JSON.stringify({ email, password }),
             });
 
-            const resData = await response.json(); // 💡 เปลี่ยนชื่อเป็น resData เพื่อให้เห็นภาพโครงสร้างชัดเจน
+            const resData = await response.json(); // เปลี่ยนชื่อเป็น resData เพื่อให้เห็นภาพโครงสร้างชัดเจน
 
-            // 💡 1. เปลี่ยนมาเช็คผ่าน resData.success
+            // 1. เปลี่ยนมาเช็คผ่าน resData.success
             if (resData.success) {
 
-                // 💡 2. ดึง accessToken ออกมาจากชั้น resData.data
+                // 2. ดึง accessToken ออกมาจากชั้น resData.data
                 localStorage.setItem("accessToken", resData.data.accessToken);
 
-                // คีย์ refreshToken ใน Controller ล่าสุดถูกคอมเมนต์เอาไว้ 
+                // คีย์ refreshToken ใน Controller ล่าสุดถูกคอมเมนต์เอาไว้
                 // หากไม่ได้ใช้งาน แนะนำให้ลบหรือคอมเมนต์ออกฝั่งหน้าบ้านด้วยครับ
                 // localStorage.setItem("refreshToken", resData.data.refreshToken);
+
+                localStorage.setItem("userId", resData.data.userId);
 
                 Swal.fire({
                     icon: 'success',
@@ -101,7 +103,7 @@ export default function Login() {
                     navigate("/");
                 });
             } else {
-                // 💡 3. กรณีอีเมลหรือรหัสผ่านผิดพลาด ดึงข้อความแจ้งเตือนจากหลังบ้านมาแสดงได้เลย
+                // 3. กรณีอีเมลหรือรหัสผ่านผิดพลาด ดึงข้อความแจ้งเตือนจากหลังบ้านมาแสดงได้เลย
                 Swal.fire({
                     icon: 'error',
                     title: 'เข้าสู่ระบบไม่สำเร็จ',

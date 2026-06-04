@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 // import { useParams } from "react-router-dom";
 
-export default function FoodFormDonation() {
+export default function FoodForm() {
     const token = localStorage.getItem("accessToken");
 
     const navigate = useNavigate();
@@ -71,42 +71,6 @@ export default function FoodFormDonation() {
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState("");
 
-    // useEffect(() => {
-    //     fetch("http://localhost:8082/food-categories", {
-    //         headers: {
-    //             "Content-Type": "application/json"
-    //         }
-    //     })
-    //         .then(res => {
-    //             if (!res.ok) {
-    //                 throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
-    //             }
-    //             return res.json();
-    //         })
-    //         .then(data => {
-    //             setCategories(data);
-    //         })
-    //         .catch(err => {
-    //             setFetchError(err.message);
-    //         })
-    //         .finally(() => setLoading(false));
-
-    //     if (isEditMode) {
-    //         // โหมดแก้ไข: ดึงข้อมูลเดิมจาก API หลังบ้านมาหยอดใส่ฟอร์ม
-    //         fetch(`http://localhost:8082/foods/${foodId}`)
-    //             .then(res => res.json())
-    //             // .then(data => setFormData(data));
-    //             .then(data => {
-    //                 console.log("=== ข้อมูลอาหารจาก API ===", data);
-    //                 // ปรับแก้ตรงจุดนี้: ใส่สเตตอันเดียวแบบเจาะคีย์ ID
-    //                 setFormData({
-    //                     ...data,
-    //                     // สกัดเอาเฉพาะ .id ข้างใน foodCategory ออกมาเซต (หรือปรับเป็น data.category?.id ตามจริงของหลังบ้าน)
-    //                     foodCategory: data.foodCategory?.foodCateId
-    //                 });
-    //             })
-    //     }
-    // }, [foodId, isEditMode]);
     useEffect(() => {
         // 1. ดึงข้อมูลหมวดหมู่มาใส่ใน Dropdown Select
         fetch("http://localhost:8082/food-categories", {
@@ -138,7 +102,7 @@ export default function FoodFormDonation() {
                     if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลอาหารรายการนี้ได้");
                     return res.json();
                 })
-                .then(resData => { // 💡 ปรับเป็น resData
+                .then(resData => {
                     if (resData.success) {
                         console.log("=== ข้อมูลอาหารจาก API ===", resData.data);
 
@@ -204,263 +168,6 @@ export default function FoodFormDonation() {
         lat: Number(formData.latitude) || 18.7883,
         lng: Number(formData.longitude) || 98.9853
     };
-
-    // const handleSubmit = (e) => {
-    //     e.preventDefault();
-    //     console.log("Check: คลิก Submit แล้ว!");
-
-    //     const skipFields = new Set([
-    //         "foodImage",
-    //         "description",
-    //         "peopleCountPerMeal",
-    //         "remainingUnit",
-    //         "donor",         // ถ้า donor จะไปดึงจาก Session ใน Backend ให้ข้ามตัวนี้ด้วย
-    //         "foodStatus",
-    //         "latitude",
-    //         "longitude"
-    //     ]);
-
-    //     const newErrors = {};
-    //     Object.keys(formData).forEach((key) => {
-    //         if (!skipFields.has(key)) {   // ใช้ .has() แทน .includes()
-    //             const value = formData[key];
-
-    //             // string
-    //             // if (typeof value === "string") {
-    //             //     if (!value || value.trim() === "") {
-    //             //         newErrors[key] = "กรุณากรอกข้อมูล";
-    //             //     }
-    //             // }
-
-    //             if (value === "" || value === null || value === undefined) {
-    //                 newErrors[key] = "กรุณากรอกข้อมูล";
-    //             }
-
-    //             // เช็คกรณีเป็นตัวเลขแต่ลืมใส่ค่า (เช่น 0 ในฟิลด์ที่ห้ามเป็น 0)
-    //             else if (typeof value === "number" && value <= 0 && key !== "remainingUnit") {
-    //                 // ถ้าฟิลด์ตัวเลขอื่นๆ ห้ามเป็น 0 ให้เช็คตรงนี้
-    //             }
-
-    //             // Date object (เช่น LocalDateTime ที่ parse มาแล้ว)
-    //             else if (value instanceof Date) {
-    //                 if (Number.isNaN(value.getTime())) {
-    //                     newErrors[key] = "กรุณาเลือกวันที่/เวลา";
-    //                 }
-    //             }
-
-    //             // image
-    //             // if (key === "foodImage" && !value && !isEditMode) {
-    //             //     newErrors[key] = "กรุณาเพิ่มรูปภาพ";
-    //             // }
-
-    //             // if (!isEditMode && !(formData.foodImage instanceof File)) {
-    //             //     newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-    //             // }
-
-    //             // if (!isEditMode) {
-    //             //     // ตรวจสอบว่ามีไฟล์รูปภาพจริง ๆ
-    //             //     if (!formData.foodImage || !(formData.foodImage instanceof File)) {
-    //             //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-    //             //     }
-    //             // }
-    //         }
-    //     });
-
-    //     if (isEditMode) {
-    //         if (!formData.foodImage && !imageFile) {
-    //             newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-    //         }
-    //     } else if (!imageFile) {
-    //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-    //     }
-
-    //     // if (!isEditMode) {
-    //     //     // 🆕 โหมดสร้างใหม่: เช็คโดยตรงที่ตัวแปร imageFile ว่ามีไฟล์อัปโหลดเข้ามาจริงไหม
-    //     //     if (!imageFile) {
-    //     //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-    //     //     }
-    //     // } else {
-    //     //     // ✏️ โหมดแก้ไข: ต้องไม่มีทั้งรูปภาพเดิมบนเซิร์ฟเวอร์ และไม่มีการเลือกรูปใหม่เข้ามาด้วย ถึงจะเตือน
-    //     //     if (!formData.foodImage && !imageFile) {
-    //     //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-    //     //     }
-    //     // }
-
-    //     // ตรวจสอบวันที่
-    //     const today = new Date();
-    //     const expiryDate = new Date(formData.expiryDate);
-    //     const pickupStartDate = new Date(formData.pickupDateStart);
-    //     const pickupEndDate = new Date(formData.pickupDateEnd);
-
-    //     // วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต
-    //     if (pickupStartDate.toDateString < today.toDateString) {
-    //         newErrors.pickupDateStart = "วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต";
-    //     }
-
-    //     // วันที่สิ้นสุดต้อง >= วันที่เริ่มรับ
-    //     if (pickupEndDate < pickupStartDate) {
-    //         newErrors.pickupDateEnd = "วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่มรับ";
-    //     }
-
-    //     // วันรับต้องไม่ตรงกับวันหมดอายุ
-    //     if (expiryDate) {
-    //         if (pickupStartDate.toDateString() === expiryDate.toDateString()) {
-    //             newErrors.pickupDateStart = "วันเริ่มรับต้องไม่ตรงกับวันหมดอายุ";
-    //         }
-    //         if (pickupEndDate.toDateString() === expiryDate.toDateString()) {
-    //             newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่ตรงกับวันหมดอายุ";
-    //         }
-    //     }
-
-    //     if (!formData.latitude || !formData.longitude) {
-    //         // หากค่าใดค่าหนึ่งเป็นว่าง ศูนย์ หรือไม่มีข้อมูล ให้แจ้งเตือนทันที
-    //         newErrors.location = "กรุณาเลือกพิกัดตำแหน่งบนแผนที่";
-    //     }
-
-    //     if (Object.keys(newErrors).length > 0) {
-    //         setErrors(newErrors);
-    //         return;
-    //     }
-
-
-
-    //     // ผ่าน validation
-    //     console.log("ส่งข้อมูล:", formData);
-
-    //     // สร้าง FormData สำหรับส่งไป backend
-    //     const data = new FormData();
-    //     // data.append("foodImage", formData.foodImage); // File
-
-    //     // ตรวจสอบรูปภาพ: ถ้าผู้ใช้เลือกรูปภาพใหม่ (จาก Event handleImageChange ที่คุณเก็บไฟล์จริงไว้)
-    //     // ให้ทำการ append ไฟล์ใหม่เข้าไปแทนที่ (สมมติว่าคุณเก็บไฟล์จริงไว้ในตัวแปรชื่อ imageFile)
-    //     // if (imageFile) {
-    //     //     data.delete("foodImage"); // เคลียร์ชื่อไฟล์เดิมออกก่อน
-    //     //     data.append("foodImage", imageFile); // ส่งไฟล์ดิบตัวใหม่ไปแทน
-    //     // }
-    //     if (imageFile) {
-    //         // เคสอัพเดตรูปใหม่: ส่งไฟล์ดิบก้อนใหม่เข้าไป
-    //         data.append("foodImage", imageFile);
-    //     }
-    //     // } else if (formData.foodImage) {
-    //     //     // เคสใช้รูปเดิม: ส่งชื่อไฟล์ String เดิมกลับไปบอกฐานข้อมูลหลังบ้าน
-    //     //     data.append("foodImage", formData.foodImage);
-    //     // }
-
-    //     data.append("foodName", formData.foodName);
-    //     data.append("description", formData.description);
-    //     data.append("expiryDate", formData.expiryDate); // yyyy-MM-dd'T'HH:mm
-    //     data.append("unitWeightKg", Number.parseFloat(formData.unitWeightKg));
-    //     data.append("totalUnit", Number.parseInt(formData.totalUnit, 10));
-    //     data.append("address", formData.address);
-    //     data.append("pickupDateStart", formData.pickupDateStart);
-    //     data.append("pickupDateEnd", formData.pickupDateEnd);
-    //     data.append("pickupStartTime", formData.pickupStartTime);
-    //     data.append("pickupEndTime", formData.pickupEndTime);
-    //     data.append("limitPerPerson", Number.parseInt(formData.limitPerPerson, 10));
-    //     data.append("latitude", Number.parseFloat(formData.latitude));
-    //     data.append("longitude", Number.parseFloat(formData.longitude));
-    //     data.append("foodCategory", Number.parseInt(formData.foodCategory, 10));
-    //     // data.append("remainingUnit", Number.parseInt(formData.totalUnit, 10));
-    //     // data.append("peopleCountPerMeal", 0);
-    //     data.append("foodStatus", formData.foodStatus);
-    //     if (formData.peopleCountPerMeal !== "" && formData.peopleCountPerMeal != null) {
-    //         data.append(
-    //             "peopleCountPerMeal",
-    //             Number.parseInt(formData.peopleCountPerMeal, 10)
-    //         );
-    //     }
-
-    //     // Object.keys(formData).forEach((key) => {
-    //     //     data.append(key, formData[key]);
-    //     // });
-
-    //     // fetch("http://localhost:8082/foods", {
-    //     //     method: "POST",
-    //     //     headers: {
-    //     //         "Authorization": `Bearer ${token}`,
-    //     //         // "Content-Type": "application/json"
-    //     //     },
-    //     //     // body: JSON.stringify(formData)
-    //     //     body: data
-    //     // })
-    //     //     .then((res) => {
-    //     //         if (!res.ok) {
-    //     //             throw new Error("ไม่สามารถบันทึกข้อมูลได้");
-    //     //         }
-    //     //         return res.json();
-    //     //     })
-    //     //     .then((result) => {
-    //     //         console.log("บันทึกสำเร็จ:", result);
-    //     //         // เคลียร์ error และ reset form ถ้าต้องการ
-    //     //         setErrors({});
-    //     //         Swal.fire({
-    //     //             title: "บันทึกข้อมูลเรียบร้อย!",
-    //     //             icon: "success",
-    //     //             confirmButtonColor: "#2ecc71"
-    //     //         }).then(() => {
-    //     //             navigate("/my-foods");
-    //     //         });
-    //     //     })
-    //     //     .catch((err) => {
-    //     //         console.error("ผิดพลาด:", err);
-    //     //     });
-
-    //     // แยก URL และ Method ตามสถานะโหมดการใช้งานในจังหวะกดเซฟ
-    //     const targetUrl = isEditMode
-    //         ? `http://localhost:8082/foods/${foodId}`  // โหมดแก้ไข
-    //         : "http://localhost:8082/foods";       // โหมดสร้างใหม่
-
-    //     const targetMethod = isEditMode ? "PUT" : "POST";
-
-    //     // ยิง API บันทึกข้อมูล (ดึงออกมาจาก useEffect นำมาวางตรงนี้แทน)
-    //     fetch(targetUrl, {
-    //         method: targetMethod,
-    //         headers: {
-    //             "Authorization": `Bearer ${token}`
-    //             // ไม่ต้องใส่ Content-Type ระบบจะจัดการให้เองครับ
-    //         },
-    //         body: data
-    //     })
-    //         // .then((res) => {
-    //         //     if (!res.ok) throw new Error("ไม่สามารถบันทึกข้อมูลได้");
-    //         //     return res.json();
-    //         // })
-    //         .then(async (res) => {
-    //             // ตรวจสอบว่าถ้า Response ไม่ผ่าน (เช่น 400 Bad Request, 500 Server Error)
-    //             if (!res.ok) {
-    //                 try {
-    //                     // พยายามแกะ Error JSON ที่ส่งมาจาก Spring Boot
-    //                     const errorData = await res.json();
-    //                     // ถ้ามีข้อความ message จากหลังบ้าน ให้ throw ออกไป ไม่งั้นใช้ข้อความ Default
-    //                     throw new Error(errorData.message || "ไม่สามารถบันทึกข้อมูลได้");
-    //                 } catch (jsonError) {
-    //                     // ป้องกันกรณีหลังบ้านไม่ได้ส่งมาเป็น JSON (เช่น ส่งเป็น Text ธรรมดา หรือไม่มี Body)
-    //                     throw new Error(jsonError.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-    //                 }
-    //             }
-    //             return res.json();
-    //         })
-    //         .then((result) => {
-    //             console.log("บันทึกสำเร็จ:", result);
-    //             setErrors({});
-
-    //             Swal.fire({
-    //                 title: isEditMode ? "อัปเดตข้อมูลเรียบร้อย!" : "บันทึกข้อมูลเรียบร้อย!",
-    //                 icon: "success",
-    //                 confirmButtonColor: "#2ecc71"
-    //             }).then(() => {
-    //                 navigate("/my-foods");
-    //             });
-    //         })
-    //         .catch((err) => {
-    //             console.error("ผิดพลาด:", err);
-    //             Swal.fire({
-    //                 title: "เกิดข้อผิดพลาด",
-    //                 text: err.message,
-    //                 icon: "error"
-    //             });
-    //         });
-    // };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -658,50 +365,6 @@ export default function FoodFormDonation() {
         return null;
     };
 
-    // const handleDeleteFood = async (foodId) => {
-    //     // แสดง confirm ก่อนลบ
-    //     const result = await Swal.fire({
-    //         title: "ยืนยันการลบรายการบริจาค?",
-    //         // text: "หากลบแล้วจะไม่สามารถกู้คืนได้",
-    //         html: 'คุณแน่ใจหรือไม่ที่จะลบรายการนี้ <br /> ผู้รับไม่สามารถมองเห็นหรือจองรายการนี้ได้อีก <br /> และจะไม่สามารถกู้ข้อมูลคืนได้',
-    //         // icon: "warning",
-    //         showCancelButton: true,
-    //         cancelButtonColor: "#a0a0a0",
-    //         confirmButtonColor: "#ff3131",
-    //         cancelButtonText: "ยกเลิก",
-    //         confirmButtonText: "ยืนยันการลบ",
-    //         reverseButtons: true,
-    //     });
-
-    //     if (result.isConfirmed) {
-    //         try {
-    //             const response = await fetch(`http://localhost:8082/foods/${foodId}`, {
-    //                 method: "DELETE",
-    //                 headers: {
-    //                     "Authorization": `Bearer ${localStorage.getItem("token")}`, // ถ้ามี JWT
-    //                 }
-    //             });
-
-    //             if (response.ok) {
-    //                 Swal.fire({
-    //                     title: "ลบสำเร็จ!",
-    //                     text: "รายการอาหารถูกลบเรียบร้อยแล้ว",
-    //                     icon: "success",
-    //                     confirmButtonColor: "#2ecc71"
-    //                 }).then(() => {
-    //                     // redirect หรือ refresh หน้า
-    //                     navigate("/my-foods")
-    //                 });
-    //             } else {
-    //                 const errorData = await response.json();
-    //                 Swal.fire("เกิดข้อผิดพลาด", errorData.message || "ไม่สามารถลบได้", "error");
-    //             }
-    //         } catch (err) {
-    //             Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
-    //         }
-    //     }
-    // };
-
     const handleDeleteFood = async (foodId) => {
         // แสดง confirm ก่อนลบ
         const result = await Swal.fire({
@@ -805,15 +468,6 @@ export default function FoodFormDonation() {
                     {/* ปุ่มบันทึก */}
                     <button
                         type="submit"
-                        // style={{
-                        //     ...styles.submitBtn,
-                        //     backgroundColor: "#ff8c00",
-                        //     color: "#fff",
-                        //     border: "none",
-                        //     padding: "10px 24px",
-                        //     borderRadius: "12px",
-                        //     cursor: "pointer"
-                        // }}
                         style={styles.submitBtn}
                     >
                         บันทึกรายการอาหาร
@@ -873,96 +527,6 @@ export default function FoodFormDonation() {
             </>
         );
     };
-
-    // const handleConfirmDelivery = () => {
-    //     if (!foodId) { // หรือ formData.foodId ขึ้นอยู่กับว่าคุณเก็บ state ไว้ที่ตัวแปรไหน
-    //         Swal.fire({
-    //             title: "ไม่พบข้อมูลอาหาร",
-    //             text: "ระบบไม่พบรหัสอาหารรายการนี้ กรุณาตรวจสอบอีกครั้ง",
-    //             icon: "warning",
-    //             confirmButtonColor: "#ff8c00"
-    //         });
-    //         return;
-    //     }
-
-    //     Swal.fire({
-    //         title: 'ยืนยันการส่งมอบอาหาร',
-    //         text: 'กรุณากรอกรหัส 6 หลักที่ได้รับจากผู้รับ',
-    //         input: 'text',
-    //         inputPlaceholder: 'กรอกรหัส 6 หลักที่นี่...',
-    //         showCancelButton: true,
-    //         confirmButtonColor: '#328d7d',
-    //         cancelButtonColor: '#c2c0c0',
-    //         confirmButtonText: 'ยืนยัน',
-    //         cancelButtonText: 'ยกเลิก',
-    //         reverseButtons: true,
-    //         inputAttributes: {
-    //             maxlength: '6',
-    //             autocapitalize: 'off',
-    //             autocorrect: 'off',
-    //             style: 'text-align: center; font-size: 22px; letter-spacing: 4px; border-radius: 12px; border: 1px solid #ccc; width: 80%; margin: 15px auto;'
-    //         },
-    //         preConfirm: (code) => {
-    //             if (!code) {
-    //                 Swal.showValidationMessage('กรุณากรอกรหัสยืนยันการส่งมอบอาหาร');
-    //                 return false;
-    //             }
-    //             if (code.length !== 6 || isNaN(code)) {
-    //                 Swal.showValidationMessage('รหัสต้องเป็นตัวเลข 6 หลักเท่านั้น');
-    //                 return false;
-    //             }
-    //             return code;
-    //         }
-    //     }).then((result) => {
-    //         if (result.isConfirmed && result.value) {
-    //             const verificationCode = result.value;
-
-    //             Swal.fire({
-    //                 title: 'กำลังตรวจสอบรหัส...',
-    //                 allowOutsideClick: false,
-    //                 didOpen: () => { Swal.showLoading(); }
-    //             });
-
-    //             fetch(`http://localhost:8082/foods/${foodId}/deliver`, {
-    //                 method: "PUT",
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                     "Authorization": `Bearer ${token}`
-    //                 },
-    //                 body: JSON.stringify({ code: verificationCode }) // 👈 ส่งคีย์ "code" ไปให้ Controller แงะออกผ่าน body.get("code")
-    //             })
-    //                 .then(async (res) => {
-    //                     const resData = await res.json().catch(() => ({}));
-    //                     if (!res.ok || resData.success === false) {
-    //                         // 💡 ดึง resData.message ที่มาจาก e.getMessage() ของ Backend มาแสดง
-    //                         throw new Error(resData.message || "รหัสยืนยันไม่ถูกต้อง หรือเกิดข้อผิดพลาดในระบบ");
-    //                     }
-    //                     return resData;
-    //                 })
-    //                 .then(() => {
-    //                     Swal.fire({
-    //                         title: 'ส่งมอบอาหารสำเร็จ!',
-    //                         text: 'ระบบบันทึกประวัติและตรวจสอบรหัสเรียบร้อยแล้ว',
-    //                         icon: 'success',
-    //                         confirmButtonColor: '#ff8c00'
-    //                     }).then(() => {
-    //                         // โหลดข้อมูลอาหารใหม่เพื่ออัปเดตสถานะบนหน้าจอแบบไม่ต้อง reload หน้าเว็บ
-    //                         fetch(`http://localhost:8082/foods/${foodId}`)
-    //                             .then(res => res.json())
-    //                             .then(data => setFormData({ ...data, foodCategory: data.foodCategory?.foodCateId || "" }));
-    //                     });
-    //                 })
-    //                 .catch((err) => {
-    //                     Swal.fire({
-    //                         title: 'เกิดข้อผิดพลาด',
-    //                         text: err.message,
-    //                         icon: 'error',
-    //                         confirmButtonColor: '#e53935'
-    //                     });
-    //                 });
-    //         }
-    //     });
-    // };
 
     const handleConfirmDelivery = () => {
         // ประกาศดึง token มาสแตนด์บายไว้ใช้งานกับ Headers ด้านล่างครับ

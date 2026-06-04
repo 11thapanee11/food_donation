@@ -14,10 +14,17 @@ export default function FoodDetail() {
     const incomingId = location.state?.id; // อาจจะเป็น foodId หรือ bookingId ขึ้นอยู่กับหน้าต้นทาง
     const navigate = useNavigate();
 
+
     const [food, setFood] = useState(null);
     const [booking, setBooking] = useState(null);
     // const [bookingHistory, setBookingHistory] = useState([]); // สร้าง State เก็บประวัติผู้จองอาหาร
     const [loading, setLoading] = useState(true);
+
+    const currentUserId = localStorage.getItem("userId");
+
+    // เปรียบเทียบกับ donorId
+    // หมายเหตุ: เช็คให้แน่ใจว่า donorId ใน formData เป็นอะไร (บางทีอาจจะเป็น object หรือ id)
+    const isOwner = currentUserId && String(food?.donor?.userId) === String(currentUserId);
 
     const BASE_URL = "http://localhost:8082";
 
@@ -32,9 +39,6 @@ export default function FoodDetail() {
 
     const [rating, setRating] = useState(1);
     const [reviewText, setReviewText] = useState("");
-
-    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [reportData, setReportData] = useState({ reason: "", detail: "", image: null });
 
     // useEffect(() => {
     //     window.scrollTo(0, 0);
@@ -332,8 +336,8 @@ export default function FoodDetail() {
                         }
                         return res.json();
                     })
-                    .then((resData) => { // 💡 1. ปรับเป็นชื่อ resData ให้ตรงจริตชุดข้อมูลห่อหุ้ม API
-                        // 💡 2. ตรวจสอบเงื่อนไขตัวแปร success จากหลังบ้านจริง ๆ
+                    .then((resData) => { // 1. ปรับเป็นชื่อ resData ให้ตรงจริตชุดข้อมูลห่อหุ้ม API
+                        // 2. ตรวจสอบเงื่อนไขตัวแปร success จากหลังบ้านจริง ๆ
                         if (resData.success) {
                             Swal.fire({
                                 title: 'จองสำเร็จเรียบร้อย!',
@@ -344,7 +348,7 @@ export default function FoodDetail() {
                                 navigate('/receive');
                             });
                         } else {
-                            // 💡 3. ถ้าหลังบ้านบอกว่าจองไม่ผ่าน (เช่น โควต้าเต็มพอดี) ให้โยนข้อความไปแสดงที่บล็อกแจ้งเตือนด้านล่าง
+                            // 3. ถ้าหลังบ้านบอกว่าจองไม่ผ่าน (เช่น โควต้าเต็มพอดี) ให้โยนข้อความไปแสดงที่บล็อกแจ้งเตือนด้านล่าง
                             throw new Error(resData.message || "จองอาหารไม่สำเร็จเนื่องจากเงื่อนไขระบบ");
                         }
                     })
@@ -571,6 +575,9 @@ export default function FoodDetail() {
 
     return (
         <div style={styles.page}>
+            <div>
+                <div>User ID: {currentUserId}</div>
+            </div>
             <div style={styles.headerRow}>
                 {/* พื้นที่ว่างด้านซ้ายปล่อยไว้ หรือปล่อยให้ปุ่มดีดไปทางขวาสุดด้วย justifyContent */}
                 <div></div>
@@ -833,7 +840,7 @@ export default function FoodDetail() {
                     </div>
 
                     {/* ปุ่มกดจอง */}
-                    {!isFromReceive && (
+                    {(!isFromReceive && !isOwner) && (
                         <button type="button" style={styles.reserveBtn} onClick={handleReserveClick}>
                             จองรายการอาหาร
                         </button>
