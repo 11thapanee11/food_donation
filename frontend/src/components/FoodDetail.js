@@ -9,7 +9,8 @@ export default function FoodDetail() {
     // const foodId = location.state?.id;
 
     // ดึงค่าหน้าต้นทางมาตรวจสอบบริบทการแสดงผล
-    const fromPage = location.state?.fromPage;
+    // const fromPage = location.state?.fromPage;
+    const { fromPage, bookingStatus } = location.state || {};
     const incomingId = location.state?.id; // อาจจะเป็น foodId หรือ bookingId ขึ้นอยู่กับหน้าต้นทาง
     const navigate = useNavigate();
 
@@ -22,6 +23,18 @@ export default function FoodDetail() {
 
     // เช็กเงื่อนไขว่ามาจากหน้าจัดการรับบริจาคหรือไม่
     const isFromReceive = fromPage === "/receive";
+
+    // เช็กสถานะการจองว่าเสร็จสมบูรณ์แล้วหรือไม่
+    const isBookingCompleted = bookingStatus === "COMPLETED";
+
+    // รวมเงื่อนไข จะโชว์รีวิวและปุ่มรายงาน ก็ต่อเมื่อมาจากหน้า receive และส่งมอบสำเร็จแล้วเท่านั้น
+    const shouldShowReviewAndReport = isFromReceive && isBookingCompleted;
+
+    const [rating, setRating] = useState(1);
+    const [reviewText, setReviewText] = useState("");
+
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [reportData, setReportData] = useState({ reason: "", detail: "", image: null });
 
     // useEffect(() => {
     //     window.scrollTo(0, 0);
@@ -470,8 +483,113 @@ export default function FoodDetail() {
         });
     };
 
+    const handleReport = () => {
+        Swal.fire({
+            didOpen: () => {
+                // ผูกฟังก์ชันเข้ากับ window เพื่อให้ HTML เรียกได้
+                window.previewFile = previewFile;
+            },
+            title: 'รายงานปัญหาเกี่ยวกับบริจาคนี้',
+            html: `
+            <div style="text-align: left;">
+                <label>เหตุผลในการรายงาน</label>
+                <select id="reason" class="swal2-select" style="width: 100%; margin: 0 0 10px 0;">
+                    <option value="" disabled selected>เลือกเหตุผลในการรายงาน</option>
+                    <option value="EXPIRED">อาหารหมดอายุ</option>
+                    <option value="NOT_MATCH">ข้อมูลไม่ตรงปก</option>
+                    <option value="SPOILED">อาหารมีกลิ่นหรือสภาพผิดปกติ</option>
+                    <option value="OTHER">อื่นๆ</option>
+                </select>
+                
+                <label>รายละเอียดเพิ่มเติม</label>
+                <textarea id="detail" class="swal2-textarea" placeholder="ระบุรายละเอียดของปัญหาที่คุณพบ..." style="width: 100%; margin: 0 0 10px 0;"></textarea>
+                
+                <label>รูปภาพหลักฐาน (ถ้ามี)</label>
+                <div style="display: flex; gap: 15px; align-items: flex-start; margin-top: 10px;">
+                    <label for="image-upload" style="
+                        display: flex; flex-direction: column; align-items: center; justify-content: center;
+                        width: 120px; height: 120px; border: 2px dashed #ccc; border-radius: 12px;
+                        cursor: pointer; color: #888; text-align: center;">
+                        <span style="font-size: 30px; font-weight: bold; color: #aaa;">+</span>
+                        <span style="font-size: 14px;">คลิกเพื่ออัปโหลด</span>
+                    </label>
+                    <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="previewFile()" />
+
+                    <div id="preview-container" style="display: none; width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 12px; overflow: hidden;">
+                        <img id="preview-image" src="" style="width: 100%; height: 100%; object-fit: cover;" />
+                    </div>
+                </div>
+            </div>
+        `,
+            confirmButtonText: 'รายงาน',
+            confirmButtonColor: '#ff9800',
+            showCancelButton: true,
+            cancelButtonColor: '#a0a0a0',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true,
+            preConfirm: () => {
+                const reason = document.getElementById('reason').value;
+                const detail = document.getElementById('detail').value;
+                const file = document.getElementById('image-upload').files[0];
+
+                // ตรวจสอบว่าเลือกเหตุผลหรือยัง
+                if (!reason) {
+                    Swal.showValidationMessage('กรุณาเลือกเหตุผลในการรายงาน');
+                    return false;
+                }
+                // ตรวจสอบว่ากรอกรายละเอียดหรือยัง
+                if (!detail.trim()) {
+                    Swal.showValidationMessage('กรุณาระบุรายละเอียดของปัญหา');
+                    return false;
+                }
+
+                return { reason, detail, file };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log("ข้อมูลที่ส่ง:", result.value);
+                // ตรงนี้คือจุดที่คุณนำข้อมูลไปยิง API ต่อ
+            }
+        });
+    };
+
+    const previewFile = () => {
+        const file = document.getElementById('image-upload').files[0];
+        const reader = new FileReader();
+        const preview = document.getElementById('preview-image');
+        const container = document.getElementById('preview-container'); // กล่องครอบรูป
+
+        reader.onloadend = () => {
+            preview.src = reader.result;
+            container.style.display = 'block'; // แสดงกล่องที่ครอบรูป
+        };
+
+        if (file) {
+            reader.readAsDataURL(file);
+        }
+    };
+
     return (
         <div style={styles.page}>
+            <div style={styles.headerRow}>
+                {/* พื้นที่ว่างด้านซ้ายปล่อยไว้ หรือปล่อยให้ปุ่มดีดไปทางขวาสุดด้วย justifyContent */}
+                <div></div>
+
+                {/* ปุ่มรายงานตัวจริงผ่านเกณฑ์ SonarQube */}
+                {shouldShowReviewAndReport && (
+                    <button
+                        type="button"
+                        style={styles.reportBtn}
+                        // onClick={() => console.log("แจ้งรายงาน")}
+                        onClick={handleReport}
+                    >
+                        <span style={styles.reportIcon} className="material-symbols-outlined">
+                            report
+                        </span> รายงานเกี่ยวกับบริจาคนี้
+                    </button>
+                )}
+
+            </div>
             <div style={styles.container}>
 
                 {/* ฝั่งซ้าย: รูปภาพอาหาร และ รีวิวผู้รับบริจาค */}
@@ -486,68 +604,105 @@ export default function FoodDetail() {
                         <span> {food.donor.firstName} {food.donor.lastName}</span>
                     </p>
 
-                    {/* กล่องรีวิวจากผู้รับบริจาค (ตามดีไซน์สีพาสเทล) */}
-                    {/* <div style={styles.reviewCard}>
-                        <h4 style={styles.reviewTitle}>รีวิวจากผู้รับบริจาค</h4>
-                        <div style={styles.reviewHeader}>
-                            <span style={styles.reviewerName}>เพิ่มพูน</span>
-                            <span style={styles.reviewDate}>20/03/2569</span>
-                        </div>
-                        <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
-                        <p style={styles.reviewContent}>
-                            ส้มอร่อยมากก! ขอบคุณผู้บริจาคใจดีที่แบ่งปันความสดชื่นให้นะคะ ได้ทั้งทานอร่อยและรักษ์โลกด้วย
-                        </p>
-                    </div> */}
-
                     {/* CONDITIONAL RENDERING: สลับการแสดงผลตรงนี้ */}
                     {isFromReceive ? (
-                        /* บล็อกประวัติการจอง (สำหรับผู้ตั้งรับบริจาคที่กดเข้ามาดู) */
-                        <div style={styles.bookingDetailCard}>
-                            <h3 style={styles.bookingCardTitle}>รายละเอียดการจอง</h3>
+                        <>
+                            {/* กล่องที่ 1: รายละเอียดการจอง */}
+                            <div style={styles.bookingDetailCard}>
+                                <h3 style={styles.bookingCardTitle}>รายละเอียดการจอง</h3>
 
-                            {!booking ? (
-                                <p style={{ fontSize: "14px", color: "#666" }}>📦 ไม่พบรายละเอียดข้อมูลการจองนี้</p>
-                            ) : (
-                                <div style={styles.bookingBody}>
-                                    <p style={styles.bookingRow}>
-                                        <span style={styles.bookingLabel}>จำนวนที่รับบริจาค :</span>
-                                        <span style={styles.bookingValue}> {booking.bookingUnit}</span>
-                                    </p>
-                                    <p style={styles.bookingRow}>
-                                        <span style={styles.bookingLabel}>น้ำหนักที่รับบริจาค :</span>
-                                        {/* คำนวณน้ำหนักรวม: เอาจำนวนที่จอง x น้ำหนักต่อหน่วยของอาหาร */}
-                                        <span style={styles.bookingValue}>
-                                            {booking.bookingWeightKg} Kg
-                                        </span>
-                                    </p>
-                                    <p style={styles.bookingRow}>
-                                        <span style={styles.bookingLabel}>วันที่ทำการจอง :</span>
-                                        {/* ใช้ฟังก์ชันฟอร์แมตวันที่ที่มีอยู่แล้วในหน้าจอ */}
-                                        <span style={styles.bookingValue}> {formatExpiryDate(booking.bookingDate || booking.createdAt)}</span>
-                                    </p>
+                                {!booking ? (
+                                    <p style={{ fontSize: "14px", color: "#666" }}>📦 ไม่พบรายละเอียดข้อมูลการจองนี้</p>
+                                ) : (
+                                    <div style={styles.bookingBody}>
+                                        <p style={styles.bookingRow}>
+                                            <span style={styles.bookingLabel}>จำนวนที่รับบริจาค :</span>
+                                            <span style={styles.bookingValue}> {booking.bookingUnit}</span>
+                                        </p>
+                                        <p style={styles.bookingRow}>
+                                            <span style={styles.bookingLabel}>น้ำหนักที่รับบริจาค :</span>
+                                            <span style={styles.bookingValue}>
+                                                {booking.bookingWeightKg} Kg
+                                            </span>
+                                        </p>
+                                        <p style={styles.bookingRow}>
+                                            <span style={styles.bookingLabel}>วันที่ทำการจอง :</span>
+                                            <span style={styles.bookingValue}> {formatExpiryDate(booking.bookingDate || booking.createdAt)}</span>
+                                        </p>
 
-                                    {/* ส่วนแสดงรหัสยืนยันตัวใหญ่เด่นชัด */}
-                                    <div style={styles.claimCodeContainer}>
-                                        <span style={styles.claimCodeLabel}>รหัสยืนยันการจอง</span>
-                                        <span style={styles.claimCodeValue}>
-                                            {booking.confirmationCode || "000000"}
-                                        </span>
+                                        {/* ส่วนแสดงรหัสยืนยัน: แสดงเฉพาะตอนที่สถานะยังไม่สำเร็จ */}
+                                        {booking.bookingStatus !== "COMPLETED" && (
+                                            <div style={styles.claimCodeContainer}>
+                                                <span style={styles.claimCodeLabel}>รหัสยืนยันการจอง</span>
+                                                <span style={styles.claimCodeValue}>
+                                                    {booking.confirmationCode || "000000"}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
+                                )}
+                            </div>
+
+                            {/* กล่องที่ 2: กรอบรีวิว (แยกออกมาอยู่นอก bookingDetailCard เรียบร้อยแล้ว) */}
+                            {shouldShowReviewAndReport && (
+                                <div style={{ ...styles.reviewCard, marginTop: "8px" }}>
+                                    <h3 style={{ ...styles.reviewTitle, fontSize: "18px", fontWeight: "bold" }}>
+                                        รีวิว
+                                    </h3>
+
+                                    {/* ส่วนดาวสำหรับคลิกเลือกคะแนน */}
+                                    <div style={styles.ratingStarsContainer}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                type="button" // ป้องกันการ Submit ฟอร์มโดยไม่ตั้งใจ
+                                                onClick={() => setRating(star)}
+                                                style={{
+                                                    ...styles.starButton,
+                                                    color: star <= rating ? "#FFB800" : "#D3D3D3"
+                                                }}
+                                            >
+                                                ★
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* ช่องสำหรับพิมพ์ข้อความรีวิว */}
+                                    <textarea
+                                        placeholder="เขียนรีวิว..."
+                                        value={reviewText}
+                                        onChange={(e) => setReviewText(e.target.value)}
+                                        style={styles.reviewInput}
+                                        rows={4}
+                                    />
                                 </div>
                             )}
-                        </div>
+                        </>
+
                     ) : (
-                        /* กล่องรีวิวส้มพาสเทลเดิม (สำหรับผู้ใช้ทั่วไปเปิดดูจาก Home/Map) */
                         <div style={styles.reviewCard}>
                             <h4 style={styles.reviewTitle}>รีวิวจากผู้รับบริจาค</h4>
-                            <div style={styles.reviewHeader}>
-                                <span style={styles.reviewerName}>เพิ่มพูน</span>
-                                <span style={styles.reviewDate}>20/03/2569</span>
-                            </div>
-                            <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
-                            <p style={styles.reviewContent}>
-                                ส้มอร่อยมากก! ขอบคุณผู้บริจาคใจดีที่แบ่งปันความสดชื่นให้นะคะ ได้ทั้งทานอร่อยและรักษ์โลกด้วย
-                            </p>
+
+                            {/* เพิ่มการตรวจสอบว่ามีรีวิวหรือไม่ */}
+                            {booking?.review ? (
+                                <>
+                                    <div style={styles.reviewHeader}>
+                                        <span style={styles.reviewerName}>{booking.review.reviewerName}</span>
+                                        <span style={styles.reviewDate}>{booking.review.date}</span>
+                                    </div>
+                                    <div style={styles.stars}>
+                                        {"★".repeat(booking.review.rating)}
+                                        {"☆".repeat(5 - booking.review.rating)}
+                                    </div>
+                                    <p style={styles.reviewContent}>
+                                        {booking.review.comment}
+                                    </p>
+                                </>
+                            ) : (
+                                <div style={{ color: "#999", textAlign: "center" }}>
+                                    <p>ยังไม่มีรีวิว</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -699,14 +854,18 @@ export default function FoodDetail() {
 const styles = {
     page: {
         minHeight: "100vh",
+        width: "100%",
+        maxWidth: "1150px",
+        margin: "0 auto",
         padding: "40px 20px",
+        boxSizing: "border-box"
         // fontFamily: "'Kanit', sans-serif"
     },
     container: {
-        maxWidth: "1150px",
-        margin: "0 auto",
+        // maxWidth: "1150px",
+        // margin: "0 auto",
         // backgroundColor: "#FFFFFF",
-        borderRadius: "24px",
+        // borderRadius: "24px",
         // padding: "40px",
         display: "flex",
         gap: "60px",
@@ -774,6 +933,46 @@ const styles = {
         fontSize: "14px",
         color: "#555",
         lineHeight: "1.5"
+    },
+    ratingStarsContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginBottom: '5px'
+    },
+    starItem: {
+        fontSize: '28px',
+        cursor: 'pointer',
+        transition: 'color 0.2s ease-in-out',
+        userSelect: 'none'
+    },
+    starButton: {
+        background: 'none',
+        border: 'none',
+        padding: '0',
+        fontSize: '28px',
+        cursor: 'pointer',
+        // transition: 'color 0.2s ease-in-out',
+        outline: 'none',
+    },
+    ratingText: {
+        fontSize: '14px',
+        color: '#d9d9d9',
+        marginLeft: '10px',
+        fontWeight: '500'
+    },
+    reviewInput: {
+        width: '100%',
+        backgroundColor: '#fff3e4',
+        border: '1px solid #d9d9d9',
+        borderRadius: '12px',
+        padding: '14px 16px',
+        fontSize: '15px',
+        color: '#333333',
+        outline: 'none',
+        resize: 'none',
+        boxSizing: 'border-box',
+        fontFamily: 'inherit'
     },
     foodName: {
         fontSize: "30px",
@@ -868,7 +1067,7 @@ const styles = {
     bookingCardTitle: {
         margin: 0,
         color: "#ff8c00",
-        fontSize: "20px",
+        fontSize: "18px",
         fontWeight: "bold"
     },
     bookingBody: {
@@ -922,5 +1121,34 @@ const styles = {
         width: "45%",               // ขนาดปุ่มกะทัดรัด
         alignSelf: "center",        // จัดให้อยู่กึ่งกลางหน้าจอ
         marginTop: "20px",
+    },
+    headerRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: '15px', // ระยะห่างระหว่างปุ่มกับเนื้อหาไข่ไก่ด้านล่าง
+    },
+
+    reportBtn: {
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor: 'transparent', // พื้นหลังโปร่งใสเนียนไปกับหน้าจอ
+        border: '2px solid #A0A0A0', // เส้นขอบสีเทาตามภาพ
+        borderRadius: '12px',           // ความมนโค้งสไตล์มินิมอล
+        padding: '8px 16px',           // ช่องว่างข้างในปุ่มให้ดูไม่เบียดเกินไป
+        color: '#A0A0A0',              // สีตัวอักษรเทาเข้ม อ่านง่ายแต่ไม่แย่งซีน
+        fontSize: '17px',              // ขนาดตัวอักษรกำลังดี
+        fontWeight: '500',
+        cursor: 'pointer',
+        outline: 'none',
+        // WebkitTapHighlightColor: 'transparent',
+    },
+
+    reportIcon: {
+        marginRight: '8px',
+        fontSize: '24px',
+        display: 'inline-flex',
+        alignItems: 'center'
     }
 };

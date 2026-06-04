@@ -286,7 +286,7 @@ export default function Home() {
                                             //     top: 0,
                                             //     // behavior: "smooth"
                                             // });
-                                            navigate('/food-detail', { state: { id: food.foodId, fromPage: '/home' } });
+                                            navigate('/food-detail', { state: { id: food.foodId, fromPage: '/' } });
                                         }}
                                         style={styles.detailBtn}
                                     >

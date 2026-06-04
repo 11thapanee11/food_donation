@@ -98,7 +98,7 @@ export default function Login() {
                     text: resData.message,
                     confirmButtonColor: '#2ecc71'
                 }).then(() => {
-                    navigate("/home");
+                    navigate("/");
                 });
             } else {
                 // 💡 3. กรณีอีเมลหรือรหัสผ่านผิดพลาด ดึงข้อความแจ้งเตือนจากหลังบ้านมาแสดงได้เลย

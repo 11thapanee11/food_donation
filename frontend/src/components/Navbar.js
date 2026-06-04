@@ -46,7 +46,7 @@ export default function Navbar() {
     const originPath = location.state?.fromPage || '';
 
     // ดึงลอจิกเช็กสถานะเมนูสว่าง (Active) ออกมาด้านบน (เคลียร์เกณฑ์ SonarQube S6766)
-    const isHomeActive = currentPath === "/home" || (currentPath === "/food-detail" && originPath === "/home");
+    const isHomeActive = currentPath === "/" || (currentPath === "/food-detail" && originPath === "/");
     const isRankingActive = currentPath === "/ranking";
     const isMapActive = currentPath === "/map" || (currentPath === "/food-detail" && originPath === "/map");
     const isReceiveActive = currentPath === "/receive" || (currentPath === "/food-detail" && originPath === "/receive");
@@ -64,7 +64,7 @@ export default function Navbar() {
 
             {/* ตรงกลาง: Menu Links */}
             <div style={styles.menuSection}>
-                <Link to="/home" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
+                <Link to="/" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
                 <Link to="/ranking" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
                 <Link to="/map" style={isMapActive ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
                 {isLoggedIn && (

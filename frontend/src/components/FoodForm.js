@@ -965,7 +965,7 @@ export default function FoodFormDonation() {
     // };
 
     const handleConfirmDelivery = () => {
-        // 💡 1. ประกาศดึง token มาสแตนด์บายไว้ใช้งานกับ Headers ด้านล่างครับ
+        // ประกาศดึง token มาสแตนด์บายไว้ใช้งานกับ Headers ด้านล่างครับ
         const token = localStorage.getItem("accessToken");
 
         if (!foodId) {
@@ -1036,7 +1036,7 @@ export default function FoodFormDonation() {
                             title: 'ส่งมอบอาหารสำเร็จ!',
                             text: resData.message || 'ระบบบันทึกประวัติและตรวจสอบรหัสเรียบร้อยแล้ว',
                             icon: 'success',
-                            confirmButtonColor: '#ff8c00'
+                            confirmButtonColor: '#2ecc71'
                         }).then(() => {
                             // 💡 2. ปรับการดึงข้อมูลอาหารใหม่ให้สอดคล้องกับโครงสร้าง ApiResponse หลังบ้าน
                             fetch(`http://localhost:8082/foods/${foodId}`)

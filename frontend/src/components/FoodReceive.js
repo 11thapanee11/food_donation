@@ -212,7 +212,7 @@ export default function FoodReceive() {
                                 <button
                                     type="button"
                                     style={styles.detailBtn}
-                                    onClick={() => navigate('/food-detail', { state: { id: booking.bookingId, fromPage: '/receive' } })}
+                                    onClick={() => navigate('/food-detail', { state: { id: booking.bookingId, fromPage: '/receive', bookingStatus: booking.bookingStatus } })}
                                 >
                                     ดูรายละเอียดการจอง
                                 </button>
