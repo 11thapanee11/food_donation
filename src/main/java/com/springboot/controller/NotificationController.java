@@ -24,9 +24,20 @@ public class NotificationController {
 
     // ดึงแจ้งเตือนทั้งหมด
     @GetMapping
-    public List<Notification> getAllNotifications() {
-        return notificationService.getAllNotifications();
+    public ResponseEntity<ApiResponse<List<Notification>>> getAllNotifications() {
+        try {
+            List<Notification> notifications = notificationService.getAllNotifications();
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, "ดึงข้อมูลการแจ้งเตือนทั้งหมดสำเร็จ", notifications)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการดึงข้อมูลการแจ้งเตือน: " + e.getMessage(), null));
+        }
     }
+    // public List<Notification> getAllNotifications() {
+    //     return notificationService.getAllNotifications();
+    // }
 
     // ดึงแจ้งเตือนที่ยังไม่ได้อ่าน
     // @GetMapping("/unread")

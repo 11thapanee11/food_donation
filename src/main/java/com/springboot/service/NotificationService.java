@@ -54,6 +54,24 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    public Notification createCancelBookingNotification(Booking booking) {
+        Notification notification = new Notification();
+
+        String message = "รายการจองถูกยกเลิก! รายการ: " + booking.getFood().getFoodName()
+                + " จำนวน " + booking.getBookingUnit();
+
+        notification.setNotificationMessage(message);
+        notification.setNotificationDate(LocalDateTime.now());
+        notification.setNotificationType("booking_cancel");
+        notification.setIsRead(false);
+
+        notification.setFood(booking.getFood());
+        notification.setBooking(booking);
+
+        return notificationRepository.save(notification);
+
+    }
+
     // ดึงแจ้งเตือนทั้งหมด
     public List<Notification> getAllNotifications() {
         return notificationRepository.findAll();
@@ -65,7 +83,7 @@ public class NotificationService {
     }
 
     // อัปเดตสถานะการอ่าน
-    public Notification markAsRead(Long id) {
+    public Notification markAsRead(Integer id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         notification.setIsRead(true);

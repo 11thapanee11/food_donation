@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.springboot.dto.*;
+import com.springboot.model.*;
 import com.springboot.service.*;
 import java.util.*;
 
@@ -50,28 +51,67 @@ public class LoginController {
     // }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> loginMember(@RequestBody LoginDto loginDto) {
-        boolean result = userService.login(loginDto);
+    public ResponseEntity<ApiResponse<Map<String, Object>>> loginMember(@RequestBody LoginDto loginDto) {
+        try {
+            boolean result = userService.login(loginDto);
 
-        if (result) {
-            // สร้าง Access Token
-            String accessToken = jwtUtil.generateToken(loginDto.getEmail(), 24 * 60 * 60 * 1000);
+            User user = userService.getUserByEmail(loginDto.getEmail());
 
-            // // สร้าง Refresh Token (อายุนาน เช่น 7 วัน)
-            // String refreshToken = jwtUtil.generateToken(loginDto.getEmail(), 7 * 24 * 60 * 60 * 1000);
+            if (result) {
+                // สร้าง Access Token อายุ 24 ชั่วโมง
+                // String accessToken = jwtUtil.generateToken(loginDto.getEmail(), 24 * 60 * 60
+                // * 1000);
+                String accessToken = jwtUtil.generateToken(
+                        String.valueOf(user.getUserId()),
+                        24 * 60 * 60 * 1000 // อายุ 24 ชั่วโมง
+                );
 
-            return ResponseEntity.ok(Map.of(
-                    "message", "เข้าสู่ระบบสำเร็จ",
-                    "accessToken", accessToken));
-                    // "refreshToken", refreshToken));
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "ไม่พบข้อมูลผู้ใช้"));
+                // บรรจุ Token ลงใน Map เพื่อส่งไปกับ ApiResponse
+                Map<String, Object> responseData = new HashMap<>();
+                responseData.put("accessToken", accessToken);
+
+                responseData.put("userId", user.getUserId());
+
+                return ResponseEntity.ok(
+                        new ApiResponse<>(true, "เข้าสู่ระบบสำเร็จ", responseData));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "อีเมลหรือรหัสผ่านไม่ถูกต้อง", null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในระบบ: " + e.getMessage(), null));
         }
     }
+    // public ResponseEntity<Map<String, String>> loginMember(@RequestBody LoginDto
+    // loginDto) {
+    // boolean result = userService.login(loginDto);
+
+    // if (result) {
+    // // สร้าง Access Token
+    // String accessToken = jwtUtil.generateToken(loginDto.getEmail(), 24 * 60 * 60
+    // * 1000);
+
+    // // // สร้าง Refresh Token (อายุนาน เช่น 7 วัน)
+    // // String refreshToken = jwtUtil.generateToken(loginDto.getEmail(), 7 * 24 *
+    // 60 * 60 * 1000);
+
+    // return ResponseEntity.ok(Map.of(
+    // "message", "เข้าสู่ระบบสำเร็จ",
+    // "accessToken", accessToken));
+    // // "refreshToken", refreshToken));
+    // } else {
+    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+    // .body(Map.of("message", "ไม่พบข้อมูลผู้ใช้"));
+    // }
+    // }
 
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout() {
-        return ResponseEntity.ok(Map.of(messageKey, "ออกจากระบบสำเร็จ"));
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "ออกจากระบบสำเร็จ", null));
     }
+    // public ResponseEntity<Map<String, String>> logout() {
+    // return ResponseEntity.ok(Map.of(messageKey, "ออกจากระบบสำเร็จ"));
+    // }
 }

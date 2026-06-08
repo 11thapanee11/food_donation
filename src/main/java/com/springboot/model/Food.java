@@ -63,7 +63,7 @@ public class Food {
     private Double longitude;
 
     @Column(name = "food_status", length = 20, nullable = false)
-    private String foodStatus = "AVAILABLE";
+    private String foodStatus = "available";
 
     // FK ไปยัง FoodCategory
     @ManyToOne
@@ -72,8 +72,8 @@ public class Food {
 
     // FK ไปยัง Donor (User)
     @ManyToOne
-    @JoinColumn(name = "donor_userId", nullable = false)
-    private User donor;
+    @JoinColumn(name = "donor_user_id", nullable = false)
+    private Donor donor;
 
     public Food() {
         super();
@@ -261,11 +261,21 @@ public class Food {
         this.foodCategory = foodCategory;
     }
 
-    public User getDonor() {
+    public Donor getDonor() {
         return donor;
     }
 
-    public void setDonor(User donor) {
+    public void setDonor(Donor donor) {
         this.donor = donor;
     }
+
+    // public User getDonor() {
+    //     return donor;
+    // }
+
+    // public void setDonor(User donor) {
+    //     this.donor = donor;
+    // }
+
+    
 }

@@ -5,6 +5,7 @@ import com.springboot.dto.MemberDto;
 import com.springboot.dto.RegisterDto;
 import com.springboot.model.User;
 import com.springboot.repository.UserRepository;
+import com.springboot.util.JwtUtil;
 import com.springboot.util.PasswordUtil;
 import java.util.*;
 
@@ -18,11 +19,32 @@ public class UserService {
     // @Autowired
     private final UserRepository userRepository;
 
+    private final JwtUtil jwtUtil;
+
     private final PasswordUtil passwordUtil;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordUtil = PasswordUtil.getInstance();
+        this.jwtUtil = jwtUtil;
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ไม่พบผู้ใช้งานด้วยอีเมลนี้: " + email));
+    }
+
+    public User authenticate(String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String idStr = jwtUtil.extractUserId(token);
+
+        if (!jwtUtil.validateToken(token, idStr)) {
+            throw new IllegalArgumentException("Token ไม่ถูกต้องหรือหมดอายุ");
+        }
+
+        Integer userId = Integer.parseInt(idStr);
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("ไม่พบสิทธิ์และข้อมูลบัญชีผู้ใช้ในระบบ"));
     }
 
     public boolean registerUser(RegisterDto request) {
@@ -73,8 +95,8 @@ public class UserService {
         }
     }
 
-    public MemberDto getMemberProfile(String email) {
-        User user = userRepository.findByEmail(email)
+    public MemberDto getMemberProfile(Integer id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("ไม่พบข้อมูลรายละเอียดสมาชิก"));
 
         return new MemberDto(

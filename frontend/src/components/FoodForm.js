@@ -82,9 +82,9 @@ export default function FoodForm() {
                 if (!res.ok) throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
                 return res.json();
             })
-            .then(resData => { // 💡 ปรับเป็น resData
+            .then(resData => { // ปรับเป็น resData
                 if (resData.success) {
-                    // 💡 แงะเอา Array ของหมวดหมู่ที่อยู่ใน .data ไปใช้งาน
+                    // แงะเอา Array ของหมวดหมู่ที่อยู่ใน .data ไปใช้งาน
                     setCategories(resData.data);
                 } else {
                     throw new Error(resData.message || "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
@@ -106,7 +106,7 @@ export default function FoodForm() {
                     if (resData.success) {
                         console.log("=== ข้อมูลอาหารจาก API ===", resData.data);
 
-                        // 💡 แงะข้อมูลก้อนวัตถุอาหารออกมาจาก resData.data
+                        // แงะข้อมูลก้อนวัตถุอาหารออกมาจาก resData.data
                         const foodInfo = resData.data;
 
                         setFormData({
@@ -173,7 +173,7 @@ export default function FoodForm() {
         e.preventDefault();
         console.log("Check: คลิก Submit แล้ว!");
 
-        // 💡 1. ประกาศดึง token มาสแตนด์บายไว้ใช้กับ header ตอนส่ง fetch ด้านล่างครับ
+        // 1. ประกาศดึง token มาสแตนด์บายไว้ใช้กับ header ตอนส่ง fetch ด้านล่างครับ
         const token = localStorage.getItem("accessToken");
 
         const skipFields = new Set([
@@ -220,7 +220,7 @@ export default function FoodForm() {
         const pickupStartDate = new Date(formData.pickupDateStart);
         const pickupEndDate = new Date(formData.pickupDateEnd);
 
-        // 💡 2. แก้ไขบั๊ก เติมวงเล็บ () ให้กับฟังก์ชัน .toDateString() ทั้งสองฝั่ง
+        // 2. แก้ไขบั๊ก เติมวงเล็บ () ให้กับฟังก์ชัน .toDateString() ทั้งสองฝั่ง
         if (pickupStartDate.toDateString() < today.toDateString()) {
             newErrors.pickupDateStart = "วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต";
         }
@@ -302,15 +302,15 @@ export default function FoodForm() {
                 }
                 return res.json();
             })
-            .then((result) => { // 💡 3. รับก้อน ApiResponse จากเซิร์ฟเวอร์
-                // 💡 เช็คค่าความสำเร็จสำเร็จผ่านฟิลด์ .success
+            .then((result) => { // 3. รับก้อน ApiResponse จากเซิร์ฟเวอร์
+                // เช็คค่าความสำเร็จสำเร็จผ่านฟิลด์ .success
                 if (result.success) {
                     console.log("บันทึกสำเร็จ:", result);
                     setErrors({});
 
                     Swal.fire({
                         title: isEditMode ? "อัปเดตข้อมูลเรียบร้อย!" : "บันทึกข้อมูลเรียบร้อย!",
-                        text: result.message,
+                        // text: result.message,
                         icon: "success",
                         confirmButtonColor: "#2ecc71"
                     }).then(() => {
@@ -392,7 +392,7 @@ export default function FoodForm() {
                 const response = await fetch(`http://localhost:8082/foods/${foodId}`, {
                     method: "DELETE",
                     headers: {
-                        // 💡 แก้ไขจุดที่ 1: เปลี่ยนชื่อคีย์จาก "token" เป็น "accessToken" ให้ตรงกับหน้า Login
+                        // แก้ไขจุดที่ 1: เปลี่ยนชื่อคีย์จาก "token" เป็น "accessToken" ให้ตรงกับหน้า Login
                         "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
                         "Content-Type": "application/json"
                     }
@@ -402,9 +402,9 @@ export default function FoodForm() {
                     throw new Error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อลบข้อมูลได้");
                 }
 
-                const resData = await response.json(); // 💡 แกะโครงสร้าง ApiResponse ออกมา
+                const resData = await response.json(); // แกะโครงสร้าง ApiResponse ออกมา
 
-                // 💡 แก้ไขจุดที่ 2: ตรวจสอบความสำเร็จผ่านตัวแปร .success จากหลังบ้าน
+                // แก้ไขจุดที่ 2: ตรวจสอบความสำเร็จผ่านตัวแปร .success จากหลังบ้าน
                 if (resData.success) {
                     Swal.fire({
                         title: "ลบสำเร็จ!",

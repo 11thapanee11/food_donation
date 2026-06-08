@@ -28,6 +28,8 @@ public class WebConfig {
                         // ชี้เป้าตรงๆ ไปที่โฟลเดอร์ในไดรฟ์ D
                         // (ใช้เครื่องหมายสแลช / แทนสแลชกลับหลัง \ ของ Windows นะครับ)
                         .addResourceLocations("file:///D:/Project/food_donation/uploads/");
+                registry.addResourceHandler("/images/**")
+                        .addResourceLocations("file:///D:/Project/food_donation/uploads/");
             }
         };
     }

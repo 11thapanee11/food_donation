@@ -97,7 +97,7 @@ export default function Login() {
                 Swal.fire({
                     icon: 'success',
                     title: 'เข้าสู่ระบบสำเร็จ',
-                    text: resData.message,
+                    // text: resData.message,
                     confirmButtonColor: '#2ecc71'
                 }).then(() => {
                     navigate("/");

@@ -21,13 +21,14 @@ import java.io.IOException;
 
 import com.springboot.service.*;
 
-import org.slf4j.Logger;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FoodService {
 
     private final FoodRepository foodRepository;
     private final UserRepository userRepository;
+    // private final DonorService donorService;
     private final FoodCategoryRepository foodCategoryRepository;
     private final NotificationService notificationService;
 
@@ -35,25 +36,65 @@ public class FoodService {
             FoodCategoryRepository foodCategoryRepository, NotificationService notificationService) {
         this.foodRepository = foodRepository;
         this.userRepository = userRepository;
+        // this.donorService = donorService;
         this.foodCategoryRepository = foodCategoryRepository;
         this.notificationService = notificationService;
     }
 
-    private static final Logger log = LoggerFactory.getLogger(FoodService.class);
+    // private static final Logger log = LoggerFactory.getLogger(FoodService.class);
 
     // ดึงทั้งหมด
     public List<Food> getAllFoods() {
         return foodRepository.findAll();
     }
 
-    public List<Food> getFoodsExceptMe(String email) {
-        return foodRepository.findByDonor_EmailNot(email);
-    }
+    // public List<Food> getFoodsExceptMe(Integer id) {
+    //     // return foodRepository.findByDonor_EmailNot(email);
+    //     return foodRepository.findByDonor_UserIdNot(id);
+    // }
 
     // ดึงตาม id
-    public Food getFoodById(Integer id) {
-        return foodRepository.findById(id)
+    // public Food getFoodById(Integer id) {
+    //     return foodRepository.findById(id)
+    //             .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร id=" + id));
+    // }
+    public FoodDto getFoodById(Integer id) {
+        // 1. ดึง Food entity จาก repository
+        Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร id=" + id));
+
+        // 2. แปลงเป็น FoodDto
+        FoodDto dto = new FoodDto();
+        dto.setFoodName(food.getFoodName());
+        dto.setDescription(food.getDescription());
+        dto.setExpiryDate(food.getExpiryDate());
+        dto.setUnitWeightKg(food.getUnitWeightKg());
+        dto.setTotalUnit(food.getTotalUnit());
+        dto.setRemainingUnit(food.getRemainingUnit());
+        dto.setPeopleCountPerMeal(food.getPeopleCountPerMeal());
+        dto.setAddress(food.getAddress());
+        dto.setPickupDateStart(food.getPickupDateStart());
+        dto.setPickupDateEnd(food.getPickupDateEnd());
+        dto.setPickupStartTime(food.getPickupStartTime());
+        dto.setPickupEndTime(food.getPickupEndTime());
+        dto.setLimitPerPerson(food.getLimitPerPerson());
+        dto.setLatitude(food.getLatitude());
+        dto.setLongitude(food.getLongitude());
+        dto.setFoodStatus(food.getFoodStatus());
+        dto.setFoodImage(food.getFoodImage());
+        
+        // ดึง Category ID
+        if (food.getFoodCategory() != null) {
+            dto.setFoodCategory(food.getFoodCategory().getFoodCateId());
+        }
+
+        // 3. ดึงชื่อ-นามสกุลจาก User (ผ่าน Donor)
+        if (food.getDonor() != null && food.getDonor().getUser() != null) {
+            dto.setDonorFirstName(food.getDonor().getUser().getFirstName());
+            dto.setDonorLastName(food.getDonor().getUser().getLastName());
+        }
+
+        return dto;
     }
 
     // ดึงตามหมวดหมู่
@@ -61,19 +102,26 @@ public class FoodService {
         return foodRepository.findByFoodCategory_FoodCateId(foodCateId);
     }
 
-    public List<Food> getFoodsByCategoryExceptMe(Integer categoryId, String email) {
-        return foodRepository.findByFoodCategory_FoodCateIdAndDonor_EmailNot(categoryId, email);
-    }
+    // public List<Food> getFoodsByCategoryExceptMe(Integer categoryId, Integer id) {
+    //     // return foodRepository.findByFoodCategory_FoodCateIdAndDonor_EmailNot(categoryId, email);
+    //     return foodRepository.findByFoodCategory_FoodCateIdAndDonor_UserIdNot(categoryId, id);
+    // }
 
     // เพิ่มอาหารใหม่
     // public Food addFood(Food food) {
     // return foodRepository.save(food);
     // }
-    public Food addFood(String email, FoodDto foodDto) throws IOException {
+
+    // public Food addFood(String email, FoodDto foodDto) throws IOException {
+    // public Food addFood(Donor donor, FoodDto foodDto) throws IOException {
+    public Food addFood(Donor donor, FoodDto foodDto, String imagePath) {
 
         // หา User (Donor) จาก email
-        User donor = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ไม่พบผู้ใช้"));
+        // User donorUser = userRepository.findByEmail(email)
+        //         .orElseThrow(() -> new RuntimeException("ไม่พบผู้ใช้"));
+
+        // donorRepository.insertDonorIfNotExist(donorUser.getUserId());
+        // Donor donor = donorService.getOrCreateDonor(donorUser.getUserId());
 
         // หา Category
         FoodCategory category = foodCategoryRepository.findById(foodDto.getFoodCategory())
@@ -100,57 +148,63 @@ public class FoodService {
         food.setLimitPerPerson(foodDto.getLimitPerPerson());
         food.setLatitude(foodDto.getLatitude());
         food.setLongitude(foodDto.getLongitude());
-        if (foodDto.getFoodStatus() != null) {
-            
+        if (foodDto.getFoodStatus() != null && !foodDto.getFoodStatus().trim().isEmpty()) {
             food.setFoodStatus(foodDto.getFoodStatus());
         } else {
-            food.setFoodStatus("AVAILABLE");
+            food.setFoodStatus("available");
         }
-        
 
         // จัดการรูปภาพ: บันทึกไฟล์ลง disk แล้วเก็บ path ลง DB
-        if (foodDto.getFoodImage() != null && !foodDto.getFoodImage().isEmpty()) {
-            String uploadDir = "uploads/";
-            String fileName = UUID.randomUUID() + "_" + foodDto.getFoodImage().getOriginalFilename();
-            Path filePath = Paths.get(uploadDir, fileName);
+        // if (foodDto.getFoodImage() != null && !foodDto.getFoodImage().isEmpty()) {
+        //     String uploadDir = "uploads/food/";
+        //     String fileName = UUID.randomUUID() + "_" + foodDto.getFoodImage().getOriginalFilename();
+        //     Path filePath = Paths.get(uploadDir, fileName);
 
-            Files.createDirectories(filePath.getParent());
-            Files.write(filePath, foodDto.getFoodImage().getBytes());
+        //     Files.createDirectories(filePath.getParent());
+        //     Files.write(filePath, foodDto.getFoodImage().getBytes());
 
-            // เก็บ path ลง DB
-            food.setFoodImage("/uploads/" + fileName);
+        //     // เก็บ path ลง DB
+        //     food.setFoodImage("images/food/" + fileName);
+        // }
+        if (imagePath != null && !imagePath.isEmpty()) {
+            food.setFoodImage(imagePath);
         }
 
         // set FK
         food.setFoodCategory(category);
+        // food.setDonor(donor);
+        // Donor donor = donorRepository.findById(donorUser.getUserId())
+        //         .orElseThrow(() -> new RuntimeException("เกิดข้อผิดพลาด: ไม่สามารถยืนยันตัวตน Donor ได้"));
         food.setDonor(donor);
 
         // print ค่าออก console
-        log.info("=== Food Entity ===");
-        log.info("Name: {}", foodDto.getFoodName());
-        log.info("Description: {}", food.getDescription());
-        log.info("ExpiryDate: {}", food.getExpiryDate());
-        log.info("UnitWeightKg: {}", food.getUnitWeightKg());
-        log.info("TotalUnit: {}", food.getTotalUnit());
-        log.info("RemainingUnit: {}", food.getRemainingUnit());
-        log.info("PeopleCountPerMeal: {}", food.getPeopleCountPerMeal());
-        log.info("Address: {}", food.getAddress());
-        log.info("PickupDateStart: {}", food.getPickupDateStart());
-        log.info("PickupDateEnd: {}", food.getPickupDateEnd());
-        log.info("PickupStartTime: {}", food.getPickupStartTime());
-        log.info("PickupEndTime: {}", food.getPickupEndTime());
-        log.info("LimitPerPerson: {}", food.getLimitPerPerson());
-        log.info("Latitude: {}", food.getLatitude());
-        log.info("Longitude: {}", food.getLongitude());
-        log.info("FoodStatus: {}", food.getFoodStatus());
-        log.info("FoodImage: {}", food.getFoodImage());
-        log.info("Category: {}", category.getFoodCateName());
-        log.info("Donor: {}", donor.getEmail());
-        log.info("===================");
+        System.out.println("=== Food Entity ===");
+        System.out.println("Name: " + foodDto.getFoodName());
+        System.out.println("Description: " + food.getDescription());
+        System.out.println("ExpiryDate: " + food.getExpiryDate());
+        System.out.println("UnitWeightKg: " + food.getUnitWeightKg());
+        System.out.println("TotalUnit: " + food.getTotalUnit());
+        System.out.println("RemainingUnit: " + food.getRemainingUnit());
+        System.out.println("PeopleCountPerMeal: " + food.getPeopleCountPerMeal());
+        System.out.println("Address: " + food.getAddress());
+        System.out.println("PickupDateStart: " + food.getPickupDateStart());
+        System.out.println("PickupDateEnd: " + food.getPickupDateEnd());
+        System.out.println("PickupStartTime: " + food.getPickupStartTime());
+        System.out.println("PickupEndTime: " + food.getPickupEndTime());
+        System.out.println("LimitPerPerson: " + food.getLimitPerPerson());
+        System.out.println("Latitude: " + food.getLatitude());
+        System.out.println("Longitude: " + food.getLongitude());
+        System.out.println("FoodStatus: " + food.getFoodStatus());
+        System.out.println("FoodImage: " + food.getFoodImage());
+        System.out.println("Category: " + category.getFoodCateName());
+        System.out.println("Donor: " + donor.getUserId());
+        System.out.println("===================");
 
         // บันทึกลง DB
         // foodRepository.save(food);
         Food savedFood = foodRepository.save(food);
+        // Food savedFood = foodRepository.saveAndFlush(food);
+        
 
         // สร้างการแจ้งเตือน
         // notificationService.createNotification(food);
@@ -166,7 +220,7 @@ public class FoodService {
     // }
     // return foodRepository.save(food);
     // }
-    public Food updateFood(Integer id, FoodDto foodDto) throws IOException {
+    public Food updateFood(Integer id, FoodDto foodDto, String imagePath) {
 
         // ดึงข้อมูลอาหารจานเดิมขึ้นมาจากฐานข้อมูล
         Food food = foodRepository.findById(id)
@@ -189,8 +243,34 @@ public class FoodService {
         food.setAddress(foodDto.getAddress());
 
         // การจัดการจำนวน
-        food.setTotalUnit(foodDto.getTotalUnit());
-        food.setRemainingUnit(food.getRemainingUnit()); // ล็อกค่าเดิม
+        // food.setTotalUnit(foodDto.getTotalUnit());
+        // food.setRemainingUnit(food.getRemainingUnit()); // ล็อกค่าเดิม
+        // 1. จำค่าจำนวนเต็มเดิม (Old Total) และคำนวณหาจำนวนที่ถูกจองไปแล้ว (Reserved)
+        int oldTotal = food.getTotalUnit() != null ? food.getTotalUnit() : 0;
+        int currentRemaining = food.getRemainingUnit() != null ? food.getRemainingUnit() : 0;
+        int reservedUnit = oldTotal - currentRemaining; // ยอดรวมที่มีคนจองไปแล้วทั้งหมด
+
+        // 2. รับยอดจำนวนเต็มใหม่จาก DTO
+        int newTotal = foodDto.getTotalUnit() != null ? foodDto.getTotalUnit() : 0;
+
+        // 3. ตรวจสอบ Edge Case: ถ้าคนบริจาคปรับจำนวนรวมใหม่ น้อยกว่า
+        // จำนวนที่มีคนจองไปแล้ว
+        if (newTotal < reservedUnit) {
+            throw new IllegalArgumentException("ไม่สามารถปรับลดจำนวนทั้งหมดเป็น " + newTotal + " ได้ " +
+                    "เนื่องจากมีผู้จองอาหารรายการนี้ไปแล้ว " + reservedUnit);
+        }
+
+        // 4. คำนวณส่วนต่าง (Diff) ของจำนวนทั้งหมด
+        int totalDifference = newTotal - oldTotal;
+
+        // 5. อัปเดตสต็อกคงเหลือ (Remaining) อัตโนมัติด้วยส่วนต่าง
+        // - ปรับเพิ่ม Total (diff เป็นบวก) -> ยอดของเหลือจะเพิ่มขึ้น
+        // - ปรับลด Total (diff เป็นลบ) -> ยอดของเหลือจะลดลง
+        int newRemaining = currentRemaining + totalDifference;
+
+        // 6. บันทึกจำนวนลง Entity
+        food.setTotalUnit(newTotal);
+        food.setRemainingUnit(newRemaining);
 
         // พิกัดและการนัดรับ
         food.setPickupDateStart(foodDto.getPickupDateStart());
@@ -201,28 +281,21 @@ public class FoodService {
         food.setLatitude(foodDto.getLatitude());
         food.setLongitude(foodDto.getLongitude());
 
-        log.info("Status received in DTO: {}" , foodDto.getFoodStatus());
+        System.out.println("Status received in DTO: " + foodDto.getFoodStatus());
         // อัปเดตสถานะ
         if (foodDto.getFoodStatus() != null) {
-            
+
             food.setFoodStatus(foodDto.getFoodStatus());
         }
 
-        //จัดการรูปภาพ
-        if (foodDto.getFoodImage() != null && !foodDto.getFoodImage().isEmpty()) {
-            String uploadDir = "uploads/";
-            String fileName = UUID.randomUUID() + "_" + foodDto.getFoodImage().getOriginalFilename();
-            Path filePath = Paths.get(uploadDir, fileName);
-
-            Files.createDirectories(filePath.getParent());
-            Files.write(filePath, foodDto.getFoodImage().getBytes());
-
+        // จัดการรูปภาพ
+        if (imagePath != null && !imagePath.isEmpty()) {
             // บันทึก Path รูปใบใหม่ทับใบเดิม
-            food.setFoodImage("/uploads/" + fileName);
+            food.setFoodImage(imagePath);
         }
 
         // บันทึกความเปลี่ยนแปลง
-        log.info("=== Updating Food Entity ID: {} ===" , id);
+        System.out.println("=== Updating Food Entity ID: " + id);
         return foodRepository.save(food);
     }
 
@@ -268,9 +341,12 @@ public class FoodService {
     // .toList();
     // }
 
-    public List<Food> findFoodsByDonorEmail(String email) {
+    // public List<Food> findFoodsByDonorEmail(String email) {
+    //     // ดึงข้อมูลจาก DB
+    //     return foodRepository.findByDonorEmail(email);
+    // }
+    public List<Food> findFoodsByDonorId(Integer id) {
         // ดึงข้อมูลจาก DB
-        return foodRepository.findByDonorEmail(email);
-
+        return foodRepository.findByDonorUserId(id);
     }
 }

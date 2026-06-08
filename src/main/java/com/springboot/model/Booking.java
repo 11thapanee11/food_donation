@@ -25,7 +25,7 @@ public class Booking {
     private Integer confirmationCode;
 
     @Column(name = "booking_status", nullable = false, length = 45)
-    private String bookingStatus;
+    private String bookingStatus = "pending";
 
     // FK ไปยัง Food
     @ManyToOne
@@ -35,7 +35,7 @@ public class Booking {
     // FK ไปยัง Recipient (User)
     @ManyToOne
     @JoinColumn(name = "recipient_user_id", nullable = false)
-    private User recipient;
+    private Recipient recipient;
 
     public Integer getBookingId() {
         return bookingId;
@@ -93,12 +93,22 @@ public class Booking {
         this.food = food;
     }
 
-    public User getRecipient() {
+    public Recipient getRecipient() {
         return recipient;
     }
 
-    public void setRecipient(User recipient) {
+    public void setRecipient(Recipient recipient) {
         this.recipient = recipient;
     }
+
+    // public User getRecipient() {
+    //     return recipient;
+    // }
+
+    // public void setRecipient(User recipient) {
+    //     this.recipient = recipient;
+    // }
+
+    
 }
 

@@ -49,60 +49,118 @@ export default function Profile() {
     };
 
 
+    // useEffect(() => {
+    //     //ถ้าไม่มี token ไม่ต้อง fetch
+    //     if (!token) {
+    //         setLoading(false);
+    //         return;
+    //     }
+    //     setLoading(true); // เริ่มโหลด
+
+    //     //เปิด SweetAlert2 popup ตอนเริ่มโหลด
+    //     Swal.fire({
+    //         title: "กำลังโหลดข้อมูลสมาชิก...",
+    //         html: `
+    //                 <div style="
+    //                 border: 6px solid #f3f3f3;
+    //                 border-top: 6px solid #ff8c00;
+    //                 border-radius: 50%;
+    //                 width: 50px;
+    //                 height: 50px;
+    //                 margin: 20px auto;
+    //                 animation: spin 1s linear infinite;
+    //                 "></div>
+    //             `,
+    //         allowOutsideClick: false,
+    //         showConfirmButton: false
+    //     });
+
+
+    //     fetch("http://localhost:8082/profile", {
+    //         headers: {
+    //             "Authorization": `Bearer ${token}`,
+    //             "Content-Type": "application/json"
+    //         }
+    //     })
+    //         .then(res => {
+    //             if (!res.ok) {
+    //                 throw new Error("ไม่สามารถโหลดข้อมูลสมาชิกได้");
+    //             }
+    //             return res.json();
+    //         })
+    //         .then(data => {
+    //             setProfile(data);
+    //             //ตั้งค่า default ให้ formData จาก DB
+    //             setFormData({
+    //                 firstName: data.firstName || "",
+    //                 lastName: data.lastName || "",
+    //                 phoneNumber: data.phoneNumber || ""
+    //             });
+    //             // setTimeout(() => {
+    //             //     Swal.close();
+    //             // }, 1500);
+    //             Swal.close(); //ปิด popup เมื่อโหลดเสร็จ
+    //         })
+    //         .catch(err => console.error(err))
+    //         .finally(() => setLoading(false)); //จบโหลด
+    // }, [token]);
     useEffect(() => {
-        //ถ้าไม่มี token ไม่ต้อง fetch
+        // 1. ตรวจสอบ Token หากไม่มีให้หยุดทำงานทันที
         if (!token) {
             setLoading(false);
             return;
         }
-        setLoading(true); // เริ่มโหลด
 
-        //เปิด SweetAlert2 popup ตอนเริ่มโหลด
-        Swal.fire({
-            title: "กำลังโหลดข้อมูลสมาชิก...",
-            html: `
-                    <div style="
-                    border: 6px solid #f3f3f3;
-                    border-top: 6px solid #ff8c00;
-                    border-radius: 50%;
-                    width: 50px;
-                    height: 50px;
-                    margin: 20px auto;
-                    animation: spin 1s linear infinite;
-                    "></div>
-                `,
-            allowOutsideClick: false,
-            showConfirmButton: false
-        });
+        const fetchProfile = async () => {
+            setLoading(true);
 
+            // แสดง Loading Popup
+            Swal.fire({
+                title: "กำลังโหลดข้อมูลสมาชิก...",
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-        fetch("http://localhost:8082/profile", {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error("ไม่สามารถโหลดข้อมูลสมาชิกได้");
-                }
-                return res.json();
-            })
-            .then(data => {
-                setProfile(data);
-                //ตั้งค่า default ให้ formData จาก DB
-                setFormData({
-                    firstName: data.firstName || "",
-                    lastName: data.lastName || "",
-                    phoneNumber: data.phoneNumber || ""
+            try {
+                const response = await fetch("http://localhost:8082/profile", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
                 });
-                // setTimeout(() => {
-                //     Swal.close();
-                // }, 1500);
-                Swal.close(); //ปิด popup เมื่อโหลดเสร็จ
-            })
-            .catch(err => console.error(err))
-            .finally(() => setLoading(false)); //จบโหลด
+
+                const result = await response.json(); // แปลงเป็น ApiResponse object
+
+                if (!response.ok) {
+                    throw new Error(result.message || "ไม่สามารถโหลดข้อมูลสมาชิกได้");
+                }
+
+                if (result.success) {
+                    // อัปเดตข้อมูลเมื่อสำเร็จ
+                    setProfile(result.data);
+                    setFormData({
+                        firstName: result.data.firstName || "",
+                        lastName: result.data.lastName || "",
+                        phoneNumber: result.data.phoneNumber || ""
+                    });
+                    Swal.close();
+                } else {
+                    // กรณี success = false แต่ response.ok = true
+                    throw new Error(result.message || "เกิดข้อผิดพลาดในการดึงข้อมูล");
+                }
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                Swal.fire({
+                    icon: "error",
+                    title: "ข้อผิดพลาด",
+                    text: err.message
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
     }, [token]);
 
     const handleChange = (e) => {
@@ -112,8 +170,49 @@ export default function Profile() {
         });
     };
 
-    const handleSave = () => {
+    // const handleSave = () => {
 
+    //     if (!validateForm()) return;
+
+    //     fetch("http://localhost:8082/profile", {
+    //         method: "PUT",
+    //         headers: {
+    //             "Authorization": `Bearer ${token}`,
+    //             "Content-Type": "application/json"
+    //         },
+    //         body: JSON.stringify(formData)
+    //     })
+    //         .then(res => {
+    //             if (!res.ok) throw new Error("ไม่สามารถแก้ไขข้อมูลได้");
+    //             return res.json();
+    //         })
+    //         .then(data => {
+    //             // setMessage(data.message || "แก้ไขข้อมูลสำเร็จ");
+    //             setProfile({
+    //                 ...profile,
+    //                 ...formData
+    //             });
+    //             setIsEditing(false);
+
+    //             Swal.fire({
+    //                 icon: "success",
+    //                 title: "บันทึกข้อมูลสำเร็จ",
+    //                 text: data.message || "แก้ไขข้อมูลสำเร็จ",
+    //                 confirmButtonColor: "#2ecc71"
+    //             });
+    //         })
+    //         .catch(err => {
+    //             // setMessage(err.message);
+
+    //             Swal.fire({
+    //                 icon: "error",
+    //                 title: "เกิดข้อผิดพลาด",
+    //                 text: err.message,
+    //                 confirmButtonColor: "#e74c3c"
+    //             });
+    //         });
+    // };
+    const handleSave = () => {
         if (!validateForm()) return;
 
         fetch("http://localhost:8082/profile", {
@@ -125,32 +224,37 @@ export default function Profile() {
             body: JSON.stringify(formData)
         })
             .then(res => {
-                if (!res.ok) throw new Error("ไม่สามารถแก้ไขข้อมูลได้");
+                // เช็คสถานะ HTTP ปกติ
+                if (!res.ok) throw new Error("ไม่สามารถเชื่อมต่อกับ Server ได้");
                 return res.json();
             })
-            .then(data => {
-                // setMessage(data.message || "แก้ไขข้อมูลสำเร็จ");
-                setProfile({
-                    ...profile,
-                    ...formData
-                });
-                setIsEditing(false);
+            .then(response => {
+                // เช็คโครงสร้าง ApiResponse ที่ส่งมาจาก Backend
+                if (response.success) {
+                    // อัปเดต Profile ในหน้าจอเมื่อ Backend ตอบกลับว่าสำเร็จ
+                    setProfile({
+                        ...profile,
+                        ...formData
+                    });
+                    setIsEditing(false);
 
-                // ✅ ใช้ SweetAlert2 แสดงผล
-                Swal.fire({
-                    icon: "success",
-                    title: "บันทึกข้อมูลสำเร็จ",
-                    text: data.message || "แก้ไขข้อมูลสำเร็จ",
-                    confirmButtonColor: "#2ecc71"
-                });
+                    Swal.fire({
+                        icon: "success",
+                        title: "บันทึกข้อมูลสำเร็จ",
+                        text: response.message || "แก้ไขข้อมูลสำเร็จ",
+                        confirmButtonColor: "#2ecc71"
+                    });
+                } else {
+                    // กรณี Backend ส่ง success: false กลับมา
+                    throw new Error(response.message || "ไม่สามารถแก้ไขข้อมูลได้");
+                }
             })
             .catch(err => {
-                // setMessage(err.message);
-
+                // จัดการ Error ไม่ว่าจะจาก network หรือ logic ใน backend
                 Swal.fire({
                     icon: "error",
                     title: "เกิดข้อผิดพลาด",
-                    text: err.message,
+                    text: err.message || "มีบางอย่างผิดพลาด โปรดลองใหม่อีกครั้ง",
                     confirmButtonColor: "#e74c3c"
                 });
             });
@@ -162,7 +266,7 @@ export default function Profile() {
     }
 
     if (!profile) {
-        return <p>ไม่พบข้อมูลสมาชิก</p>;
+        return <div style={styles.loading}>ไม่พบข้อมูลสมาชิก</div>;
     }
 
     return (
@@ -394,5 +498,11 @@ const styles = {
         gap: '10px',
         width: '180px'
         // boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-    }
+    },
+    loading: {
+        textAlign: "center",
+        padding: "100px",
+        color: "#ff8c00",
+        fontSize: "20px"
+    },
 };

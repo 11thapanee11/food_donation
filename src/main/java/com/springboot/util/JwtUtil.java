@@ -25,16 +25,34 @@ public class JwtUtil {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(String email, long expirationMillis) {
+    // public String generateToken(String email, long expirationMillis) {
+    //     return Jwts.builder()
+    //             .setSubject(email)
+    //             .setIssuedAt(new Date())
+    //             .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
+    //             .signWith(secretKey, SignatureAlgorithm.HS256)
+    //             .compact();
+    // }
+    // ใช้ userId เป็น subject
+    public String generateToken(String userId, long expirationMillis) {
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String extractEmail(String token) {
+    // public String extractEmail(String token) {
+    //     return Jwts.parserBuilder()
+    //             .setSigningKey(secretKey)
+    //             .build()
+    //             .parseClaimsJws(token)
+    //             .getBody()
+    //             .getSubject();
+    // }
+    // ดึง userId ออกมา
+    public String extractUserId(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
@@ -43,8 +61,11 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    public boolean validateToken(String token, String email) {
-        return email.equals(extractEmail(token)) && !isTokenExpired(token);
+    // public boolean validateToken(String token, String email) {
+    //     return email.equals(extractEmail(token)) && !isTokenExpired(token);
+    // }
+    public boolean validateToken(String token, String userId) {
+        return userId.equals(extractUserId(token)) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {

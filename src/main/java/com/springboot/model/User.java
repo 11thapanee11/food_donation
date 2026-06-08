@@ -29,7 +29,7 @@ public class User {
     public User() {
     }
 
-    public User(int userId, String firstName, String lastName, String email, String phoneNumber, String password) {
+    public User(Integer userId, String firstName, String lastName, String email, String phoneNumber, String password) {
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -38,11 +38,11 @@ public class User {
         this.password = password;
     }
 
-    public int getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
 

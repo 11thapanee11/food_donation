@@ -4,22 +4,26 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "donor")
-public class Donor extends User {
+// @PrimaryKeyJoinColumn(name = "user_id")
+public class Donor {
 
-    @Column(name = "donor_status", length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVE'")
-    private String donorStatus;
+    @Id
+    @Column(name = "user_id")
+    private Integer userId;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(name = "donor_status", length = 20)
+    private String donorStatus = "active";
 
     @Column(name = "total_impact_amount")
     private Double totalImpactAmount;
 
     public Donor() {
-    }
-
-    public Donor(User user, String donorStatus, Double totalImpactAmount) {
-        super(user.getUserId(), user.getFirstName(), user.getLastName(),
-                user.getEmail(), user.getPhoneNumber(), user.getPassword());
-        this.donorStatus = donorStatus;
-        this.totalImpactAmount = totalImpactAmount;
+        super();
     }
 
     public String getDonorStatus() {
@@ -37,6 +41,25 @@ public class Donor extends User {
     public void setTotalImpactAmount(Double totalImpactAmount) {
         this.totalImpactAmount = totalImpactAmount;
     }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    
+    
 
     // ตัวอย่าง method business logic
     // public String getListTotalImpact() {

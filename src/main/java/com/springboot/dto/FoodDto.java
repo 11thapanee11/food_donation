@@ -37,12 +37,14 @@ public class FoodDto {
     private Double longitude;
     private String foodStatus;
 
-    private MultipartFile foodImage;
-    private String foodImagePath;
+    // private MultipartFile foodImage;
+    private String foodImage;
 
     // สำคัญ: ต้องรับเป็น ID (Integer) ให้ตรงกับที่ Java ต้องการ
     private Integer foodCategory;
-    private Integer donor;
+    // private Integer donor;
+    private String donorFirstName;
+    private String donorLastName;
 
     public String getFoodName() {
         return foodName;
@@ -180,28 +182,44 @@ public class FoodDto {
         this.foodCategory = foodCategory;
     }
 
-    public Integer getDonor() {
-        return donor;
-    }
+    // public Integer getDonor() {
+    // return donor;
+    // }
 
-    public void setDonor(Integer donor) {
-        this.donor = donor;
-    }
+    // public void setDonor(Integer donor) {
+    // this.donor = donor;
+    // }
 
-    public MultipartFile getFoodImage() {
+    // public MultipartFile getFoodImage() {
+    // return foodImage;
+    // }
+
+    // public void setFoodImage(MultipartFile foodImage) {
+    // this.foodImage = foodImage;
+    // }
+
+    public String getFoodImage() {
         return foodImage;
     }
 
-    public void setFoodImage(MultipartFile foodImage) {
+    public void setFoodImage(String foodImage) {
         this.foodImage = foodImage;
     }
 
-    public String getFoodImagePath() {
-        return foodImagePath;
+    public String getDonorFirstName() {
+        return donorFirstName;
     }
 
-    public void setFoodImagePath(String foodImagePath) {
-        this.foodImagePath = foodImagePath;
+    public void setDonorFirstName(String donorFirstName) {
+        this.donorFirstName = donorFirstName;
+    }
+
+    public String getDonorLastName() {
+        return donorLastName;
+    }
+
+    public void setDonorLastName(String donorLastName) {
+        this.donorLastName = donorLastName;
     }
 
 }

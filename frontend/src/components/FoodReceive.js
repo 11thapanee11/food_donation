@@ -8,9 +8,9 @@ export default function FoodReceive() {
     const [bookings, setBookings] = useState([]);
     const [activeTab, setActiveTab] = useState('current');
 
-    // 🌟 กรองข้อมูลตามสถานะของการจอง (Booking Status)
-    const currentBookings = bookings.filter(b => b.bookingStatus === 'PENDING');
-    const historyBookings = bookings.filter(b => b.bookingStatus === 'COMPLETED' || b.bookingStatus === 'CANCELLED');
+    // กรองข้อมูลตามสถานะของการจอง (Booking Status)
+    const currentBookings = bookings.filter(b => b.bookingStatus === 'pending');
+    const historyBookings = bookings.filter(b => b.bookingStatus === 'completed' || b.bookingStatus === 'cancelled');
 
     const BASE_URL = "http://localhost:8082";
 
@@ -45,8 +45,7 @@ export default function FoodReceive() {
                 if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการจองได้");
                 return res.json();
             })
-            .then((resData) => { // 💡 1. ปรับมารับเป็นวัตถุ resData ตามโครงสร้างสากล
-                // 💡 2. ตรวจสอบสถานะและแงะเอา Array รายการจองที่อยู่ข้างใน .data มาเซ็ตลง State
+            .then((resData) => {
                 if (resData.success && Array.isArray(resData.data)) {
                     setBookings(resData.data); // บันทึกอาเรย์การจองลง state
                 } else {
@@ -103,17 +102,17 @@ export default function FoodReceive() {
 
     // 2. กำหนดป้ายสถานะสำหรับ "ฝั่งการจอง (Booking)" ให้ตรงกับรูปภาพ Layout ของคุณ
     const STATUS_CONFIG = {
-        PENDING: {
+        pending: {
             text: "รอการเข้ารับ",
             color: "#f0b002",     // สีส้มอมน้ำตาลเข้มอ่านง่าย
             bgColor: "#fff3a6"   // สีครีมส้มพาสเทลแบบในรูปเดโมของคุณ
         },
-        COMPLETED: {
+        completed: {
             text: "รับบริจาคสำเร็จ",
             color: "#2e7d32",     // สีเขียวเข้มสบายตา
             bgColor: "#e8f5e9"    // สีเขียวพาสเทลอ่อน
         },
-        CANCELLED: {
+        cancelled: {
             text: "ยกเลิกรายการ",
             color: "#c62828",     // สีแดงเข้มอมชมพู
             bgColor: "#ffebee"    // สีชมพู/แดงพาสเทลอ่อน

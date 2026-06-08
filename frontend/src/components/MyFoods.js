@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function MyFoods() {
@@ -137,28 +137,28 @@ export default function MyFoods() {
 
     // สร้างตารางจับคู่
     const STATUS_TEXTS = {
-        AVAILABLE: "เปิดให้รับบริจาค",
-        CLOSED: "ปิดให้รับบริจาค",
-        SUSPENDED: "ถูกระงับ",
-        EXPIRED: "หมดอายุ"
+        available: "เปิดให้รับบริจาค",
+        closed: "ปิดให้รับบริจาค",
+        suspended: "ถูกระงับ",
+        expired: "หมดอายุ"
     };
     const STATUS_CONFIG = {
-        AVAILABLE: {
+        available: {
             text: "เปิดให้รับบริจาค",
             color: "#2e7d32",     // สีเขียวเข้มสบายตา
             bgColor: "#e8f5e9"    // สีเขียวพาสเทลอ่อน
         },
-        CLOSED: {
+        closed: {
             text: "ปิดให้รับบริจาค",
             color: "#c62828",     // สีแดงเข้มอมชมพู
             bgColor: "#ffebee"    // สีชมพู/แดงพาสเทลอ่อน
         },
-        SUSPENDED: {
+        suspended: {
             text: "ถูกระงับ",
             color: "#ef6c00",     // สีส้มอิฐ
             bgColor: "#fff3e0"    // สีครีมส้มพาสเทล
         },
-        EXPIRED: {
+        expired: {
             text: "หมดอายุ",
             color: "#37474f",     // สีเทาเข้ม
             bgColor: "#eceff1"    // สีเทาพาสเทลอ่อน
