@@ -115,10 +115,10 @@ const MapPage = () => {
                 if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่ไม่สำเร็จ");
                 return res.json();
             })
-            .then((resData) => { // 💡 1. รับค่าเป็น resData ตามโครงสร้าง ApiResponse
-                // 💡 2. เช็คตัวแปร success จากหลังบ้าน
+            .then((resData) => { // 1. รับค่าเป็น resData ตามโครงสร้าง ApiResponse
+                // 2. เช็คตัวแปร success จากหลังบ้าน
                 if (resData.success) {
-                    // 💡 3. แงะข้อมูลออกจาก resData.data เพื่อเอาไปกรองหาตัวที่มีละติจูด/ลองจิจูด
+                    // 3. แงะข้อมูลออกจาก resData.data เพื่อเอาไปกรองหาตัวที่มีละติจูด/ลองจิจูด
                     const validFoods = resData.data.filter(item => item.latitude && item.longitude);
                     setFoods(validFoods);
                 } else {

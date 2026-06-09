@@ -3,6 +3,8 @@ package com.springboot.repository;
 import org.springframework.stereotype.Repository;
 import com.springboot.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -15,12 +17,31 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
     // :latitude, :longitude = พิกัดของ Food
     // :radiusKm = ระยะทางที่ต้องการค้นหา (เช่น 5.0 กม.)
     // @Query(value = "SELECT u.* FROM user u " +
-    //         "WHERE (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) " +
-    //         "* cos(radians(u.longitude) - radians(:longitude)) + sin(radians(:latitude)) " +
-    //         "* sin(radians(u.latitude)))) <= :radiusKm", nativeQuery = true)
+    // "WHERE (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) " +
+    // "* cos(radians(u.longitude) - radians(:longitude)) + sin(radians(:latitude))
+    // " +
+    // "* sin(radians(u.latitude)))) <= :radiusKm", nativeQuery = true)
     // List<User> findUsersNearby(@Param("latitude") Double latitude,
-    //         @Param("longitude") Double longitude,
-    //         @Param("radiusKm") double radiusKm);
+    // @Param("longitude") Double longitude,
+    // @Param("radiusKm") double radiusKm);
+
+    // ดึงเฉพาะแจ้งเตือนอาหารใหม่ (สำหรับผู้รับอาหาร)
+    List<Notification> findByNotificationTypeOrderByNotificationDateDesc(String type);
+
+    List<Notification> findByNotificationType(String notificationType);
+
+    // ดึงเฉพาะแจ้งเตือนการจอง (สำหรับผู้บริจาค)
+    // List<Notification>
+    // findByNotificationTypeInOrderByNotificationDateDesc(List<String> types);
+    @Query("""
+                SELECT n FROM Notification n
+                JOIN n.food f
+                WHERE f.donor.userId = :userId
+                AND n.notificationType IN :types
+            """)
+    List<Notification> findBookingsByDonorIdAndTypes(
+            @Param("userId") Integer userId,
+            @Param("types") List<String> types);
 
     List<Notification> findByIsReadFalse();
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import foodIcon from '../assets/images/new.png';
 
 export default function Navbar() {
     const location = useLocation();
@@ -7,6 +8,8 @@ export default function Navbar() {
     const [openDropdown, setOpenDropdown] = useState(false);
     const [openNotifications, setOpenNotifications] = useState(false);
     const dropdownRef = useRef(null);
+    const [loading, setLoading] = useState(true);
+    const [notifications, setNotifications] = useState([]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -19,7 +22,85 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // useEffect(() => {
+    //     navigator.geolocation.getCurrentPosition(
+    //         (position) => {
+    //             const { latitude, longitude } = position.coords;
+    //             // ส่ง lat, lng นี้ไปดึงอาหารจาก API
+    //             fetchNearbyFoods(latitude, longitude);
+    //         },
+    //         (error) => {
+    //             console.error("ไม่ได้อนุญาตให้เข้าถึงตำแหน่ง:", error);
+    //             fetchAllFoods(); // ถ้าไม่ได้อนุญาต ก็แสดงอาหารทั้งหมดแทน
+    //         }
+    //     );
+    // }, []);
+
     const isLoggedIn = !!localStorage.getItem("accessToken");
+
+    // const fetchNearbyNotifications = () => {
+    //     navigator.geolocation.getCurrentPosition((position) => {
+    //         const { latitude, longitude } = position.coords;
+
+    //         // ยิงไปที่ Backend พร้อมแนบ Lat, Lng
+    //         fetch(`http://localhost:8082/notifications/food/nearby?lat=${latitude}&lng=${longitude}&radius=5`)
+    //             .then(res => res.json())
+    //             .then(data => setNotifications(data));
+    //     });
+    // };
+    const fetchNearbyNotifications = () => {
+        setLoading(true);
+
+        if (!navigator.geolocation) {
+            console.warn("Browser ไม่รองรับ Geolocation");
+            return;
+        }
+
+        const token = localStorage.getItem("accessToken");
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+
+                try {
+                    const response = await fetch(
+                        `http://localhost:8082/notifications/food?lat=${latitude}&lng=${longitude}&radius=5`,
+                        {
+                            method: "GET",
+                            headers: {
+                                "Content-Type": "application/json",
+                                // 2. ส่ง Token เพื่อระบุตัวตนและกรองรายการ "อาหารของคนอื่น"
+                                "Authorization": `Bearer ${token}`
+                            }
+                        }
+                    );
+
+                    if (!response.ok) throw new Error("ไม่สามารถดึงข้อมูลได้");
+
+                    const data = await response.json();
+                    setNotifications(data);
+                } catch (err) {
+                    console.error("API Error:", err);
+                } finally {
+                    // 3. ปิดสถานะ Loading เสมอ ไม่ว่าจะสำเร็จหรือผิดพลาด
+                    setLoading(false);
+                }
+            },
+            (error) => {
+                console.error("User ปฏิเสธการเข้าถึงตำแหน่ง:", error);
+                setLoading(false);
+                // กรณีปฏิเสธ อาจจะเรียก API ดึงเฉพาะแจ้งเตือนทั่วไปแทน
+            }
+        );
+    };
+
+    const toggleNotifications = () => {
+        if (!openNotifications) {
+            // ก่อนจะเปิดกล่อง ให้ไปดึงข้อมูลใหม่มาก่อน
+            fetchNearbyNotifications();
+        }
+        setOpenNotifications(!openNotifications);
+    };
 
     const handleIconClick = () => {
         if (!isLoggedIn) {
@@ -36,10 +117,21 @@ export default function Navbar() {
         navigate("/login");
     };
 
-    const handleBellClick = () => {
-        setOpenNotifications(!openNotifications);
-        setOpenDropdown(false);
+    const iconMap = {
+        food: foodIcon,
+        // booking: bookingIcon,
+        // booking_cancel: cancelIcon
     };
+    const headerMap = {
+        food: 'มีอาหารใหม่ใกล้คุณ!',
+        booking: 'มีผู้จองอาหาร!',
+        booking_cancel: 'รายการจองถูกยกเลิก!',
+    };
+
+    // const handleBellClick = () => {
+    //     setOpenNotifications(!openNotifications);
+    //     setOpenDropdown(false);
+    // };
 
     // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า (เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร)
     const currentPath = location.pathname;
@@ -93,7 +185,10 @@ export default function Navbar() {
 
                 {isLoggedIn && (
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                        <button style={styles.iconBase} onClick={handleBellClick}>
+                        <button style={styles.iconBase}
+                            // onClick={handleBellClick}
+                            onClick={toggleNotifications}
+                        >
                             <span className="material-icons" style={{
                                 fontSize: "26px",
                                 color: openNotifications ? "#ff8c00" : "#737373"
@@ -104,9 +199,45 @@ export default function Navbar() {
 
                         {openNotifications && (
                             <div style={styles.notificationBadge}>
-                                <p style={{ margin: 0, fontSize: "14px", color: "#333" }}>
-                                    🔔 ยังไม่มีการแจ้งเตือนใหม่
-                                </p>
+                                <p style={styles.notificationTitle}>การแจ้งเตือน</p>
+                                {loading && (
+                                    <div style={{ padding: '15px', textAlign: 'center', color: '#ff8c00' }}>
+                                        <p style={{ fontSize: '14px' }}>กำลังโหลดข้อมูล...</p>
+                                    </div>
+                                )}
+                                {!loading && (
+                                    notifications.length > 0 ? (
+                                        notifications.map((n) => (
+                                            <div key={n.notificationId} style={{ ...styles.notificationItem, display: 'flex', alignItems: 'flex-start', padding: '0 22px 12px' }}>
+                                                <div style={{ marginRight: '10px', marginTop: '2px' }}>
+                                                    <img
+                                                        src={iconMap[n.notificationType]}
+                                                        alt={n.notificationType}
+                                                        style={{ width: '30px', height: '30px' }}
+                                                    />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: n.isRead ? '500' : 'bold', color: '#ff8c00' }}>
+                                                        {headerMap[n.notificationType]}
+                                                    </p>
+                                                    <p style={{ margin: '4px 0', fontSize: '14px', color: '#555' }}>
+                                                        {n.notificationMessage}
+                                                    </p>
+                                                    <p style={{ margin: 0, color: '#aaa', fontSize: '11px' }}>
+                                                        {new Date(n.notificationDate).toLocaleString('th-TH', {
+                                                            year: 'numeric', month: 'long', day: 'numeric',
+                                                            hour: '2-digit', minute: '2-digit'
+                                                        })} น.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#888", textAlign: "center", padding: '20px' }}>
+                                            ยังไม่มีการแจ้งเตือนใหม่
+                                        </p>
+                                    )
+                                )}
                             </div>
                         )}
                     </div>
@@ -198,16 +329,42 @@ const styles = {
         display: "flex",
         alignItems: "center"
     },
+    // notificationBadge: {
+    //     position: "absolute",
+    //     right: 0,
+    //     top: "40px",
+    //     backgroundColor: "#fff",
+    //     boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+    //     borderRadius: "5px",
+    //     width: "250px",
+    //     zIndex: 1000,
+    //     padding: "10px"
+    // },
+
     notificationBadge: {
         position: "absolute",
-        right: 0,
         top: "40px",
+        right: "0px",
+        width: "380px",
+        maxHeight: "500px",
+        overflowY: "auto",
         backgroundColor: "#fff",
-        boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-        borderRadius: "5px",
-        width: "250px",
-        zIndex: 1000,
-        padding: "10px"
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        padding: "10px",
+        zIndex: 1000
+    },
+    notificationTitle: {
+        padding: "10px 20px 5px 20px",
+        color: "#328d7d",
+        fontSize: "22px",
+        fontWeight: "700",
+        margin: "10px 0px"
+    },
+    notificationItem: {
+        padding: "0px 20px 10px 20px",
+        // borderBottom: "1px solid #f0f0f0",
+        cursor: "pointer"
     },
     profileDropdown: {
         position: "absolute",
