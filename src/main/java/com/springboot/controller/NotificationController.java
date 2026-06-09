@@ -82,9 +82,15 @@ public class NotificationController {
 
         List<Notification> foodList = notificationService.getNearbyFoodNotifications(lat, lng, radius, userId);
         List<Notification> bookingList = notificationService.getBookingNotifications(userId);
-        
 
-        return ResponseEntity.ok(notificationService.getNearbyFoodNotifications(lat, lng, radius, userId));
+        List<Notification> listNotification = new ArrayList<>();
+        listNotification.addAll(foodList);
+        listNotification.addAll(bookingList);
+
+        // เรียงลำดับตามเวลา (ล่าสุดก่อน)
+        listNotification.sort(Comparator.comparing(Notification::getNotificationDate).reversed());
+        
+        return ResponseEntity.ok(listNotification);
     }
 
     // หน้าสำหรับผู้บริจาค

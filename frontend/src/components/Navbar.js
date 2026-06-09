@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import foodIcon from '../assets/images/new.png';
+import bookingIcon from '../assets/images/received.png';
+import cancelIcon from '../assets/images/cancel.png';
 
 export default function Navbar() {
     const location = useLocation();
@@ -119,8 +121,8 @@ export default function Navbar() {
 
     const iconMap = {
         food: foodIcon,
-        // booking: bookingIcon,
-        // booking_cancel: cancelIcon
+        booking: bookingIcon,
+        booking_cancel: cancelIcon
     };
     const headerMap = {
         food: 'มีอาหารใหม่ใกล้คุณ!',
