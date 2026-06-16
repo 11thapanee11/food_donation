@@ -93,6 +93,7 @@ export default function Login() {
                 // localStorage.setItem("refreshToken", resData.data.refreshToken);
 
                 localStorage.setItem("userId", resData.data.userId);
+                localStorage.setItem("isAdmin", resData.data.isAdmin);
 
                 Swal.fire({
                     icon: 'success',
@@ -100,7 +101,12 @@ export default function Login() {
                     // text: resData.message,
                     confirmButtonColor: '#2ecc71'
                 }).then(() => {
-                    navigate("/");
+                    if (resData.data.isAdmin) {
+                        navigate('/admin-dashboard');
+                    } else {
+                        navigate('/');
+                    }
+                    // navigate("/");
                 });
             } else {
                 // 3. กรณีอีเมลหรือรหัสผ่านผิดพลาด ดึงข้อความแจ้งเตือนจากหลังบ้านมาแสดงได้เลย

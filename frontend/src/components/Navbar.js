@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import profileMember from '../assets/images/member_profile.jpg'
+import profileAdmin from '../assets/images/admin_profile.jpg'
 import foodIcon from '../assets/images/new.png';
 import bookingIcon from '../assets/images/received.png';
 import cancelIcon from '../assets/images/cancel.png';
@@ -13,6 +15,8 @@ export default function Navbar() {
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
 
+
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -24,33 +28,16 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // useEffect(() => {
-    //     navigator.geolocation.getCurrentPosition(
-    //         (position) => {
-    //             const { latitude, longitude } = position.coords;
-    //             // ส่ง lat, lng นี้ไปดึงอาหารจาก API
-    //             fetchNearbyFoods(latitude, longitude);
-    //         },
-    //         (error) => {
-    //             console.error("ไม่ได้อนุญาตให้เข้าถึงตำแหน่ง:", error);
-    //             fetchAllFoods(); // ถ้าไม่ได้อนุญาต ก็แสดงอาหารทั้งหมดแทน
-    //         }
-    //     );
-    // }, []);
-
     const isLoggedIn = !!localStorage.getItem("accessToken");
 
-    // const fetchNearbyNotifications = () => {
-    //     navigator.geolocation.getCurrentPosition((position) => {
-    //         const { latitude, longitude } = position.coords;
+    useEffect(() => {
+        // ตรวจสอบทั้งสถานะ isLoggedIn และมี Token หรือไม่
+        if (isLoggedIn) {
+            fetchNotifications();
+        }
+    }, [isLoggedIn]);
 
-    //         // ยิงไปที่ Backend พร้อมแนบ Lat, Lng
-    //         fetch(`http://localhost:8082/notifications/food/nearby?lat=${latitude}&lng=${longitude}&radius=5`)
-    //             .then(res => res.json())
-    //             .then(data => setNotifications(data));
-    //     });
-    // };
-    const fetchNearbyNotifications = () => {
+    const fetchNotifications = () => {
         setLoading(true);
 
         if (!navigator.geolocation) {
@@ -79,8 +66,15 @@ export default function Navbar() {
 
                     if (!response.ok) throw new Error("ไม่สามารถดึงข้อมูลได้");
 
-                    const data = await response.json();
-                    setNotifications(data);
+                    const resData = await response.json(); // เปลี่ยนชื่อให้ชัดเจน
+
+                    // ตรวจสอบว่า success เป็น true และ data เป็น array
+                    if (resData.success && Array.isArray(resData.data)) {
+                        setNotifications(resData.data);
+                    } else {
+                        console.warn("ข้อมูลว่างเปล่าหรือเกิดข้อผิดพลาด:", resData.message);
+                        setNotifications([]); // กำหนดเป็น Array ว่างเพื่อกัน Error
+                    }
                 } catch (err) {
                     console.error("API Error:", err);
                 } finally {
@@ -96,13 +90,85 @@ export default function Navbar() {
         );
     };
 
-    const toggleNotifications = () => {
-        if (!openNotifications) {
-            // ก่อนจะเปิดกล่อง ให้ไปดึงข้อมูลใหม่มาก่อน
-            fetchNearbyNotifications();
+    const [readIds, setReadIds] = useState(() => {
+        return JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    });
+
+    const handleNotificationClick = async (n) => {
+
+        let targetId = null;
+
+        targetId = n.food?.foodId; // ดึงจาก n.food.foodId
+
+        console.log("Target ID identified:", targetId);
+
+        if (!targetId) {
+            console.error("ไม่พบ ID สำหรับการนำทาง!");
+            return;
         }
-        setOpenNotifications(!openNotifications);
+
+        const userId = localStorage.getItem("userId");
+
+        // 1. ดึง Object ทั้งหมดออกมา (ถ้าไม่มีให้เริ่มเป็น {})
+        const allReadStatus = JSON.parse(localStorage.getItem('readNotifications') || '{}');
+
+        // 2. ดึง Array ของ User คนนี้ (ถ้ายังไม่มีให้เริ่มเป็น [])
+        const userReadIds = allReadStatus[userId] || [];
+
+        // 3. ถ้ายังไม่อ่านในลิสต์ของคนนี้ ให้เพิ่มเข้าไป
+        if (!userReadIds.includes(n.notificationId)) {
+            const newUserReadIds = [...userReadIds, n.notificationId];
+
+            // อัปเดต Object รวม
+            allReadStatus[userId] = newUserReadIds;
+
+            // บันทึกกลับลง localStorage
+            localStorage.setItem('readNotifications', JSON.stringify(allReadStatus));
+
+            // อัปเดต State (ถ้ามี)
+            setReadIds(newUserReadIds);
+        }
+
+        setOpenNotifications(false);
+
+        // 2. อัปเดต Local State เพื่อให้จุดสีแดงหายไปทันทีโดยไม่ต้องรอโหลดหน้าใหม่
+        setNotifications(prev => prev.map(item =>
+            item.notificationId === n.notificationId ? { ...item, isRead: true } : item
+        ));
+
+        // ไปยังหน้าเป้าหมาย
+        // navigate(`/food-detail/${targetId}`, {
+        //     state: {
+        //         id: targetId,
+        //         fromPage: '/'
+        //     }
+        // });
+        navigate('/food-detail', { state: { id: targetId, fromPage: '/' } });
     };
+
+    const isRead = (notificationId) => {
+        const userId = localStorage.getItem("userId");
+        const allReadStatus = JSON.parse(localStorage.getItem('readNotifications') || '{}');
+        const userReadIds = allReadStatus[userId] || [];
+        return userReadIds.includes(notificationId);
+    };
+
+    // const isRead = (notificationId) => {
+    //     const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    //     return readNotifications.includes(notificationId);
+    // };
+
+    // const unreadCount = notifications.filter(n => !n.isRead).length;
+
+    // const toggleNotifications = () => {
+    //     if (!openNotifications) {
+    //         // ก่อนจะเปิดกล่อง ให้ไปดึงข้อมูลใหม่มาก่อน
+    //         fetchNotifications();
+    //     }
+    //     setOpenNotifications(!openNotifications);
+    // };
+
+
 
     const handleIconClick = () => {
         if (!isLoggedIn) {
@@ -115,6 +181,8 @@ export default function Navbar() {
 
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("userId");
         setOpenDropdown(false);
         navigate("/login");
     };
@@ -130,10 +198,10 @@ export default function Navbar() {
         booking_cancel: 'รายการจองถูกยกเลิก!',
     };
 
-    // const handleBellClick = () => {
-    //     setOpenNotifications(!openNotifications);
-    //     setOpenDropdown(false);
-    // };
+    const handleBellClick = () => {
+        setOpenNotifications(!openNotifications);
+        setOpenDropdown(false);
+    };
 
     // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า (เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร)
     const currentPath = location.pathname;
@@ -147,6 +215,10 @@ export default function Navbar() {
     const isMyFoodsActive = currentPath === "/my-foods" || currentPath === "/food-form";
     const isDashboardActive = currentPath === "/impact-dashboard";
     // const isAuthActive = currentPath === "/login" || currentPath === "/register";
+    const isAdminDashboardActive = currentPath === "/admin-dashboard";
+    const isManageFoodsActive = currentPath === "/manage-foods" || (currentPath === "/food-detail" && originPath === "/manage-foods");
+    const isManageUsersActive = currentPath === "/manage-users";
+    const isReportActive = currentPath === "/manage-report";
 
     return (
         <nav style={styles.loginHeader}>
@@ -158,15 +230,34 @@ export default function Navbar() {
 
             {/* ตรงกลาง: Menu Links */}
             <div style={styles.menuSection}>
-                <Link to="/" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
-                <Link to="/ranking" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
-                <Link to="/map" style={isMapActive ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
+                {localStorage.getItem("isAdmin") !== "true" && (
+                    <>
+                        <Link to="/" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
+                        <Link to="/ranking" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
+                        <Link to="/map" style={isMapActive ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
+                    </>
+                )}
                 {isLoggedIn && (
                     <>
-                        <Link to="/receive" style={isReceiveActive ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
-                        <Link to="/my-foods" style={isMyFoodsActive ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
-                        <Link to="/impact-dashboard" style={isDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
+                        {localStorage.getItem("isAdmin") === "true" ? (
+                            // --- กรณีเป็นแอดมิน: แสดงเมนู Admin เท่านั้น ---
+                            <>
+                                <Link to="/admin-dashboard" style={isAdminDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Dashboard</Link>
+                                <Link to="/manage-foods" style={isManageFoodsActive ? styles.activeMenu : styles.inactiveMenu}>รายการอาหาร</Link>
+                                <Link to="/manage-users" style={isManageUsersActive ? styles.activeMenu : styles.inactiveMenu}>จัดการผู้ใช้</Link>
+                                <Link to="/manage-report" style={isReportActive ? styles.activeMenu : styles.inactiveMenu}>รายงานปัญหา</Link>
+                            </>
+                        ) : (
+                            // --- กรณีเป็น User ปกติ: แสดงเมนู User ---
+                            <>
+                                <Link to="/receive" style={isReceiveActive ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
+                                <Link to="/my-foods" style={isMyFoodsActive ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
+                                <Link to="/impact-dashboard" style={isDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
+                            </>
+                        )}
+
                     </>
+
                 )}
             </div>
             {/* <div style={styles.menuSection}>
@@ -185,11 +276,11 @@ export default function Navbar() {
             {/* ฝั่งขวา: Icons & Dropdowns */}
             <div ref={dropdownRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "20px" }}>
 
-                {isLoggedIn && (
+                {isLoggedIn && localStorage.getItem("isAdmin") !== "true" && (
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                         <button style={styles.iconBase}
-                            // onClick={handleBellClick}
-                            onClick={toggleNotifications}
+                            onClick={handleBellClick}
+                        // onClick={toggleNotifications}
                         >
                             <span className="material-icons" style={{
                                 fontSize: "26px",
@@ -197,7 +288,20 @@ export default function Navbar() {
                             }}>
                                 notifications
                             </span>
+                            {notifications.filter(n => !isRead(n.notificationId)).length > 0 && (
+                                <span style={{
+                                    position: "absolute",
+                                    top: "0px",
+                                    right: "2px",
+                                    width: "10px",
+                                    height: "10px",
+                                    backgroundColor: "red",
+                                    borderRadius: "50%",
+                                    border: "2px solid white" // ช่วยให้จุดดูเด่นขึ้นเมื่อวางบน background
+                                }}></span>
+                            )}
                         </button>
+
 
                         {openNotifications && (
                             <div style={styles.notificationBadge}>
@@ -207,33 +311,51 @@ export default function Navbar() {
                                         <p style={{ fontSize: '14px' }}>กำลังโหลดข้อมูล...</p>
                                     </div>
                                 )}
+
                                 {!loading && (
                                     notifications.length > 0 ? (
-                                        notifications.map((n) => (
-                                            <div key={n.notificationId} style={{ ...styles.notificationItem, display: 'flex', alignItems: 'flex-start', padding: '0 22px 12px' }}>
-                                                <div style={{ marginRight: '10px', marginTop: '2px' }}>
-                                                    <img
-                                                        src={iconMap[n.notificationType]}
-                                                        alt={n.notificationType}
-                                                        style={{ width: '30px', height: '30px' }}
-                                                    />
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: n.isRead ? '500' : 'bold', color: '#ff8c00' }}>
-                                                        {headerMap[n.notificationType]}
-                                                    </p>
-                                                    <p style={{ margin: '4px 0', fontSize: '14px', color: '#555' }}>
-                                                        {n.notificationMessage}
-                                                    </p>
-                                                    <p style={{ margin: 0, color: '#aaa', fontSize: '11px' }}>
-                                                        {new Date(n.notificationDate).toLocaleString('th-TH', {
-                                                            year: 'numeric', month: 'long', day: 'numeric',
-                                                            hour: '2-digit', minute: '2-digit'
-                                                        })} น.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))
+                                        notifications.map((n) => {
+                                            // เรียกใช้ฟังก์ชันตรวจสอบสถานะอ่าน
+                                            const readStatus = isRead(n.notificationId);
+
+                                            return (
+                                                <button
+                                                    key={n.notificationId}
+                                                    type="button"
+                                                    onClick={() => handleNotificationClick(n)}
+                                                    style={{
+                                                        ...styles.notificationItem,
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        padding: '0 22px 12px',
+                                                        cursor: 'pointer',
+                                                        width: '100%',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        textAlign: 'left'
+                                                    }}
+                                                >
+                                                    <div style={{ marginRight: '10px', marginTop: '2px' }}>
+                                                        <img src={iconMap[n.notificationType]} alt={n.notificationType} style={{ width: '30px', height: '30px' }} />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        {/* เปลี่ยนจาก n.isRead เป็น readStatus */}
+                                                        <p style={{ margin: 0, fontSize: '16px', fontWeight: readStatus ? '500' : 'bold', color: '#ff8c00' }}>
+                                                            {headerMap[n.notificationType]}
+                                                        </p>
+                                                        <p style={{ margin: '4px 0', fontSize: '14px', color: '#555', fontWeight: readStatus ? '500' : 'bold' }}>
+                                                            {n.notificationMessage}
+                                                        </p>
+                                                        <p style={{ margin: 0, color: '#aaa', fontSize: '11px', fontWeight: readStatus ? '500' : 'bold' }}>
+                                                            {new Date(n.notificationDate).toLocaleString('th-TH', {
+                                                                year: 'numeric', month: 'long', day: 'numeric',
+                                                                hour: '2-digit', minute: '2-digit'
+                                                            })} น.
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
                                     ) : (
                                         <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#888", textAlign: "center", padding: '20px' }}>
                                             ยังไม่มีการแจ้งเตือนใหม่
@@ -249,7 +371,7 @@ export default function Navbar() {
                     <button onClick={handleIconClick} style={styles.iconBase}>
                         {isLoggedIn ? (
                             <img
-                                src="/images/profile_member.jpg"
+                                src={localStorage.getItem("isAdmin") === "true" ? profileAdmin : profileMember}
                                 alt="user avatar"
                                 style={styles.profileImg(openDropdown)}
                             />
@@ -384,7 +506,7 @@ const styles = {
         padding: "10px",
         width: "100%",
         textAlign: "left",
-        fontSize: "14px",
+        fontSize: "16px",
         fontWeight: "normal",
         color: "#333",
         textDecoration: "none",

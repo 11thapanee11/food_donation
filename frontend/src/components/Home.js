@@ -10,96 +10,6 @@ export default function Home() {
     const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
     const navigate = useNavigate();
 
-    // // โหลดหมวดหมู่จาก Database
-    // useEffect(() => {
-    //     fetch("http://localhost:8082/food-categories")
-    //         .then(res => {
-    //             if (!res.ok) throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
-    //             return res.json();
-    //         })
-    //         .then(resData => {
-    //             if (resData.success) {
-    //                 const allOption = { id: 0, name: "ทั้งหมด" };
-    //                 setCategories([allOption, ...resData.data]);
-    //             } else {
-    //                 throw new Error(resData.message || "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
-    //             }
-    //         })
-    //         .catch(err => setError(err.message))
-    //         .finally(() => setLoading(false));
-    // }, []);
-    // // useEffect(() => {
-    // //     fetch("http://localhost:8082/food-categories")
-    // //         .then(res => {
-    // //             if (!res.ok) throw new Error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
-    // //             return res.json();
-    // //         })
-    // //         .then(data => {
-    // //             const allOption = { id: 0, name: "ทั้งหมด" };
-    // //             setCategories([allOption, ...data]);
-    // //         })
-    // //         .catch(err => setError(err.message))
-    // //         .finally(() => setLoading(false));
-    // // }, []);
-
-    // // โหลดอาหารตามหมวดหมู่ที่เลือก
-    // useEffect(() => {
-    //     const token = localStorage.getItem("accessToken");
-
-    //     let url = "http://localhost:8082/foods";
-    //     if (selectedCategory !== "ทั้งหมด") {
-    //         const category = categories.find(c => c.name === selectedCategory);
-    //         if (category) {
-    //             url = `http://localhost:8082/foods/category/${category.id}`;
-    //         }
-    //     }
-
-    //     fetch(url, {
-    //         method: "GET",
-    //         headers: {
-    //             "Authorization": token ? `Bearer ${token}` : "",
-    //             "Content-Type": "application/json"
-    //         }
-    //     })
-    //         .then(res => {
-    //             if (!res.ok) throw new Error("โหลดข้อมูลอาหารไม่สำเร็จ");
-    //             return res.json();
-    //         })
-    //         .then(resData => {
-    //             if (resData.success) {
-    //                 setFoods(resData.data);
-    //             } else {
-    //                 throw new Error(resData.message || "โหลดข้อมูลอาหารไม่สำเร็จ");
-    //             }
-    //         })
-    //         .catch(err => setError(err.message));
-    // }, [selectedCategory, categories]);
-    // useEffect(() => {
-    //     const token = localStorage.getItem("accessToken");
-
-    //     let url = "http://localhost:8082/foods";
-    //     if (selectedCategory !== "ทั้งหมด") {
-    //         const category = categories.find(c => c.name === selectedCategory);
-    //         if (category) {
-    //             url = `http://localhost:8082/foods/category/${category.id}`;
-    //         }
-    //     }
-
-    //     fetch(url, {
-    //         method: "GET",
-    //         headers: {
-    //             "Authorization": token ? `Bearer ${token}` : "", // ถ้ามี Token ให้แปะไปด้วย ถ้าไม่มีส่งว่าง (สิทธิ์คนนอก)
-    //             "Content-Type": "application/json"
-    //         }
-    //     })
-    //         .then(res => {
-    //             if (!res.ok) throw new Error("โหลดข้อมูลอาหารไม่สำเร็จ");
-    //             return res.json();
-    //         })
-    //         .then(data => setFoods(data))
-    //         .catch(err => setError(err.message));
-    // }, [selectedCategory, categories]);
-
     const BASE_URL = "http://localhost:8082";
 
     // 1. โหลดหมวดหมู่จาก Database (ทำงานครั้งเดียวตอนเปิดหน้าเว็บ)
@@ -121,7 +31,7 @@ export default function Home() {
             .finally(() => setLoading(false));
     }, []);
 
-    // 2. โหลดอาหารตามหมวดหมู่ที่เลือก
+    // โหลดอาหารตามหมวดหมู่ที่เลือก
     useEffect(() => {
         // ดักจับ: ถ้า categories ยังโหลดไม่เสร็จ (มีความยาวแค่ 0) ให้แตกแถวออกไปก่อน ไม่ต้องยิง API
         if (categories.length === 0) return;
@@ -154,32 +64,14 @@ export default function Home() {
                     throw new Error(resData.message || "โหลดข้อมูลอาหารไม่สำเร็จ");
                 }
             })
-            .catch(err => setError(err.message));
+            .catch(err => setError(err.message))
+            .finally(() => setLoading(false));
             
     }, [selectedCategory, categories]);
 
     const filteredFoods = foods.filter(f =>
         f.foodName.toLowerCase().includes(search.toLowerCase())
     );
-
-    // const showDetail = (food) => {
-    //     Swal.fire({
-    //         title: food.foodName,
-    //         html: `
-    //             <div style="text-align:left;">
-    //                 <img src="${food.foodImage}" style="width:100%; border-radius:15px; margin-bottom:15px" />
-    //                 <p style="color:#4A7C72"><b>รายละเอียด:</b> ${food.description ?? "-"}</p>
-    //                 <p><b>วันหมดอายุ:</b> ${food.expiryDate}</p>
-    //                 <p><b>คงเหลือ:</b> ${food.remainingUnit} หน่วย</p>
-    //             </div>
-    //         `,
-    //         confirmButtonText: "ปิด",
-    //         confirmButtonColor: "#F97316",
-    //         customClass: {
-    //             popup: 'my-swal-font' // คุณสามารถไปตั้งค่าฟอนต์ใน index.css ให้คลาสนี้ได้
-    //         }
-    //     });
-    // };
 
     if (loading) return <div style={styles.loading}>กำลังโหลด...</div>;
     if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
@@ -243,7 +135,7 @@ export default function Home() {
                 <div style={styles.foodGrid}>
                     {filteredFoods.length > 0 ? (
                         filteredFoods.map(food => (
-                            <div key={food.foodId} style={styles.foodCard}>
+                            <div key={food.id} style={styles.foodCard}>
                                 <img
                                     src={`${BASE_URL}${food.foodImage}`}
                                     alt={food.foodName}
@@ -282,11 +174,7 @@ export default function Home() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            // window.scrollTo({
-                                            //     top: 0,
-                                            //     // behavior: "smooth"
-                                            // });
-                                            navigate('/food-detail', { state: { id: food.foodId, fromPage: '/' } });
+                                            navigate('/food-detail', { state: { id: food.id, fromPage: '/' } });
                                         }}
                                         style={styles.detailBtn}
                                     >

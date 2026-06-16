@@ -187,7 +187,7 @@ const MapPage = () => {
                         onMouseOut={() => setSelectedFood(null)}
 
                         // 3: เมื่อกดคลิก (Click) -> ให้เปลี่ยนหน้าไปยังหน้ารายละเอียดอาหารชิ้นนั้น
-                        onClick={() => navigate('/food-detail', { state: { id: food.foodId, fromPage: '/map' } })}
+                        onClick={() => navigate('/food-detail', { state: { id: food.id, fromPage: '/map' } })}
                         icon={{
                             // แต่งไอคอนหมุดเป็นจุดกลมๆ สีส้มพาสเทลตามดีไซน์เว็บของคุณ
                             url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='8' cy='8' r='6' fill='%23ff8c00' stroke='white' stroke-width='2'/></svg>",

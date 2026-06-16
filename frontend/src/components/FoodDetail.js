@@ -24,12 +24,14 @@ export default function FoodDetail() {
 
     // เปรียบเทียบกับ donorId
     // หมายเหตุ: เช็คให้แน่ใจว่า donorId ใน formData เป็นอะไร (บางทีอาจจะเป็น object หรือ id)
-    const isOwner = currentUserId && String(food?.donor?.userId) === String(currentUserId);
+    // const isOwner = currentUserId && String(food?.donor?.userId) === String(currentUserId);
+    const isOwner = food && food.donorId && String(food.donorId) === String(currentUserId);
 
     const BASE_URL = "http://localhost:8082";
 
     // เช็กเงื่อนไขว่ามาจากหน้าจัดการรับบริจาคหรือไม่
     const isFromReceive = fromPage === "/receive";
+    const isFromManage = fromPage === "/manage-foods";
 
     // เช็กสถานะการจองว่าเสร็จสมบูรณ์แล้วหรือไม่
     const isBookingCompleted = bookingStatus === "completed";
@@ -42,28 +44,43 @@ export default function FoodDetail() {
     const [existingReview, setExistingReview] = useState(null);
     const [reviews, setReviews] = useState([]);
 
-    const getDonorName = () => {
-        // 1. ถ้าข้อมูลมาจาก Home (จะเป็น DTO ที่เราตั้งชื่อฟิลด์ไว้ตรงๆ)
-        if (food?.donorFirstName) {
-            return `${food.donorFirstName} ${food.donorLastName || ""}`;
-        }
-
-        // 2. ถ้าข้อมูลมาจาก Receive (จะเป็น Entity ที่ซ้อนกันตามโครงสร้างเดิม)
-        // เช็คว่าอยู่ใน food object หรืออยู่ใน booking.food object
-        const donor = food?.donor || booking?.food?.donor;
-        if (donor?.user) {
-            return `${donor.user.firstName} ${donor.user.lastName}`;
-        }
-
-        return "ไม่พบข้อมูลผู้บริจาค";
-    };
-
     useEffect(() => {
+        if (!incomingId) {
+            console.error("ไม่พบ ID อาหาร");
+            setLoading(false);
+            return;
+        }
+
         window.scrollTo(0, 0);
         if (!incomingId) return;
 
+        // if (isFromReceive) {
+        //     // เคสที่ 1: กดมาจากหน้ารับบริจาค (ค่าส่งมาคือ bookingId)
+        //     fetch(`http://localhost:8082/bookings/${incomingId}`, {
+        //         headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+        //     })
+        //         .then((res) => {
+        //             if (!res.ok) throw new Error("ไม่พบรายละเอียดข้อมูลการจองนี้");
+        //             return res.json();
+        //         })
+        //         .then((resData) => {
+        //             if (resData.success) {
+        //                 console.log(resData.data.food);
+        //                 setBooking(resData.data);
+        //                 setFood(resData.data.food);
+        //             } else {
+        //                 throw new Error(resData.message || "ไม่พบรายละเอียดข้อมูลการจองนี้");
+        //             }
+        //         })
+        //         .catch((err) => {
+        //             console.error("Error fetching booking:", err);
+        //             setFood(null);
+        //         })
+        //         .finally(() => setLoading(false));
+
+        // } 
         if (isFromReceive) {
-            // เคสที่ 1: กดมาจากหน้ารับบริจาค (ค่าส่งมาคือ bookingId)
+            setLoading(true);
             fetch(`http://localhost:8082/bookings/${incomingId}`, {
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             })
@@ -71,11 +88,31 @@ export default function FoodDetail() {
                     if (!res.ok) throw new Error("ไม่พบรายละเอียดข้อมูลการจองนี้");
                     return res.json();
                 })
-                .then((resData) => {
+                .then(async (resData) => {
                     if (resData.success) {
-                        console.log(resData.data.food);
-                        setBooking(resData.data);
-                        setFood(resData.data.food);
+                        const booking = resData.data;
+                        setBooking(booking);
+
+                        // ใช้ Promise.all เพื่อดึงข้อมูลอาหาร (ถ้ามี foodId)
+                        if (booking.foodId) {
+                            try {
+                                // สร้างคำสั่ง fetch เพื่อดึงข้อมูลอาหาร
+                                const foodPromise = fetch(`http://localhost:8082/foods/${booking.foodId}`, {
+                                    headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+                                }).then(res => res.json());
+
+                                // รอให้ Promise ทำงานเสร็จ
+                                const [foodResult] = await Promise.all([foodPromise]);
+
+                                setFood(foodResult.data || foodResult);
+                                console.log(foodResult.data)
+                            } catch (error) {
+                                console.error("Error fetching food details:", error);
+                                setFood(null);
+                            }
+                        } else {
+                            setFood(null); // กรณีไม่มี foodId
+                        }
                     } else {
                         throw new Error(resData.message || "ไม่พบรายละเอียดข้อมูลการจองนี้");
                     }
@@ -85,8 +122,8 @@ export default function FoodDetail() {
                     setFood(null);
                 })
                 .finally(() => setLoading(false));
-
         } else {
+
             // เคสที่ 2: กดมาจากหน้า Home / Map ทั่วไป (ค่าส่งมาคือ foodId)
             fetch(`http://localhost:8082/foods/${incomingId}`)
                 .then((res) => {
@@ -192,101 +229,6 @@ export default function FoodDetail() {
         return <div style={styles.centerPage}>ไม่พบข้อมูล</div>;
     }
 
-    // const handleReserveClick = () => {
-    //     Swal.fire({
-    //         title: 'จองรายการอาหารบริจาาค',
-    //         // text: 'กรุณากรอกจำนวนที่ต้องการจอง (ชิ้น/กล่อง):',
-    //         html: `กรุณากรอกจำนวนที่ต้องการ จำกัดไม่เกิน ${food.limitPerPerson} <br />สามารถดูรหัสยืนยันได้รับที่รายการรับบริจาค`,
-    //         input: 'number',
-    //         inputAttributes: {
-    //             min: '1',
-    //             step: '1'
-    //         },
-    //         showCancelButton: true,
-    //         confirmButtonText: 'ยืนยัน',
-    //         cancelButtonText: 'ยกเลิก',
-    //         confirmButtonColor: '#328d7d',
-    //         cancelButtonColor: '#a0a0a0',
-    //         buttonsStyling: true,
-    //         reverseButtons: true,
-    //         inputValidator: (value) => {
-    //             // เขียนฟังก์ชันดักจับค่าว่างหรือเลข 0 ด้านในได้เลย
-    //             if (!value || Number.parseInt(value) <= 0) {
-    //                 return 'กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0';
-    //             }
-
-    //             const quantity = Number.parseInt(value);
-
-    //             // ดักจับ: ห้ามกรอกเกิน Limit ที่กำหนดต่อคน
-    //             if (food.limitPerPerson && quantity > food.limitPerPerson) {
-    //                 return `ขออภัยครับ รายการนี้จำกัดสิทธิ์การจองไม่เกิน ${food.limitPerPerson} ชิ้นต่อคน`;
-    //             }
-
-    //             // ดักจับแถมให้อีกชั้น: ห้ามกรอกเกินยอดของที่มีอยู่จริงในคลังอาหารตอนนี้
-    //             if (quantity > food.remainingUnit) {
-    //                 return `ขออภัยครับ อาหารรายการนี้เหลือให้จองได้อีกเพียง ${food.remainingUnit} ชิ้นเท่านั้น`;
-    //             }
-    //         }
-    //     }).then((result) => {
-    //         // ถ้าผู้ใช้กรอกผ่านและกด "ยืนยัน"
-    //         if (result.isConfirmed) {
-    //             const quantity = Number.parseInt(result.value);
-
-    //             // ดึง Token มาเพื่อระบุตัวตนคนจอง (ถ้าหลังบ้านระบบระบุตัวตนต้องการตรวจสอบสิทธิ์)
-    //             const token = localStorage.getItem("accessToken");
-
-    //             // แสดง Loading ป๊อปอัพหมุน ๆ ระหว่างส่งข้อมูลไปหลังบ้าน
-    //             Swal.fire({
-    //                 title: 'กำลังบันทึกการจอง...',
-    //                 allowOutsideClick: false,
-    //                 didOpen: () => {
-    //                     Swal.showLoading();
-    //                 }
-    //             });
-
-    //             // ยิง API ไปหา Spring Boot หลังบ้านโดยตรง
-    //             fetch(`http://localhost:8082/bookings`, { // เปลี่ยน URL เส้นทางของ API จองให้ตรงกับหลังบ้านของคุณนะครับ
-    //                 method: "POST",
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                     "Authorization": token ? `Bearer ${token}` : "" // แนบพาสปอร์ตยืนยันตัวตนคนกดจอง
-    //                 },
-    //                 body: JSON.stringify({
-    //                     foodId: food.foodId,       // ไอดีอาหารที่จอง
-    //                     quantity: quantity         // จำนวนอาหารที่กรอกเข้ามาจากป๊อปอัพ
-    //                 })
-    //             })
-    //                 .then(async (res) => {
-    //                     if (!res.ok) {
-    //                         throw new Error("ไม่สามารถบันทึกข้อมูลการจองได้ กรุณาลองใหม่อีกครั้ง");
-    //                     }
-    //                     return res.json();
-    //                 })
-    //                 .then((data) => {
-    //                     // แจ้งเตือนเมื่อจองอาหารสำเร็จ สไตล์พาสเทลน่ารัก
-    //                     Swal.fire({
-    //                         title: 'จองสำเร็จเรียบร้อย!',
-    //                         text: 'รายการอาหารของคุณถูกล็อกสิทธิ์เรียบร้อยแล้ว',
-    //                         icon: 'success',
-    //                         confirmButtonColor: '#328d7d', // สีเขียวพาสเทลคู่ใจ
-    //                     }).then(() => {
-    //                         // หลังกดรับทราบ สามารถเลือกสั่งรีเฟรชหน้าจอ หรือเปลี่ยนหน้าไปดูประวัติการจองได้ครับ
-    //                         // window.location.reload(); // ตัวอย่าง: รีเฟรชข้อมูลอาหารใหม่
-    //                         navigate('/receive')
-    //                     });
-    //                 })
-    //                 .catch((err) => {
-    //                     // แจ้งเตือนเมื่อเกิดข้อผิดพลาด (เช่น ของหมด หรือระบบหลังบ้านขัดข้อง)
-    //                     Swal.fire({
-    //                         title: 'เกิดข้อผิดพลาด',
-    //                         text: err.message,
-    //                         icon: 'error',
-    //                         confirmButtonColor: '#e57373', // สีแดงพาสเทลซอฟต์ ๆ
-    //                     });
-    //                 });
-    //         }
-    //     });
-    // }
     const handleReserveClick = () => {
         Swal.fire({
             title: 'จองรายการอาหารบริจาค',
@@ -353,9 +295,9 @@ export default function FoodDetail() {
                         if (resData.success) {
                             Swal.fire({
                                 title: 'จองสำเร็จเรียบร้อย!',
-                                text: resData.message || 'รายการอาหารของคุณถูกล็อกสิทธิ์เรียบร้อยแล้ว',
+                                // text: resData.message || 'รายการอาหารของคุณถูกล็อกสิทธิ์เรียบร้อยแล้ว',
                                 icon: 'success',
-                                confirmButtonColor: '#328d7d',
+                                confirmButtonColor: '#2ecc71',
                             }).then(() => {
                                 navigate('/receive');
                             });
@@ -376,67 +318,6 @@ export default function FoodDetail() {
         });
     };
 
-    // const handleCancelBooking = () => {
-    //     if (!booking) return;
-
-    //     // ดึงไอดีใบจองออกมาใช้ (เช็กตามชื่อคีย์ที่หลังบ้านส่งมา เช่น bookingId หรือ id)
-    //     const bookingId = booking.bookingId || booking.id;
-
-    //     Swal.fire({
-    //         title: 'ยืนยันการยกเลิกการจอง?',
-    //         // text: "คุณต้องการยกเลิกสิทธิ์การจองอาหารรายการนี้ใช่หรือไม่",
-    //         html: 'คุณต้องการยกเลิกการจองใช่หรือไม่? </br>หากยกเลิก การจองของคุณจะถูกลบออกจากระบบ',
-    //         showCancelButton: true,
-    //         confirmButtonColor: '#ff3131',
-    //         cancelButtonColor: '#a0a0a0',
-    //         confirmButtonText: 'ยืนยันการยกเลิก',
-    //         cancelButtonText: 'ยกเลิก',
-    //         reverseButtons: true,
-    //     }).then((result) => {
-    //         if (result.isConfirmed) {
-    //             // แสดง Loading ระหว่างลบข้อมูล
-    //             Swal.fire({
-    //                 title: 'กำลังดำเนินการยกเลิก...',
-    //                 allowOutsideClick: false,
-    //                 didOpen: () => {
-    //                     Swal.showLoading();
-    //                 }
-    //             });
-
-    //             // ยิง API เส้น DELETE ไปที่หลังบ้าน (หรือปรับ URL ตาม Controller หลังบ้านของคุณนะครับ)
-    //             fetch(`http://localhost:8082/bookings/${bookingId}/cancel`, {
-    //                 method: "PUT", // ✨ เปลี่ยนจาก DELETE เป็น PUT
-    //                 headers: {
-    //                     "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-    //                 }
-    //             })
-    //                 .then((res) => {
-    //                     if (!res.ok) throw new Error("ไม่สามารถยกเลิกการจองได้ กรุณาลองใหม่อีกครั้ง");
-    //                     // หลังบ้านบางที่ส่งกลับมาเป็นข้อความธรรมดา หรือ JSON ว่าง ให้เช็กตามความเหมาะสมครับ
-    //                     return res.text();
-    //                 })
-    //                 .then(() => {
-    //                     Swal.fire({
-    //                         title: 'ยกเลิกการจองสำเร็จ!',
-    //                         text: 'ระบบได้คืนสิทธิ์จำนวนอาหารเข้าสู่คลังเรียบร้อยแล้ว',
-    //                         icon: 'success',
-    //                         confirmButtonColor: '#2d7d71'
-    //                     }).then(() => {
-    //                         // วาร์ปกลับไปหน้าประวัติการรับบริจาค หรือหน้า /receive ของคุณ
-    //                         navigate('/receive');
-    //                     });
-    //                 })
-    //                 .catch((err) => {
-    //                     Swal.fire({
-    //                         title: 'เกิดข้อผิดพลาด',
-    //                         text: err.message,
-    //                         icon: 'error',
-    //                         confirmButtonColor: '#ff4d4d'
-    //                     });
-    //                 });
-    //         }
-    //     });
-    // };
     const handleCancelBooking = () => {
         if (!booking) return;
 
@@ -479,7 +360,7 @@ export default function FoodDetail() {
                                 title: 'ยกเลิกการจองสำเร็จ!',
                                 // text: resData.message || 'ระบบได้คืนสิทธิ์จำนวนอาหารเข้าสู่คลังเรียบร้อยแล้ว',
                                 icon: 'success',
-                                confirmButtonColor: '#ff8c00'
+                                confirmButtonColor: '#2ecc71'
                             }).then(() => {
                                 navigate('/receive');
                             });
@@ -500,21 +381,6 @@ export default function FoodDetail() {
     };
 
     const handleReport = async () => {
-
-        // const checkReportStatus = async () => {
-        //     const res = await fetch(`http://localhost:8082/report/check/${booking.bookingId}`);
-        //     const result = await res.json();
-        //     if (result.exists) {
-        //         Swal.fire("แจ้งเตือน", "คุณได้รายงานปัญหานี้ไปแล้ว", "warning");
-        //         return false;
-        //     }
-        //     return true;
-        // };
-
-        // // เรียกใช้ก่อน Swal.fire(...) ใน handleReport
-        // // if (!(await checkReportStatus())) return;
-        // const isAllowed = await checkReportStatus();
-        // if (!isAllowed) return;
 
         try {
             const res = await fetch(`http://localhost:8082/report/check/${booking.bookingId}`, {
@@ -721,6 +587,117 @@ export default function FoodDetail() {
         }
     };
 
+    // const handleToggleStatus = async (foodId) => {
+    //     // const result = await Swal.fire({
+    //     //     title: 'ยืนยันการปิดการแสดง',
+    //     //     text: "คุณต้องการปิดการแสดงผล ใช่หรือไม่",
+    //     //     showCancelButton: true,
+    //     //     confirmButtonColor: '#ff4d4d',
+    //     //     cancelButtonColor: '#b0b0b0',
+    //     //     confirmButtonText: 'ยืนยันการปิด',
+    //     //     cancelButtonText: 'ยกเลิก',
+    //     //     reverseButtons: true,
+    //     // });
+
+    //     // ตรวจสอบสถานะก่อนเริ่มทำงาน
+    //     if (food.foodStatus === 'deactivate') {
+    //         Swal.fire({
+    //             icon: 'info',
+    //             title: 'อาหารนี้ถูกปิดการแสดงผลแล้ว',
+    //             confirmButtonColor: '#3085d6'
+    //         });
+    //         return; // หยุดการทำงานทันที ไม่ต้องเปิด Swal ยืนยัน
+    //     }
+
+    //     // 2. ถ้าสถานะไม่ใช่ deactivated ถึงจะขึ้นกล่องยืนยัน
+    //     const result = await Swal.fire({
+    //         title: 'ยืนยันการปิดการแสดง',
+    //         text: "คุณต้องการปิดการแสดงผล ใช่หรือไม่",
+    //         showCancelButton: true,
+    //         confirmButtonColor: '#ff4d4d',
+    //         cancelButtonColor: '#b0b0b0',
+    //         confirmButtonText: 'ยืนยันการปิด',
+    //         cancelButtonText: 'ยกเลิก',
+    //         reverseButtons: true,
+    //     });
+
+    //     if (result.isConfirmed) {
+    //         try {
+    //             const response = await fetch(`${BASE_URL}/foods/${foodId}/deactivate`, {
+    //                 method: 'PUT',
+    //                 headers: {
+    //                     'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
+    //                     'Content-Type': 'application/json'
+    //                 }
+    //             });
+
+    //             if (response.ok) {
+    //                 Swal.fire({
+    //                     icon: "success",
+    //                     title: "ปิดการแสดงผลเรียบร้อยแล้ว",
+    //                     // text: "บันทึกรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับความคิดเห็น",
+    //                     confirmButtonColor: "#2ecc71"
+    //                 }).then(() => {
+    //                     navigate('/manage-foods');
+    //                 });
+    //             } else {
+    //                 throw new Error("ไม่สามารถปิดการแสดงผลได้");
+    //             }
+    //         } catch (error) {
+    //             Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+    //         }
+    //     }
+    // };
+    const handleToggleStatus = async (food) => {
+        // กำหนดสถานะใหม่ที่จะส่งไป
+        const newStatus = food.foodStatus === 'deactivate' ? 'available' : 'deactivate';
+        const actionText = food.foodStatus === 'deactivate' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล';
+
+        const result = await Swal.fire({
+            title: `ยืนยันการ${actionText}?`,
+            text: `คุณต้องการ${actionText} รายการนี้ ใช่หรือไม่`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: food.foodStatus === 'deactivate' ? '#219b54' : '#ff4d4d',
+            confirmButtonText: `${actionText}`,
+            cancelButtonText: 'ยกเลิก',
+            cancelButtonColor: '#b0b0b0',
+            reverseButtons: true,
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // const response = await fetch(`${BASE_URL}/foods/${foodId}/deactivate`, {
+                //     method: 'PUT',
+                //     headers: {
+                //         'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
+                //         'Content-Type': 'application/json'
+                //     }
+                // });
+                const response = await fetch(`${BASE_URL}/foods/${food.id}/update-status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: "success",
+                        title: `${actionText}เรียบร้อยแล้ว`,
+                        // text: "บันทึกรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับความคิดเห็น",
+                        confirmButtonColor: "#2ecc71"
+                    }).then(() => {
+                        navigate('/manage-foods');
+                    });
+                } else {
+                    throw new Error("ไม่สามารถปิดการแสดงผลได้");
+                }
+            } catch (error) {
+                Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+            }
+        }
+    };
+
     return (
         <div style={styles.page}>
             {/* <div>
@@ -756,8 +733,7 @@ export default function FoodDetail() {
                     />
                     <p style={styles.donorText}>
                         <span style={{ color: "#ff8c00", fontWeight: "bold", }}>บริจาคโดย</span>
-                        {/* <span> {food.donorFirstName} {food.donorLastName}</span> */}
-                        <span> {getDonorName()}</span>
+                        <span> {food.donorName}</span>
                     </p>
 
                     {/* CONDITIONAL RENDERING: สลับการแสดงผลตรงนี้ */}
@@ -948,7 +924,7 @@ export default function FoodDetail() {
                     {/* <p style={styles.foodDescription}>{food.foodDescription || "ส้มสายน้ำผึ้ง คัดพิเศษ จากสวน บริจาคเป็นถุง"}</p> */}
                     <p style={styles.categoryText}>
                         <span style={styles.labelBold}>หมวดหมู่ :</span>
-                        <span style={styles.categoryBadge}> {food.category || "ของสด / วัตถุดิบ"}</span>
+                        <span style={styles.categoryBadge}> {food.foodCateName} </span>
                         {/* <span style={styles.categoryBadge}> {food.category || "ของสด / วัตถุดิบ"}</span> */}
                     </p>
 
@@ -990,7 +966,7 @@ export default function FoodDetail() {
                             </span>
                             <div>
                                 <div style={styles.infoLabel}>จำนวนคนที่เหมาะต่อการบริโภค</div>
-                                <div style={styles.infoValue}>{food.peopleCountPerMeal === 0 ? "-" : food.peopleCountPerMeal} คน</div>
+                                <div style={styles.infoValue}>{food.peopleCountPerMeal === null ? "ไม่ระบุ" : food.peopleCountPerMeal} คน</div>
                             </div>
                         </div>
 
@@ -1056,7 +1032,7 @@ export default function FoodDetail() {
                     </div>
 
                     {/* ปุ่มกดจอง */}
-                    {(!isFromReceive && !isOwner) && (
+                    {(!isFromReceive && !isOwner && !isFromManage) && (
                         <button type="button" style={styles.reserveBtn} onClick={handleReserveClick}>
                             จองรายการอาหาร
                         </button>
@@ -1067,10 +1043,69 @@ export default function FoodDetail() {
                     >
                         จองรายการอาหาร
                     </button> */}
-                </div>
 
+                </div>
             </div>
+
+            {(isFromManage) && (
+                <div style={{ display: 'flex', gap: '15px', marginTop: '20px', justifyContent: 'center' }}>
+                    {/* ปุ่มย้อนกลับ: พื้นหลังสีเทาอ่อน ตัวหนังสือสีเข้ม */}
+                    <button
+                        onClick={() => navigate(-1)}
+                        style={{
+                            padding: '10px 25px',
+                            borderRadius: '10px',
+                            border: '1px solid #ccc',
+                            backgroundColor: '#c5c5c5',
+                            color: '#5c5c5c',
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            width: '200px'
+                        }}
+                    >
+                        ย้อนกลับ
+                    </button>
+
+                    {/* ปุ่มปิดการแสดงผล: ขอบแดง พื้นหลังขาว ตัวหนังสือแดง */}
+                    {/* <button
+                        onClick={() => handleToggleStatus(food.id)}
+                        style={{
+                            padding: '10px 25px',
+                            borderRadius: '10px',
+                            border: '2px solid #ff4d4d',
+                            backgroundColor: 'transparent',
+                            color: '#ff4d4d',
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            width: '200px'
+                        }}
+                    >
+                        ปิดการแสดงผล
+                    </button> */}
+                    <button
+                        onClick={() => handleToggleStatus(food)} // ส่ง object food ไปเพื่อเช็คสถานะในฟังก์ชัน
+                        style={{
+                            padding: '10px 25px',
+                            borderRadius: '10px',
+                            // เปลี่ยนสีขอบและสีตัวหนังสือตามสถานะ
+                            border: food.foodStatus === 'deactivate'
+                                ? '2px solid #219b54'
+                                : '2px solid #ff4d4d',
+                            backgroundColor: 'transparent',
+                            color: food.foodStatus === 'deactivate'
+                                ? '#219b54'
+                                : '#ff4d4d',
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            width: '200px'
+                        }}
+                    >
+                        {food.foodStatus === 'deactivate' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล'}
+                    </button>
+                </div>
+            )}
         </div>
+
     );
 }
 

@@ -14,11 +14,10 @@ export default function FoodReceive() {
 
     const BASE_URL = "http://localhost:8082";
 
-    // ดึงข้อมูลรายการจองของผู้รับบริจาคที่ล็อกอินอยู่
     // useEffect(() => {
     //     const token = localStorage.getItem("accessToken");
 
-    //     // เปลี่ยน URL ให้ยิงไปหา Controller ฝั่ง Booking ของคุณ
+    //     // ยิงไปหา Controller ฝั่ง Booking เพื่อดึงประวัติการจองทั้งหมด
     //     fetch("http://localhost:8082/bookings", {
     //         headers: {
     //             "Authorization": `Bearer ${token}`
@@ -28,33 +27,56 @@ export default function FoodReceive() {
     //             if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการจองได้");
     //             return res.json();
     //         })
-    //         .then((data) => setBookings(data)) // บันทึกอาเรย์การจองลง state
-    //         .catch((err) => console.error("Error fetching bookings:", err))
+    //         .then((resData) => {
+    //             if (resData.success && Array.isArray(resData.data)) {
+    //                 setBookings(resData.data); // บันทึกอาเรย์การจองลง state
+    //             } else {
+    //                 setBookings([]); // หากหลังบ้านไม่มีข้อมูลหรือผิดพลาด ให้เคลียร์เป็นอาเรย์ว่างป้องกันการพังของ .map() ใน JSX
+    //             }
+    //         })
+    //         .catch((err) => {
+    //             console.error("Error fetching bookings:", err);
+    //             setBookings([]); // ป้องกันหน้าเว็บค้างหากเกิดข้อผิดพลาด
+    //         })
     //         .finally(() => setLoading(false));
     // }, []);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
+        setLoading(true);
 
-        // ยิงไปหา Controller ฝั่ง Booking เพื่อดึงประวัติการจองทั้งหมด
+        // 1. ดึงข้อมูลการจองทั้งหมด
         fetch("http://localhost:8082/bookings", {
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
+            headers: { "Authorization": `Bearer ${token}` }
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการจองได้");
-                return res.json();
-            })
-            .then((resData) => {
+            .then(res => res.json())
+            .then(async (resData) => {
                 if (resData.success && Array.isArray(resData.data)) {
-                    setBookings(resData.data); // บันทึกอาเรย์การจองลง state
+                    const bookings = resData.data;
+
+                    // 2. ดึงข้อมูล Food ของทุกรายการ (ใช้ Promise.all เพื่อเรียกพร้อมกัน)
+                    const bookingsWithFood = await Promise.all(
+                        bookings.map(async (booking) => {
+                            try {
+                                const foodRes = await fetch(`http://localhost:8082/foods/${booking.foodId}`, {
+                                    headers: { "Authorization": `Bearer ${token}` }
+                                });
+                                const foodData = await foodRes.json();
+                                // รวมข้อมูล food เข้าไปใน booking object
+                                return { ...booking, food: foodData.data || foodData };
+                            } catch (e) {
+                                return { ...booking, food: null }; // ถ้าดึง food ไม่ได้ ก็ใส่ null ไว้
+                            }
+                        })
+                    );
+
+                    setBookings(bookingsWithFood);
                 } else {
-                    setBookings([]); // หากหลังบ้านไม่มีข้อมูลหรือผิดพลาด ให้เคลียร์เป็นอาเรย์ว่างป้องกันการพังของ .map() ใน JSX
+                    setBookings([]);
                 }
             })
             .catch((err) => {
-                console.error("Error fetching bookings:", err);
-                setBookings([]); // ป้องกันหน้าเว็บค้างหากเกิดข้อผิดพลาด
+                console.error("Error:", err);
+                setBookings([]);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -104,19 +126,29 @@ export default function FoodReceive() {
     const STATUS_CONFIG = {
         pending: {
             text: "รอการเข้ารับ",
-            color: "#f0b002",     // สีส้มอมน้ำตาลเข้มอ่านง่าย
-            bgColor: "#fff3a6"   // สีครีมส้มพาสเทลแบบในรูปเดโมของคุณ
+            color: "#f0b002",
+            bgColor: "#fff3a6"
         },
         completed: {
             text: "รับบริจาคสำเร็จ",
-            color: "#2e7d32",     // สีเขียวเข้มสบายตา
-            bgColor: "#e8f5e9"    // สีเขียวพาสเทลอ่อน
+            color: "#2e7d32",
+            bgColor: "#e8f5e9"
         },
         cancelled: {
             text: "ยกเลิกรายการ",
-            color: "#c62828",     // สีแดงเข้มอมชมพู
-            bgColor: "#ffebee"    // สีชมพู/แดงพาสเทลอ่อน
-        }
+            color: "#c62828",
+            bgColor: "#ffebee"
+        },
+        deactivate: {
+            text: "ถูกระงับ",
+            color: "#ef6c00", 
+            bgColor: "#fff3e0" 
+        },
+        // expired: {
+        //     text: "หมดอายุ",
+        //     color: "#37474f",
+        //     bgColor: "#eceff1"
+        // }
     };
 
     const renderContent = () => {
@@ -135,6 +167,7 @@ export default function FoodReceive() {
             <div style={styles.list}>
                 {displayData.map((booking) => {
                     // แตก Object ชั้นอาหารออกมาใช้งานเพื่อให้อ่านโค้ดง่ายขึ้น
+                    // console.log("Booking Item:", booking);
                     const food = booking.food;
                     const status = STATUS_CONFIG[booking.bookingStatus] || { text: booking.bookingStatus, color: "#37474f", bgColor: "#eceff1" };
 

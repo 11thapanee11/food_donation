@@ -108,12 +108,15 @@ export default function FoodForm() {
 
                         // แงะข้อมูลก้อนวัตถุอาหารออกมาจาก resData.data
                         const foodInfo = resData.data;
+                                        
+                        console.log("เช็คข้อมูลอาหาร (foodInfo):", foodInfo);
 
                         setFormData({
                             ...foodInfo, // กระจายข้อมูลอาหารเดิมลงฟอร์ม
                             // ดึง ID หมวดหมู่เดิมออกมากดเลือกให้ตรงกับ Select Dropdown ในหน้าเว็บ
-                            foodCategory: foodInfo.foodCategory?.foodCateId
+                            foodCategory: foodInfo.foodCategory
                         });
+                        
                     } else {
                         setFetchError(resData.message || "ไม่พบข้อมูลอาหารรายการนี้");
                     }
@@ -584,7 +587,7 @@ export default function FoodForm() {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}` // 💡 ใช้งานตัวแปร token ได้อย่างปลอดภัยแล้ว
+                        "Authorization": `Bearer ${token}` // ใช้งานตัวแปร token ได้อย่างปลอดภัยแล้ว
                     },
                     body: JSON.stringify({ code: verificationCode })
                 })
@@ -628,6 +631,9 @@ export default function FoodForm() {
             }
         });
     };
+
+    console.log("หมวดหมู่ที่ถูกเลือก (formData):", formData.foodCateName);
+    console.log("รายการหมวดหมู่ทั้งหมด (categories):", categories);
 
     return (
         <div style={styles.page}>
@@ -679,7 +685,7 @@ export default function FoodForm() {
                                 <p style={{ ...styles.label, margin: 0, whiteSpace: "nowrap", fontSize: "18px", color: "#b4b4b4" }}>สถานะบริจาค :</p>
                                 <select
                                     name="foodStatus"
-                                    value={formData.foodStatus || "AVAILABLE"}
+                                    value={formData.foodStatus || "available"}
                                     onChange={handleChange}
                                     // style={{ ...styles.input, width: "160px", marginBottom: 0 }}
                                     disabled={!isEditable}
@@ -692,8 +698,8 @@ export default function FoodForm() {
                                         cursor: isEditable ? "pointer" : "not-allowed",
                                     }}
                                 >
-                                    <option value="AVAILABLE">เปิดให้รับบริจาค</option>
-                                    <option value="CLOSED">ปิดให้รับบริจาค</option>
+                                    <option value="available">เปิดให้รับบริจาค</option>
+                                    <option value="closed">ปิดให้รับบริจาค</option>
                                 </select>
                             </div>
                         </div>
@@ -778,7 +784,7 @@ export default function FoodForm() {
                             <p style={styles.label}>หมวดหมู่</p>
                             <select
                                 name="foodCategory" // เปลี่ยนชื่อให้ตรงกับ state
-                                value={formData.foodCategory ? String(formData.foodCategory) : ""}
+                                value={String(formData.foodCateId || "")}
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,

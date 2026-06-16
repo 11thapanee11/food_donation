@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Swal from 'sweetalert2';
+import profileMember from '../assets/images/member_profile.jpg'
 
 export default function Profile() {
     const token = localStorage.getItem("accessToken");
@@ -278,7 +279,7 @@ export default function Profile() {
                 <div style={styles.banner}>
                     <div style={styles.avatarWrapper}>
                         <img
-                            src="/images/profile_member.jpg"
+                            src={profileMember}
                             alt="Profile"
                             style={styles.avatarImg}
                         />

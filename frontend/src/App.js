@@ -12,6 +12,11 @@ import MapPage from './components/MapPage';
 import RankingPage from './components/RankingPage';
 import FoodReceive from './components/FoodReceive';
 import ImpactDashboard from './components/ImpactDashboard';
+import AdminDashboard from './components/AdminDashboard';
+import ListFood from './components/ListFood';
+import ManageUsers from './components/ManageUser';
+import ListReport from './components/ListReport';
+import ReportDetail from './components/ReportDetail';
 
 function App() {
   return (
@@ -31,6 +36,11 @@ function App() {
         <Route path='/ranking' element={<RankingPage/>} />
         <Route path='/receive' element={<FoodReceive/>} />
         <Route path='/impact-dashboard' element={<ImpactDashboard/>} />
+        {/* <Route path='/admin-dashboard' element={<AdminDashboard/>} /> */}
+        <Route path='/manage-foods' element={<ListFood/>} />
+        <Route path='/manage-users' element={<ManageUsers/>} />
+        <Route path='/manage-report' element={<ListReport/>} />
+        <Route path='/report-detail' element={<ReportDetail/>} />
       </Routes>
     </Router>
   );

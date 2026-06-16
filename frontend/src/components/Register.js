@@ -2,6 +2,7 @@ import React, { useState } from "react";
 // import '../css/register.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
+import registerImg from '../assets/images/register_img.jpg'
 
 function Register() {
     const navigate = useNavigate();
@@ -271,7 +272,7 @@ function Register() {
             </div>
 
             <div style={styles.imageSection}>
-                <img src="/images/register_img2.jpg" alt="food" style={styles.image} />
+                <img src={registerImg} alt="food" style={styles.image} />
             </div>
         </div>
     );

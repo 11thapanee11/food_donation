@@ -145,23 +145,23 @@ export default function MyFoods() {
     const STATUS_CONFIG = {
         available: {
             text: "เปิดให้รับบริจาค",
-            color: "#2e7d32",     // สีเขียวเข้มสบายตา
-            bgColor: "#e8f5e9"    // สีเขียวพาสเทลอ่อน
+            color: "#2e7d32",   
+            bgColor: "#e8f5e9"    
         },
         closed: {
             text: "ปิดให้รับบริจาค",
-            color: "#c62828",     // สีแดงเข้มอมชมพู
-            bgColor: "#ffebee"    // สีชมพู/แดงพาสเทลอ่อน
+            color: "#707070",     
+            bgColor: "#f0f0f0"    
         },
-        suspended: {
+        deactivate: {
             text: "ถูกระงับ",
-            color: "#ef6c00",     // สีส้มอิฐ
-            bgColor: "#fff3e0"    // สีครีมส้มพาสเทล
+            color: "#c41414",    
+            bgColor: "#ffc8c8"
         },
         expired: {
             text: "หมดอายุ",
-            color: "#37474f",     // สีเทาเข้ม
-            bgColor: "#eceff1"    // สีเทาพาสเทลอ่อน
+            color: "#37474f",    
+            bgColor: "#eceff1"   
         }
     };
 
@@ -211,7 +211,7 @@ export default function MyFoods() {
                                                 : "#37474f",
                                         }}
                                     >
-                                        {foodStatusText} {/* ข้อความภาษาไทยที่คุณดึงมาแสดงผลอยู่แล้ว */}
+                                        {STATUS_CONFIG[food.foodStatus].text} {/* ข้อความภาษาไทยที่คุณดึงมาแสดงผลอยู่แล้ว */}
                                     </span>
                                 </div>
 
