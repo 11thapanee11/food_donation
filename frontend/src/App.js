@@ -36,7 +36,7 @@ function App() {
         <Route path='/ranking' element={<RankingPage/>} />
         <Route path='/receive' element={<FoodReceive/>} />
         <Route path='/impact-dashboard' element={<ImpactDashboard/>} />
-        {/* <Route path='/admin-dashboard' element={<AdminDashboard/>} /> */}
+        <Route path='/admin-dashboard' element={<AdminDashboard/>} />
         <Route path='/manage-foods' element={<ListFood/>} />
         <Route path='/manage-users' element={<ManageUsers/>} />
         <Route path='/manage-report' element={<ListReport/>} />

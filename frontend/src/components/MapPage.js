@@ -111,14 +111,11 @@ const MapPage = () => {
             }
         })
             .then((res) => {
-                // 💡 แก้คำผิดตรงนี้ จาก "สำเร็จ" เป็น "ไม่สำเร็จ" 
                 if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่ไม่สำเร็จ");
                 return res.json();
             })
-            .then((resData) => { // 1. รับค่าเป็น resData ตามโครงสร้าง ApiResponse
-                // 2. เช็คตัวแปร success จากหลังบ้าน
+            .then((resData) => { 
                 if (resData.success) {
-                    // 3. แงะข้อมูลออกจาก resData.data เพื่อเอาไปกรองหาตัวที่มีละติจูด/ลองจิจูด
                     const validFoods = resData.data.filter(item => item.latitude && item.longitude);
                     setFoods(validFoods);
                 } else {
@@ -180,13 +177,13 @@ const MapPage = () => {
                             lat: Number(food.latitude),  //
                             lng: Number(food.longitude)  //
                         }}
-                        // 1: เมื่อเมาส์ชี้ (Mouse Over) -> ให้เก็บข้อมูลเพื่อเปิดป้าย InfoWindow
+                        // เมื่อเมาส์ชี้ (Mouse Over) -> ให้เก็บข้อมูลเพื่อเปิดป้าย InfoWindow
                         onMouseOver={() => setSelectedFood(food)}
 
-                        // 2: เมื่อเมาส์เลื่อนออก (Mouse Out) -> ให้ปิดป้าย InfoWindow ทันที
+                        // เมื่อเมาส์เลื่อนออก (Mouse Out) -> ให้ปิดป้าย InfoWindow ทันที
                         onMouseOut={() => setSelectedFood(null)}
 
-                        // 3: เมื่อกดคลิก (Click) -> ให้เปลี่ยนหน้าไปยังหน้ารายละเอียดอาหารชิ้นนั้น
+                        // เมื่อกดคลิก (Click) -> ให้เปลี่ยนหน้าไปยังหน้ารายละเอียดอาหารชิ้นนั้น
                         onClick={() => navigate('/food-detail', { state: { id: food.id, fromPage: '/map' } })}
                         icon={{
                             // แต่งไอคอนหมุดเป็นจุดกลมๆ สีส้มพาสเทลตามดีไซน์เว็บของคุณ
@@ -206,7 +203,6 @@ const MapPage = () => {
                         // เลือกโหมดการแปะวัตถุลงบนแผนที่ (OVERLAY_MOUSE_TARGET จะลอยอยู่เหนือกราฟิกปกติ)
                         mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                     >
-                        {/* 🎨 ออกแบบหน้าตาป้ายชื่ออาหารสไตล์พาสเทลมินิมอลของคุณได้อิสระเลยครับ */}
                         <div style={{
                             position: "absolute",
                             transform: "translate(-50%, -130%)", // จัดตำแหน่งให้ป้ายลอยอยู่กึ่งกลางขยับขึ้นเหนือหัวหมุดพอดี
@@ -215,7 +211,7 @@ const MapPage = () => {
                             borderRadius: "8px", // ขอบมนพาสเทลน่ารักๆ
                             boxShadow: "0 2px 8px rgba(0,0,0,0.15)", // ใส่เงานุ่มๆ
                             whiteSpace: "nowrap", // ป้องกันข้อความตัดบรรทัด
-                            pointerEvents: "none", // 🌟 กุญแจสำคัญ: ห้ามตัวป้ายรับ Event เมาส์เด็ดขาด ขจัดบั๊กกะพริบ 100%
+                            pointerEvents: "none", // กุญแจสำคัญ: ห้ามตัวป้ายรับ Event เมาส์เด็ดขาด ขจัดบั๊กกะพริบ 100%
                             border: "1px solid #ffe8d6"
                         }}>
                             <strong style={{ color: "#ff8c00", fontSize: "16px" }}>

@@ -17,6 +17,7 @@ public class Recipient {
     private User user;
 
     public Recipient() {
+        super();
     }
 
     public Integer getUserId() {

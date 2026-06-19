@@ -650,15 +650,15 @@ export default function FoodDetail() {
     // };
     const handleToggleStatus = async (food) => {
         // กำหนดสถานะใหม่ที่จะส่งไป
-        const newStatus = food.foodStatus === 'deactivate' ? 'available' : 'deactivate';
-        const actionText = food.foodStatus === 'deactivate' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล';
+        const newStatus = food.foodStatus === 'disable' ? 'available' : 'disable';
+        const actionText = food.foodStatus === 'disable' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล';
 
         const result = await Swal.fire({
             title: `ยืนยันการ${actionText}?`,
-            text: `คุณต้องการ${actionText} รายการนี้ ใช่หรือไม่`,
-            icon: 'question',
+            icon: food.foodStatus === 'disable' ? 'question' : 'warning',
+            iconColor: food.foodStatus === 'disable' ? '#219b54' : '#ff4d4d',
             showCancelButton: true,
-            confirmButtonColor: food.foodStatus === 'deactivate' ? '#219b54' : '#ff4d4d',
+            confirmButtonColor: food.foodStatus === 'disable' ? '#219b54' : '#ff4d4d',
             confirmButtonText: `${actionText}`,
             cancelButtonText: 'ยกเลิก',
             cancelButtonColor: '#b0b0b0',
@@ -674,7 +674,7 @@ export default function FoodDetail() {
                 //         'Content-Type': 'application/json'
                 //     }
                 // });
-                const response = await fetch(`${BASE_URL}/foods/${food.id}/update-status`, {
+                const response = await fetch(`${BASE_URL}/foods/${food.id}/status`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })
@@ -1088,11 +1088,11 @@ export default function FoodDetail() {
                             padding: '10px 25px',
                             borderRadius: '10px',
                             // เปลี่ยนสีขอบและสีตัวหนังสือตามสถานะ
-                            border: food.foodStatus === 'deactivate'
+                            border: food.foodStatus === 'disable'
                                 ? '2px solid #219b54'
                                 : '2px solid #ff4d4d',
                             backgroundColor: 'transparent',
-                            color: food.foodStatus === 'deactivate'
+                            color: food.foodStatus === 'disable'
                                 ? '#219b54'
                                 : '#ff4d4d',
                             cursor: 'pointer',
@@ -1100,7 +1100,7 @@ export default function FoodDetail() {
                             width: '200px'
                         }}
                     >
-                        {food.foodStatus === 'deactivate' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล'}
+                        {food.foodStatus === 'disable' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล'}
                     </button>
                 </div>
             )}

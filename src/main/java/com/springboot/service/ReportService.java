@@ -3,6 +3,10 @@ package com.springboot.service;
 import com.springboot.dto.ReportDto;
 import com.springboot.model.*;
 import com.springboot.repository.*;
+import java.util.*;
+
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -53,5 +57,52 @@ public class ReportService {
 
     public boolean checkReport(Integer bookingId) {
         return reportRepository.existsByBooking_BookingId(bookingId);
+    }
+
+    public List<ReportDto> getAllReports() {
+        return reportRepository.findAll().stream().map(r -> {
+            ReportDto dto = new ReportDto();
+            dto.setReportId(r.getReportId());
+            dto.setReason(r.getReportReason());
+            dto.setFoodName(r.getBooking().getFood().getFoodName());
+            dto.setReporterName(r.getBooking().getRecipient().getUser().getFirstName() + " "
+                    + r.getBooking().getRecipient().getUser().getLastName());
+            dto.setReportDate(r.getReportDate());
+            dto.setReportStatus(r.getReportStatus());
+            return dto;
+        }).toList();
+    }
+
+    public ReportDto getReportById(Integer id) {
+        // ค้นหา Report หากไม่เจอให้โยน Exception
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ไม่พบรายงานปัญหา ID: " + id));
+
+        // แปลง Entity เป็น DTO
+        ReportDto dto = new ReportDto();
+        dto.setReportId(report.getReportId());
+        dto.setReason(report.getReportReason());
+        dto.setDescription(report.getReportDescription());
+        dto.setReportDate(report.getReportDate());
+        dto.setReportImage(report.getReportImage());
+        dto.setReportStatus(report.getReportStatus());
+
+        if (report.getBooking().getFood() != null) {
+            dto.setBookingId(report.getBooking().getBookingId());
+            dto.setFoodId(report.getBooking().getFood().getFoodId());
+            dto.setFoodName(report.getBooking().getFood().getFoodName());
+            dto.setReporterName(report.getBooking().getRecipient().getUser().getFirstName() + " " + report.getBooking().getRecipient().getUser().getLastName());
+            dto.setDonorStatus(report.getBooking().getFood().getDonor().getDonorStatus());
+        }
+
+        return dto;
+    }
+
+    public void updateReportStatus(Integer id, String newStatus) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลรายงาน"));
+
+        report.setReportStatus(newStatus);
+        reportRepository.save(report);
     }
 }

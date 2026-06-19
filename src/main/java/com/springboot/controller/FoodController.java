@@ -44,68 +44,14 @@ public class FoodController {
         this.donorService = donorService;
     }
 
-    // ดึงทั้งหมด
-    // @GetMapping
-    // public ResponseEntity<List<Food>> getAllFoods() {
-    // return ResponseEntity.ok(foodService.getAllFoods());
-    // }
     @GetMapping
-    // public ResponseEntity<ApiResponse<List<Food>>>
-    // getAllFoods(@RequestHeader(value = "Authorization", required = false) String
-    // authHeader) {
-    public ResponseEntity<ApiResponse<List<Food>>> getAllFoods() {
-        List<Food> foods;
-
-        // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        // foods = foodService.getAllFoods();
-        // return ResponseEntity.ok(new ApiResponse<>(true,
-        // "ดึงข้อมูลอาหารทั้งหมดสำเร็จ", foods));
-        // }
-
-        // String token = authHeader.replace("Bearer ", "");
-        // String email = jwtUtil.extractEmail(token);
-
-        // if (!jwtUtil.validateToken(token, email)) {
-        // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        // .body(new ApiResponse<>(false, "Token ไม่ถูกต้องหรือหมดอายุ", null));
-        // }
-        // User user = userService.authenticate(authHeader);
-
-        // foods = foodService.getFoodsExceptMe(user.getUserId());
+    public ResponseEntity<ApiResponse<List<FoodDto>>> getAllFoods() {
+        List<FoodDto> foods;
 
         foods = foodService.getAllFoods();
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารทั้งหมดสำเร็จ (ยกเว้นของผู้บริจาค)", foods));
     }
-    // public ResponseEntity<List<Food>> getAllFoods(@RequestHeader(value =
-    // "Authorization", required = false) String authHeader) {
-    // // ถ้าผู้ใช้ไม่ได้ Login หรือไม่มี Token ให้ส่งอาหารทั้งหมดกลับไปปกติ
-    // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-    // return ResponseEntity.ok(foodService.getAllFoods());
-    // }
 
-    // String token = authHeader.replace("Bearer ", "");
-    // String email = jwtUtil.extractEmail(token);
-
-    // if (!jwtUtil.validateToken(token, email)) {
-    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    // }
-
-    // // ดึงอาหารทั้งหมด ยกเว้นของเราเอง
-    // return ResponseEntity.ok(foodService.getFoodsExceptMe(email));
-    // }
-
-    // ดึงตาม id
-    // @GetMapping("/{id}")
-    // public ResponseEntity<ApiResponse<Food>> getFoodById(@PathVariable Integer
-    // id) {
-    // Food food = foodService.getFoodById(id);
-    // if (food == null) {
-    // return ResponseEntity.status(HttpStatus.NOT_FOUND)
-    // .body(new ApiResponse<>(false, "ไม่พบข้อมูลอาหารที่ระบุ", null));
-    // }
-    // return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารสำเร็จ",
-    // food));
-    // }
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FoodDto>> getFoodById(@PathVariable Integer id) {
         // เรียกใช้เมธอดใหม่ใน Service ที่คืนค่าเป็น DTO
@@ -118,103 +64,18 @@ public class FoodController {
 
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารสำเร็จ", foodDto));
     }
-    // public ResponseEntity<Food> getFoodById(@PathVariable Integer id) {
-    // Food food = foodService.getFoodById(id);
-    // if (food == null) {
-    // return ResponseEntity.notFound().build(); // ส่ง Status 404 กลับไป
-    // }
-    // return ResponseEntity.ok(food);
-    // }
-
-    // ดึงตามหมวดหมู่
-    // @GetMapping("/category/{cateId}")
-    // public ResponseEntity<List<Food>> getFoodsByCategory(@PathVariable Integer
-    // cateId) {
-    // return ResponseEntity.ok(foodService.getFoodsByCategory(cateId));
-    // }
 
     @GetMapping("/category/{id}")
-    // public ResponseEntity<ApiResponse<List<Food>>> getFoodsByCategory(
-    // @PathVariable("id") Integer categoryId,
-    // @RequestHeader(value = "Authorization", required = false) String authHeader)
-    // {
-    public ResponseEntity<ApiResponse<List<Food>>> getFoodsByCategory(@PathVariable("id") Integer categoryId) {
+    public ResponseEntity<ApiResponse<List<FoodDto>>> getFoodsByCategory(@PathVariable("id") Integer categoryId) {
 
-        List<Food> foods;
-
-        // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        // foods = foodService.getFoodsByCategory(categoryId);
-        // return ResponseEntity.ok(new ApiResponse<>(true,
-        // "ดึงข้อมูลอาหารตามหมวดหมู่สำเร็จ", foods));
-        // }
-
-        // String token = authHeader.replace("Bearer ", "");
-        // String email = jwtUtil.extractEmail(token);
-
-        // if (!jwtUtil.validateToken(token, email)) {
-        // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        // .body(new ApiResponse<>(false, "Token ไม่ถูกต้องหรือหมดอายุ", null));
-        // }
-
-        // User user = userService.authenticate(authHeader);
-        // foods = foodService.getFoodsByCategoryExceptMe(categoryId, user.getUserId());
+        List<FoodDto> foods;
 
         foods = foodService.getFoodsByCategory(categoryId);
 
         return ResponseEntity
-                .ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารตามหมวดหมู่สำเร็จ (ยกเว้นของผู้บริจาค)", foods));
+                .ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารตามหมวดหมู่สำเร็จ", foods));
     }
-    // public ResponseEntity<List<Food>> getFoodsByCategory(
-    // @PathVariable("id") Integer categoryId,
-    // @RequestHeader(value = "Authorization", required = false) String authHeader)
-    // {
 
-    // // ถ้าไม่มี Token ให้ส่งอาหารตามหมวดหมู่ของทุกคนกลับไปปกติ
-    // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-    // return ResponseEntity.ok(foodService.getFoodsByCategory(categoryId));
-    // }
-
-    // String token = authHeader.replace("Bearer ", "");
-    // String email = jwtUtil.extractEmail(token);
-
-    // if (!jwtUtil.validateToken(token, email)) {
-    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    // }
-
-    // // ดึงอาหารในหมวดหมู่นี้ ยกเว้นของเราเอง
-    // return ResponseEntity.ok(foodService.getFoodsByCategoryExceptMe(categoryId,
-    // email));
-    // }
-
-    // @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    // public ResponseEntity<ApiResponse<Food>> addFood(
-    // @RequestHeader("Authorization") String authHeader,
-    // @ModelAttribute FoodDto foodDto) throws IOException {
-    // try {
-    // // String token = authHeader.replace("Bearer ", "");
-    // // String email = jwtUtil.extractEmail(token);
-
-    // // if (!jwtUtil.validateToken(token, email)) {
-    // // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    // // .body(new ApiResponse<>(false, "Token ไม่ถูกต้องหรือหมดอายุ", null));
-    // // }
-
-    // User user = userService.authenticate(authHeader);
-
-    // Donor donor = donorService.getOrCreateDonor(user);
-
-    // Food savedFood = foodService.addFood(donor, foodDto);
-
-    // // Food savedFood = foodService.addFood(user.getEmail(), foodDto);
-    // return ResponseEntity.ok(new ApiResponse<>(true, "เพิ่มข้อมูลอาหารสำเร็จ",
-    // savedFood));
-
-    // } catch (RuntimeException e) {
-    // return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    // .body(new ApiResponse<>(false, "ไม่สามารถเพิ่มข้อมูลอาหารได้: " +
-    // e.getMessage(), null));
-    // }
-    // }
     private String saveFoodImage(MultipartFile image) throws IOException {
         String uploadDir = "D:/Project/food_donation/uploads/food/";
         File directory = new File(uploadDir);
@@ -380,4 +241,23 @@ public class FoodController {
                     .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในระบบ: " + e.getMessage(), null));
         }
     }
+
+    @PutMapping("/{foodId}/status")
+    public ResponseEntity<ApiResponse<String>> updateStatus(
+            @PathVariable Integer foodId,
+            @RequestBody Map<String, String> request) {
+
+        String newStatus = request.get("status");
+
+        if (newStatus == null || newStatus.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "โปรดระบุสถานะที่ต้องการเปลี่ยน", null));
+        }
+
+        foodService.updateFoodStatus(foodId, newStatus);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "อัปเดตสถานะเป็น " + newStatus + " สำเร็จ", null));
+    }
+
 }

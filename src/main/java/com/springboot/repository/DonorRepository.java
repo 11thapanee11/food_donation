@@ -31,4 +31,7 @@ public interface DonorRepository extends JpaRepository<Donor, Integer> {
     // ดึง Donor เรียงตามค่าพลังงานที่ลดได้ (มากไปน้อย)
     List<Donor> findAllByOrderByTotalImpactAmountDesc();
 
+    @Query("SELECT d FROM Donor d JOIN User u ON d.userId = u.userId")
+    List<Donor> findAllDonors();
+
 }

@@ -1,7 +1,5 @@
 package com.springboot.controller;
 
-import java.util.UUID;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +9,7 @@ import org.springframework.http.MediaType;
 import com.springboot.dto.*;
 import com.springboot.model.*;
 import com.springboot.service.*;
+import java.util.*;
 
 import java.io.File;
 
@@ -91,5 +90,39 @@ public class ReportController {
     public ResponseEntity<ApiResponse<Boolean>> checkReportStatus(@PathVariable Integer bookingId) {
         boolean exists = reportService.checkReport(bookingId);
         return ResponseEntity.ok(new ApiResponse<>(true, "ตรวจสอบสถานะสำเร็จ", exists));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ReportDto>>> getListReport() {
+        try {
+            // เรียกใช้ Service ที่คุณเขียนไว้
+            List<ReportDto> reports = reportService.getAllReports();
+
+            // ส่ง Response กลับไปพร้อมสถานะ Success
+            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรายงานสำเร็จ", reports));
+
+        } catch (Exception e) {
+            // กรณีเกิดข้อผิดพลาด ให้ส่ง error message กลับไป
+            return ResponseEntity.status(500)
+                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการดึงข้อมูล: " + e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ReportDto>> getReportDetail(@PathVariable Integer id) {
+        ReportDto reportDto = reportService.getReportById(id);
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "ดึงข้อมูลรายงานสำเร็จ", reportDto));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<String>> updateStatus(
+            @PathVariable Integer id,
+            @RequestBody Map<String, String> body) { // รับเป็น JSON Body
+
+        String newStatus = body.get("status"); 
+        reportService.updateReportStatus(id, newStatus);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะสำเร็จ", null));
     }
 }

@@ -66,32 +66,76 @@ public class NotificationController {
     // หน้าสำหรับผู้รับอาหาร
     // @GetMapping("/food")
     // public ResponseEntity<List<Notification>> getFoodNotifications() {
-    //     return ResponseEntity.ok(notificationService.getFoodNotifications());
+    // return ResponseEntity.ok(notificationService.getFoodNotifications());
     // }
 
+    // @GetMapping("/food")
+    // public ResponseEntity<List<Notification>> getListNotification(
+    // @RequestParam double lat,
+    // @RequestParam double lng,
+    // @RequestParam(defaultValue = "5.0") double radius, // รัศมีเริ่มต้น 5 กม.
+    // @RequestHeader("Authorization") String authHeader) {
+
+    // User user = userService.authenticate(authHeader);
+    // Integer userId = user.getUserId();
+
+    // List<Notification> foodList =
+    // notificationService.getNearbyFoodNotifications(lat, lng, radius, userId);
+    // List<Notification> bookingList =
+    // notificationService.getBookingNotifications(userId);
+
+    // List<Notification> listNotification = new ArrayList<>();
+    // listNotification.addAll(foodList);
+    // listNotification.addAll(bookingList);
+
+    // // เรียงลำดับตามเวลา (ล่าสุดก่อน)
+    // listNotification.sort(Comparator.comparing(Notification::getNotificationDate).reversed());
+
+    // return ResponseEntity.ok(listNotification);
+    // }
     @GetMapping("/food")
-    public ResponseEntity<List<Notification>> getListNotification(
+    public ResponseEntity<ApiResponse<List<Notification>>> getListNotification(
             @RequestParam double lat,
             @RequestParam double lng,
-            @RequestParam(defaultValue = "5.0") double radius, // รัศมีเริ่มต้น 5 กม.
-            @RequestHeader("Authorization") String authHeader
-        ) {
+            @RequestParam(defaultValue = "5.0") double radius,
+            @RequestHeader("Authorization") String authHeader) {
 
-        User user = userService.authenticate(authHeader);
-        Integer userId = user.getUserId();
+        try {
+            User user = userService.authenticate(authHeader);
+            Integer userId = user.getUserId();
 
-        List<Notification> foodList = notificationService.getNearbyFoodNotifications(lat, lng, radius, userId);
-        List<Notification> bookingList = notificationService.getBookingNotifications(userId);
+            List<Notification> foodList = notificationService.getNearbyFoodNotifications(lat, lng, radius, userId);
+            List<Notification> bookingList = notificationService.getBookingNotifications(userId);
 
-        List<Notification> listNotification = new ArrayList<>();
-        listNotification.addAll(foodList);
-        listNotification.addAll(bookingList);
+            List<Notification> listNotification = new ArrayList<>();
+            listNotification.addAll(foodList);
+            listNotification.addAll(bookingList);
+            listNotification.sort(Comparator.comparing(Notification::getNotificationDate).reversed());
 
-        // เรียงลำดับตามเวลา (ล่าสุดก่อน)
-        listNotification.sort(Comparator.comparing(Notification::getNotificationDate).reversed());
-        
-        return ResponseEntity.ok(listNotification);
+            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", listNotification));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "ไม่สามารถดึงข้อมูลได้: " + e.getMessage(), null));
+        }
     }
+
+    @PutMapping("/read/{id}")
+    public ResponseEntity<ApiResponse<String>> markAsRead(@PathVariable Integer id) {
+        try {
+            notificationService.markAsRead(id);
+            return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะการอ่านสำเร็จ", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการอัปเดต", null));
+        }
+    }
+
+    // @PutMapping("/read/{id}")
+    // public ResponseEntity<?> markAsRead(@PathVariable Long id) {
+    // notificationService.markAsRead(id); // ใน Service ให้หา id นี้แล้ว set isRead
+    // = true
+    // return ResponseEntity.ok().build();
+    // }
 
     // หน้าสำหรับผู้บริจาค
     // @GetMapping("/donor")

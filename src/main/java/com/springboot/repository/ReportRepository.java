@@ -10,4 +10,6 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
 
     // @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Report r WHERE r.booking.bookingId = :bookingId")
     boolean existsByBooking_BookingId(Integer bookingId);
+
+    long countByReportStatus(String status);
 }

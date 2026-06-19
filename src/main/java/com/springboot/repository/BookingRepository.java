@@ -38,4 +38,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         // "JOIN f.donor d " +
         // "WHERE d.userId = :donorId AND b.bookingStatus = 'COMPLETED'")
         int countCompleteBookingsByDonorId(@Param("donorId") Integer donorId);
+
+        long countByBookingStatus(String status);
 }

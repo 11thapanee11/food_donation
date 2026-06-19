@@ -26,8 +26,8 @@ export default function ListFood() {
         //     color: "#ef6c00",
         //     bgColor: "#fff3e0"
         // },
-        deactivate: {
-            text: "DEACTIVATE",
+        disable: {
+            text: "DISABLE",
             color: "#d32f2f", 
             bgColor: "#ffebee"
         },

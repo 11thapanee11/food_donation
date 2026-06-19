@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.springboot.service.UserService;
 import com.springboot.util.JwtUtil;
 import com.springboot.util.PasswordUtil;
 
@@ -32,11 +31,13 @@ public class LoginController {
     private String messageKey = "message";
 
     private final UserService userService;
+    private final AdminService adminService;
 
     private final JwtUtil jwtUtil;
 
-    public LoginController(UserService userService, JwtUtil jwtUtil) {
+    public LoginController(UserService userService, AdminService adminService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.adminService = adminService;
         this.jwtUtil = jwtUtil;
     }
 
@@ -51,7 +52,7 @@ public class LoginController {
     // }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> loginMember(@RequestBody LoginDto loginDto) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@RequestBody LoginDto loginDto) {
         try {
             boolean result = userService.login(loginDto);
 
@@ -66,11 +67,13 @@ public class LoginController {
                         24 * 60 * 60 * 1000 // อายุ 24 ชั่วโมง
                 );
 
+                boolean isAdmin = adminService.isAdmin(user.getUserId());
+
                 // บรรจุ Token ลงใน Map เพื่อส่งไปกับ ApiResponse
                 Map<String, Object> responseData = new HashMap<>();
                 responseData.put("accessToken", accessToken);
-
                 responseData.put("userId", user.getUserId());
+                responseData.put("isAdmin", isAdmin);
 
                 return ResponseEntity.ok(
                         new ApiResponse<>(true, "เข้าสู่ระบบสำเร็จ", responseData));

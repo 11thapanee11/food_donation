@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -36,4 +37,12 @@ public interface FoodRepository extends JpaRepository<Food, Integer> {
             +
             "FROM food HAVING distance <= :radius ORDER BY distance", nativeQuery = true)
     List<Food> findNearbyFoods(@Param("lat") double lat, @Param("lng") double lng, @Param("radius") double radius);
+
+    long countByFoodStatus(String status);
+
+    // ดึงอาหารที่วันหมดอายุน้อยกว่าหรือเท่ากับวันนี้ (หมดอายุแล้ว)
+    List<Food> findByExpiryDateBeforeAndFoodStatus(LocalDateTime now, String status);
+    
+    // ดึงอาหารที่ใกล้หมดอายุ (เช่น ภายใน 24 ชั่วโมง)
+    List<Food> findByExpiryDateBetweenAndFoodStatus(LocalDateTime start, LocalDateTime end, String status);
 }

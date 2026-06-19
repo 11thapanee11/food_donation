@@ -4,87 +4,210 @@ import Swal from "sweetalert2";
 
 export default function ReportDetail() {
     const { state } = useLocation();
-    // const location = useLocation();
+    const location = useLocation();
+    const { id } = location.state || {};
+
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const navigate = useNavigate();
 
+    // useEffect(() => {
+    //     if (id) {
+    //         updateReportStatus(id);
+    //     }
+    // }, [id]);
+
+    // const updateReportStatus = async (reportId) => {
+    //     try {
+    //         const response = await fetch(`http://localhost:8082/report/${reportId}/status`, {
+    //             method: 'PUT',
+    //             headers: { 'Content-Type': 'application/json' },
+
+    //             body: JSON.stringify({
+    //                 status: "checked"
+    //             })
+    //         });
+
+    //         const result = await response.json(); // ดึงข้อมูล ApiResponse ที่ส่งกลับมา
+
+    //         if (result.success) {
+    //             console.log("ข้อความจากเซิร์ฟเวอร์:", result.message);
+    //             setReport(result.data); // อัปเดตข้อมูล report ใน State
+    //         } else {
+    //             console.error("เกิดข้อผิดพลาด:", result.message);
+    //         }
+    //     } catch (error) {
+    //         console.error("การเชื่อมต่อล้มเหลว:", error);
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     if (!state?.id) return;
+
+    //     setLoading(true);
+    //     // ดึงข้อมูลรายงานก่อน
+    //     fetch(`http://localhost:8082/report/${state.id}`)
+    //         .then(res => res.json())
+    //         .then(async (response) => {
+    //             const reportData = response.data;
+    //             setReport(reportData);
+    //             console.log("รายงานที่ได้รับ:", reportData);
+
+    //             if (reportData.foodId || reportData.bookingId) {
+    //                 // ดึงข้อมูลแบบแยกกันเพื่อความปลอดภัย ถ้าตัวใดตัวหนึ่งพังจะไม่กระทบอีกตัว
+    //                 const fetchFood = reportData.foodId
+    //                     ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json())
+    //                     : Promise.resolve(null);
+
+    //                 const fetchBooking = reportData.bookingId
+    //                     ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json())
+    //                     : Promise.resolve(null);
+
+    //                 const [foodRes, bookingRes] = await Promise.all([fetchFood, fetchBooking]);
+
+    //                 // ตรวจสอบว่ามี .data หรือไม่ (ถ้ามีให้ดึง .data ถ้าไม่มีให้ใช้ตัวมันเอง)
+    //                 const foodDetail = foodRes?.data || foodRes;
+    //                 const bookingDetail = bookingRes?.data || bookingRes;
+
+    //                 console.log("Food Detail ที่เซ็ตลง State:", foodDetail);
+
+    //                 setReport(prev => ({
+    //                     ...prev,
+    //                     foodDetail: foodDetail,
+    //                     bookingDetail: bookingDetail
+    //                 }));
+    //             }
+    //             setLoading(false);
+
+    //         })
+    //         .catch(err => {
+    //             setError(err.message);
+    //             setLoading(false);
+    //         });
+    // }, [state]);
+
     useEffect(() => {
-        if (!state?.id) return;
+        if (!id) return;
 
-        setLoading(true);
-        // 1. ดึงข้อมูลรายงานก่อน
-        fetch(`http://localhost:8082/report/${state.id}`)
-            .then(res => res.json())
-            .then(async (response) => {
-                const reportData = response.data;
-                setReport(reportData);
-                console.log("รายงานที่ได้รับ:", reportData);
+        const loadDataAndUpdateStatus = async () => {
+            setLoading(true);
+            try {
+                // 1. ดึงข้อมูลรายงานก่อน
+                const reportRes = await fetch(`http://localhost:8082/report/${id}`);
+                const reportResponse = await reportRes.json();
+                let reportData = reportResponse.data;
 
-                // 2. ดึงข้อมูล Food และ Booking เพิ่มเติม (หากมี ID)
-                // if (reportData.foodId || reportData.bookingId) {
-                //     const [foodRes, bookingRes] = await Promise.all([
-                //         fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json()),
-                //         fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json())
-                //     ]);
-                //     console.log("Food ที่ได้รับ:", foodRes);
+                // 2. ถ้าสถานะยังเป็น WAITING ให้สั่งเปลี่ยนเป็น CHECKED ก่อนแสดงผล
+                if (reportData.status === 'pending') {
+                    const updateRes = await fetch(`http://localhost:8082/report/${id}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: "checked" })
+                    });
+                    const updateResult = await updateRes.json();
 
-                //     // อัปเดต state ให้มีข้อมูลครบ
-                //     setReport(prev => ({
-                //         ...prev,
-                //         foodDetail: foodRes,
-                //         bookingDetail: bookingRes
+                    if (updateResult.success) {
+                        reportData = updateResult.data; // อัปเดตข้อมูลเป็นชุดล่าสุดที่มีสถานะ CHECKED แล้ว
+                    }
+                }
 
-                //     }));
-                // }
+                // 3. ดึงข้อมูล Food/Booking ต่อ
                 if (reportData.foodId || reportData.bookingId) {
-                    // ดึงข้อมูลแบบแยกกันเพื่อความปลอดภัย ถ้าตัวใดตัวหนึ่งพังจะไม่กระทบอีกตัว
-                    const fetchFood = reportData.foodId
-                        ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json())
-                        : Promise.resolve(null);
-
-                    const fetchBooking = reportData.bookingId
-                        ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json())
-                        : Promise.resolve(null);
+                    const fetchFood = reportData.foodId ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json()) : Promise.resolve(null);
+                    const fetchBooking = reportData.bookingId ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json()) : Promise.resolve(null);
 
                     const [foodRes, bookingRes] = await Promise.all([fetchFood, fetchBooking]);
 
-                    // ตรวจสอบว่ามี .data หรือไม่ (ถ้ามีให้ดึง .data ถ้าไม่มีให้ใช้ตัวมันเอง)
-                    const foodDetail = foodRes?.data || foodRes;
-                    const bookingDetail = bookingRes?.data || bookingRes;
-
-                    console.log("Food Detail ที่เซ็ตลง State:", foodDetail);
-
-                    setReport(prev => ({
-                        ...prev,
-                        foodDetail: foodDetail,
-                        bookingDetail: bookingDetail
-                    }));
+                    reportData = {
+                        ...reportData,
+                        foodDetail: foodRes?.data || foodRes,
+                        bookingDetail: bookingRes?.data || bookingRes
+                    };
                 }
-                setLoading(false);
 
-            })
-            .catch(err => {
+                setReport(reportData);
+            } catch (err) {
                 setError(err.message);
+            } finally {
                 setLoading(false);
-            });
-    }, [state]);
+            }
+        };
+
+        loadDataAndUpdateStatus();
+    }, [id]);
 
     const handleAction = async (actionType) => {
-        const confirm = await Swal.fire({
-            title: 'ยืนยันการดำเนินการ?',
+        const isFood = actionType === 'food';
+        const actionLabel = isFood ? "ปิดการแสดงอาหาร" : "ระงับบัญชีผู้ใช้";
+        // const targetName = isFood ? report.foodDetail?.foodName : report.foodDetail?.donorName;
+
+        // const detail = report.foodDetail;
+        // console.log("Current Detail Status:", detail);
+        if (isFood && report.foodDetail.foodStatus === 'disable') {
+            Swal.fire('อาหารรายการนี้ถูกปิดการแสดงผลไปแล้ว', '', 'info');
+            return;
+        }
+        if (!isFood && report.donorStatus === 'deactivate') {
+            Swal.fire('บัญชีผู้ใช้งานนี้ถูกระงับไปแล้ว', '', 'info');
+            return;
+        }
+
+        // 1. ใช้ Swal.fire แทน window.confirm
+        const result = await Swal.fire({
+            title: `ยืนยันการ${actionLabel}?`,
+            // text: `รายการ: ${targetName || 'ไม่ระบุชื่อ'}`,
             icon: 'warning',
+            iconColor: '#d33',
             showCancelButton: true,
-            confirmButtonText: 'ยืนยัน'
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#a0a0a0',
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true,
         });
 
-        if (confirm.isConfirmed) {
-            const url = actionType === 'food' ? `/deactivate-food` : `/suspend-user`;
-            await fetch(`http://localhost:8082/report/${state.id}${url}`, { method: 'PUT' });
-            Swal.fire('สำเร็จ', 'ดำเนินการเรียบร้อย', 'success');
-            navigate('/manage-reports');
+        if (!result.isConfirmed) return; // ถ้ากดยกเลิก ให้จบฟังก์ชัน
+
+        try {
+            const token = localStorage.getItem("accessToken");
+            const endpoint = isFood
+                ? `http://localhost:8082/foods/${report.foodDetail.id}/status`
+                : `http://localhost:8082/donor/${report.foodDetail.donorId}/status`;
+
+            const statusToSend = isFood ? 'disable' : 'deactivate';
+
+            const res = await fetch(endpoint, {
+                method: 'PUT',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status: statusToSend
+                })
+            });
+
+            if (res.ok) {
+                await Swal.fire({
+                    title: `${actionLabel}เรียบร้อยแล้ว`,
+                    icon: 'success',
+                    showCancelButton: false,
+                    confirmButtonColor: '#2ecc71',
+                    confirmButtonText: 'ยืนยัน',
+                });
+                navigate('/report-list');
+            } else {
+                throw new Error("เกิดข้อผิดพลาดจากฝั่ง Server");
+            }
+        } catch (err) {
+            // 3. ใช้ Swal.fire แทน alert แจ้งเตือนข้อผิดพลาด
+            Swal.fire({
+                title: 'ผิดพลาด!',
+                text: err.message,
+                icon: 'error'
+            });
         }
     };
 
@@ -136,7 +259,6 @@ export default function ReportDetail() {
         "SPOILED": "อาหารมีกลิ่นหรือสภาพผิดปกติ",
         "OTHER": "อื่นๆ"
     };
-
 
     if (loading) return <div style={styles.loading}>กำลังโหลด...</div>;
     if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
@@ -446,5 +568,16 @@ const styles = {
     bookingValue: {
         color: "#328d7d",           // สีเขียวพาสเทลเข้มตามภาพต้นฉบับ
         fontWeight: "500",
+    },
+    loading: {
+        textAlign: "center",
+        padding: "100px",
+        color: "#ff8c00",
+        fontSize: "20px"
+    },
+    error: {
+        textAlign: "center",
+        padding: "100px",
+        color: "red"
     },
 };

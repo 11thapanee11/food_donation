@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class FoodDto {
+    private Integer id;
     private String foodName;
     private String description;
 
@@ -41,10 +42,11 @@ public class FoodDto {
     private String foodImage;
 
     // สำคัญ: ต้องรับเป็น ID (Integer) ให้ตรงกับที่ Java ต้องการ
-    private Integer foodCategory;
+    private Integer foodCateId;
+    private String foodCateName;
     // private Integer donor;
-    private String donorFirstName;
-    private String donorLastName;
+    private Integer donorId;
+    private String donorName;
 
     public String getFoodName() {
         return foodName;
@@ -174,30 +176,6 @@ public class FoodDto {
         this.foodStatus = foodStatus;
     }
 
-    public Integer getFoodCategory() {
-        return foodCategory;
-    }
-
-    public void setFoodCategory(Integer foodCategory) {
-        this.foodCategory = foodCategory;
-    }
-
-    // public Integer getDonor() {
-    // return donor;
-    // }
-
-    // public void setDonor(Integer donor) {
-    // this.donor = donor;
-    // }
-
-    // public MultipartFile getFoodImage() {
-    // return foodImage;
-    // }
-
-    // public void setFoodImage(MultipartFile foodImage) {
-    // this.foodImage = foodImage;
-    // }
-
     public String getFoodImage() {
         return foodImage;
     }
@@ -206,20 +184,48 @@ public class FoodDto {
         this.foodImage = foodImage;
     }
 
-    public String getDonorFirstName() {
-        return donorFirstName;
+    public Integer getDonorId() {
+        return donorId;
     }
 
-    public void setDonorFirstName(String donorFirstName) {
-        this.donorFirstName = donorFirstName;
+    public void setDonorId(Integer donorId) {
+        this.donorId = donorId;
     }
 
-    public String getDonorLastName() {
-        return donorLastName;
+    public String getDonorName() {
+        return donorName;
     }
 
-    public void setDonorLastName(String donorLastName) {
-        this.donorLastName = donorLastName;
+    public void setDonorName(String donorName) {
+        this.donorName = donorName;
     }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getFoodCateId() {
+        return foodCateId;
+    }
+
+    public void setFoodCateId(Integer foodCateId) {
+        this.foodCateId = foodCateId;
+    }
+
+    public String getFoodCateName() {
+        return foodCateName;
+    }
+
+    public void setFoodCateName(String foodCateName) {
+        this.foodCateName = foodCateName;
+    }
+
+    
+
+    
 
 }

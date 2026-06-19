@@ -20,6 +20,21 @@ public class DonorService {
         this.bookingRepository = bookingRepository;
     }
 
+    public List<DonorDto> getAllDonors() {
+        // ดึง List ของ Donor ที่มีข้อมูล User อยู่ด้วย
+        List<Donor> donors = donorRepository.findAllDonors();
+
+        return donors.stream().map(d -> {
+            DonorDto dto = new DonorDto();
+            dto.setId(d.getUser().getUserId());
+            dto.setName(d.getUser().getFirstName() + " " + d.getUser().getLastName());
+            dto.setEmail(d.getUser().getEmail());
+            dto.setStatus(d.getDonorStatus());
+            dto.setTotalCo2(d.getTotalImpactAmount());
+            return dto;
+        }).toList();
+    }
+
     public Donor getOrCreateDonor(User user) {
         // 1. ลองหาดูก่อน
         // return donorRepository.findById(user.getUserId()).orElseGet(() -> {
@@ -136,6 +151,14 @@ public class DonorService {
                         d.getUser().getLastName(),
                         d.getTotalImpactAmount()))
                 .toList();
+    }
+
+    public void updateDonorStatus(Integer userId, String newStatus) {
+        Donor donor = donorRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลผู้บริจาค"));
+
+        donor.setDonorStatus(newStatus);
+        donorRepository.save(donor);
     }
 
 }

@@ -218,7 +218,7 @@ export default function Navbar() {
     const isAdminDashboardActive = currentPath === "/admin-dashboard";
     const isManageFoodsActive = currentPath === "/manage-foods" || (currentPath === "/food-detail" && originPath === "/manage-foods");
     const isManageUsersActive = currentPath === "/manage-users";
-    const isReportActive = currentPath === "/manage-report";
+    const isReportActive = currentPath === "/manage-report" || (currentPath === "/report-detail" && originPath === "/manage-report");
 
     return (
         <nav style={styles.loginHeader}>

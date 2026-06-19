@@ -11,6 +11,7 @@ import com.springboot.repository.*;
 import com.springboot.dto.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -33,7 +34,7 @@ public class BookingService {
     }
 
     public Booking addBooking(BookingDto request, Recipient recipient) {
-        // 1. หา User (Recipient) จาก email ของคนที่กำลังล็อกอินเข้ามาจอง
+        // หา User (Recipient) จาก email ของคนที่กำลังล็อกอินเข้ามาจอง
         // User recipientUser = userRepository.findByEmail(email)
         // .orElseThrow(() -> new RuntimeException("ไม่พบผู้ใช้"));
 
@@ -45,7 +46,7 @@ public class BookingService {
             throw new RuntimeException("ERROR: foodId เป็น null จริงๆ ด้วย! เช็ค React ด่วน");
         }
 
-        // 2. หาอาหาร (Food) ที่ต้องการจองจากไอดีที่ส่งเข้ามา
+        // หาอาหาร (Food) ที่ต้องการจองจากไอดีที่ส่งเข้ามา
         Food food = foodRepository.findById(request.getFoodId())
                 .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร"));
 
@@ -55,7 +56,7 @@ public class BookingService {
             throw new IllegalArgumentException("ขออภัย จำนวนอาหารที่เหลือไม่เพียงพอสำหรับการจอง");
         }
 
-        // 3. หักลบจำนวนอาหารคงเหลือในตาราง Food
+        // หักลบจำนวนอาหารคงเหลือในตาราง Food
         food.setRemainingUnit(food.getRemainingUnit() - request.getQuantity());
         foodRepository.save(food);
 
@@ -63,12 +64,12 @@ public class BookingService {
         // Entity
         Integer generatedCode = generateConfirmationCode();
 
-        // 4. คำนวณน้ำหนักรวมของล็อตที่จอง (จำนวนชิ้นที่จอง x
+        // คำนวณน้ำหนักรวมของล็อตที่จอง (จำนวนชิ้นที่จอง x
         // น้ำหนักต่อหน่วยของอาหารนั้น)
         // สมมติชื่อฟิลด์น้ำหนักต่อหน่วยใน Food คือ unitWeightKg
         Double totalWeight = food.getUnitWeightKg() * request.getQuantity();
 
-        // 5. สร้าง Booking entity และผูกค่าตามฟิลด์จริงของคุณเป๊ะๆ
+        // สร้าง Booking entity และผูกค่าตามฟิลด์จริงของคุณเป๊ะๆ
         Booking booking = new Booking();
         booking.setBookingUnit(request.getQuantity()); // แมตช์กับ bookingUnit
         booking.setBookingWeightKg(totalWeight); // แมตช์กับ bookingWeightKg
@@ -118,15 +119,54 @@ public class BookingService {
         return random.nextInt(900000) + 100000;
     }
 
-    public List<Booking> getListBooking(Integer id) {
-        return bookingRepository.findByRecipient_UserIdOrderByBookingDateDesc(id);
+    public List<BookingDto> getListBooking(Integer id) {
+        List<Booking> bookings = bookingRepository.findByRecipient_UserIdOrderByBookingDateDesc(id);
+
+        return bookings.stream()
+                .map(booking -> {
+                    BookingDto dto = new BookingDto();
+                    dto.setBookingId(booking.getBookingId());
+                    dto.setBookingUnit(booking.getBookingUnit());
+                    dto.setBookingWeightKg(booking.getBookingWeightKg());
+                    dto.setBookingDate(booking.getBookingDate());
+                    dto.setConfirmationCode(booking.getConfirmationCode());
+                    dto.setBookingStatus(booking.getBookingStatus());
+                    dto.setFoodId(booking.getFood().getFoodId());
+                    return dto;
+                })
+                .toList();
     }
 
-    public Booking getBookingDetail(Integer bookingId) {
+    // public Booking getBookingDetail(Integer bookingId) {
+    // System.out.println("กำลังค้นหาใบจอง ID: " + bookingId);
+
+    // return bookingRepository.findById(bookingId)
+    // .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลรายละเอียดการจองรหัส: " +
+    // bookingId));
+    // }
+    public BookingDto getBookingDetail(Integer bookingId) {
         System.out.println("กำลังค้นหาใบจอง ID: " + bookingId);
 
-        return bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลรายละเอียดการจองรหัส: " + bookingId));
+
+        // แปลง Entity -> DTO
+        BookingDto dto = new BookingDto();
+        dto.setBookingId(booking.getBookingId());
+        dto.setBookingUnit(booking.getBookingUnit());
+        dto.setBookingWeightKg(booking.getBookingWeightKg());
+        dto.setBookingDate(booking.getBookingDate());
+        dto.setConfirmationCode(booking.getConfirmationCode());
+        dto.setBookingStatus(booking.getBookingStatus());
+
+        // ถ้ามีการเชื่อมโยงกับ Food (ให้ดึงค่ามาใส่ใน DTO ตามที่วางแผนไว้)
+        if (booking.getFood() != null) {
+            dto.setFoodId(booking.getFood().getFoodId());
+            // dto.setFoodName(booking.getFood().getFoodName());
+            // dto.setFoodImage(booking.getFood().getFoodImage());
+        }
+
+        return dto;
     }
 
     public void cancelBooking(Integer bookingId) {

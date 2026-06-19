@@ -34,19 +34,19 @@ export default function ListReport() {
             <p style={styles.mainTitle}>รายงานปัญหาทั้งหมด</p>
 
             {reports.map((report) => (
-                <div key={report.reportId} style={styles.reportRow}>
+                <div key={report.reportId} style={{...styles.reportRow, opacity: report.status === 'checked' ? 0.7 : 1}}>
                     {/* คอลัมน์ต่างๆ ตามภาพ */}
-                    <span style={{ flex: 1.8 }}>{PROBLEM_MAP[report.reason] || report.reason}</span>
-                    <span style={{ flex: 1.5 }}>รายงาน {report.foodName}</span>
-                    <span style={{ flex: 1.5 }}>รายงานโดย {report.reporterName}</span>
+                    <span style={{ flex: 1.8, color: report.reportStatus === 'checked' ? '#999' : '#333'}}>{PROBLEM_MAP[report.reason] || report.reason}</span>
+                    <span style={{ flex: 1.5, color: report.reportStatus === 'checked' ? '#999' : '#333' }}>รายงาน {report.foodName}</span>
+                    <span style={{ flex: 1.5, color: report.reportStatus === 'checked' ? '#999' : '#333' }}>รายงานโดย {report.reporterName}</span>
                     <span style={{ flex: 1.2, color: '#999' }}>{new Date(report.reportDate).toLocaleDateString('th-TH', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
                     })}</span>
                     <button
-                        style={styles.detailBtn}
-                        onClick={() => navigate('/report-detail', { state: { id: report.reportId } })}
+                        style={{...styles.detailBtn, color: report.reportStatus === 'checked' ? '#777' : '#333'}}
+                        onClick={() => navigate('/report-detail', { state: { id: report.reportId, fromPage: '/manage-report' } })}
                     >
                         ดูรายละเอียด
                     </button>

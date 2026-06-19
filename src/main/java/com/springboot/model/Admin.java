@@ -4,14 +4,37 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "admin")
-public class Admin extends User {
+public class Admin {
+
+    @Id
+    @Column(name = "user_id")
+    private Integer userId;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
 
     public Admin() {
+        super();
     }
 
-    public Admin(User user) {
-        super(user.getUserId(), user.getFirstName(), user.getLastName(),
-                user.getEmail(), user.getPhoneNumber(), user.getPassword());
+    public Integer getUserId() {
+        return userId;
     }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    
 
 }
