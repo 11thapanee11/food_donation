@@ -31,43 +31,7 @@ export default function Login() {
         setErrors(newErrors);
         return valid;
     };
-
-    // const handleSubmit = async (e) => {
-    //     e.preventDefault();
-
-    //     if (!validateForm()) return;
-
-    //     const response = await fetch("http://localhost:8082/login", {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify({ email, password }),
-    //     });
-
-    //     const data = await response.json();
-
-    //     if (response.ok) {
-    //         //เก็บ token ลง localStorage
-    //         localStorage.setItem("accessToken", data.accessToken);
-    //         localStorage.setItem("refreshToken", data.refreshToken);
-    //         Swal.fire({
-    //             icon: 'success',
-    //             title: 'เข้าสู่ระบบสำเร็จ',
-    //             text: data.message,
-    //             confirmButtonColor: '#2ecc71'
-    //         }).then(() => {
-    //             // ไปหน้า HomePage หลังจากกด OK
-    //             navigate("/home");
-    //         });
-    //     } else {
-    //         Swal.fire({
-    //             icon: 'error',
-    //             title: 'เข้าสู่ระบบไม่สำเร็จ',
-    //             text: data.message || "username หรือ password ไม่ถูกต้อง",
-    //             confirmButtonColor: '#e74c3c'
-    //         });
-    //     }
-
-    // };
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -88,13 +52,6 @@ export default function Login() {
                 // 2. ดึง accessToken ออกมาจากชั้น resData.data
                 localStorage.setItem("accessToken", resData.data.accessToken);
 
-                // คีย์ refreshToken ใน Controller ล่าสุดถูกคอมเมนต์เอาไว้
-                // หากไม่ได้ใช้งาน แนะนำให้ลบหรือคอมเมนต์ออกฝั่งหน้าบ้านด้วยครับ
-                // localStorage.setItem("refreshToken", resData.data.refreshToken);
-
-                localStorage.setItem("userId", resData.data.userId);
-                localStorage.setItem("isAdmin", resData.data.isAdmin);
-
                 Swal.fire({
                     icon: 'success',
                     title: 'เข้าสู่ระบบสำเร็จ',
@@ -106,7 +63,6 @@ export default function Login() {
                     } else {
                         navigate('/');
                     }
-                    // navigate("/");
                 });
             } else {
                 // 3. กรณีอีเมลหรือรหัสผ่านผิดพลาด ดึงข้อความแจ้งเตือนจากหลังบ้านมาแสดงได้เลย

@@ -59,14 +59,17 @@ export default function Home() {
             })
             .then(resData => {
                 if (resData.success) {
-                    setFoods(resData.data);
+                    const availableFoods = resData.data.filter(
+                        food => food.foodStatus === "available"
+                    );
+                    setFoods(availableFoods);
                 } else {
                     throw new Error(resData.message || "โหลดข้อมูลอาหารไม่สำเร็จ");
                 }
             })
             .catch(err => setError(err.message))
             .finally(() => setLoading(false));
-            
+
     }, [selectedCategory, categories]);
 
     const filteredFoods = foods.filter(f =>

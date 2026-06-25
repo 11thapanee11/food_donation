@@ -32,8 +32,8 @@ export default function ListFood() {
             bgColor: "#ffebee"
         },
         expired: {
-            text: "หมดอายุ",
-            color: "#37474f",
+            text: "EXPIRED",
+            color: "#f1d900",
             bgColor: "#eceff1"
         }
     };

@@ -1,63 +1,31 @@
-import React, { Suspense, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from 'jwt-decode';
+import Swal from 'sweetalert2';
 
 export default function MyFoods() {
     const navigate = useNavigate();
 
+    const [userId, setUserId] = useState(null);
     const [myFoods, setMyFoods] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // useEffect(() => {
-    //     // สมมติว่าดึงข้อมูลอาหารที่เราเป็นคนบริจาค (อาจจะมีการส่ง userId ใน header หรือ query)
-    //     fetch("http://localhost:8082/foods/my-donations")
-    //         .then((res) => res.json())
-    //         .then((data) => setMyFoods(data))
-    //         .catch((err) => console.error("Error:", err))
-    //         .finally(() => setLoading(false));
-    // }, []);
-
-    // useEffect(() => {
-    //     const token = localStorage.getItem("accessToken"); // ดึง token ที่เก็บไว้หลัง login
-
-    //     fetch("http://localhost:8082/foods/my-donations", {
-    //         headers: {
-    //             "Authorization": `Bearer ${token}`
-    //         }
-    //     })
-    //         .then((res) => {
-    //             if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลได้");
-    //             return res.json();
-    //         })
-    //         .then((data) => setMyFoods(data))
-    //         .catch((err) => console.error("Error:", err))
-    //         .finally(() => setLoading(false));
-    // }, []);
-
-    // ฟังก์ชันช่วยแก้ปัญหาเส้นดำเวลาคลิก
-    // const handlePress = (e) => e.target.blur();
-
-
     const BASE_URL = "http://localhost:8082";
 
-    //
-    // useEffect(() => {
-    //     const token = localStorage.getItem("accessToken");
-
-    //     fetch("http://localhost:8082/foods/my-donations", {
-    //         headers: {
-    //             "Authorization": `Bearer ${token}`
-    //         }
-    //     })
-    //         .then((res) => {
-    //             if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลได้");
-    //             return res.json();
-    //         })
-    //         .then((data) => setMyFoods(data))
-    //         .catch((err) => console.error("Error:", err))
-    //         .finally(() => setLoading(false));
-    // }, []);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
+
+        if (token && token !== "undefined" && token !== "null") {
+            try {
+                const decoded = jwtDecode(token);
+                setUserId(decoded?.sub);
+            } catch (error) {
+                console.error("Token Decode Error:", error);
+                setUserId(null);
+            }
+        } else {
+            setUserId(null);
+        }
 
         fetch("http://localhost:8082/foods/my-donations", {
             headers: {
@@ -99,18 +67,6 @@ export default function MyFoods() {
         return `${formattedDate} เวลา ${formattedTime}`;
     };
 
-    // 2. ฟังก์ชันฟอร์แมตเฉพาะวันที่รับของ (เช่น: 20 มีนาคม 2569)
-    // const formatPickupDate = (dateString) => {
-    //     if (!dateString) return "-";
-    //     const date = new Date(dateString);
-
-    //     return date.toLocaleDateString("th-TH", {
-    //         day: "numeric",
-    //         month: "long",
-    //         year: "numeric"
-    //     });
-    // };
-
     // ฟังก์ชันแปลงวันที่เริ่ม-จบ ให้เป็นแบบไทยย่อ (เช่น 20 มี.ค. 2569)
     const formatPickupDate = (dateString) => {
         if (!dateString) return "-";
@@ -145,23 +101,54 @@ export default function MyFoods() {
     const STATUS_CONFIG = {
         available: {
             text: "เปิดให้รับบริจาค",
-            color: "#2e7d32",   
-            bgColor: "#e8f5e9"    
+            color: "#2e7d32",
+            bgColor: "#e8f5e9"
         },
         closed: {
             text: "ปิดให้รับบริจาค",
-            color: "#707070",     
-            bgColor: "#f0f0f0"    
+            color: "#707070",
+            bgColor: "#f0f0f0"
         },
-        deactivate: {
+        disable: {
             text: "ถูกระงับ",
-            color: "#c41414",    
+            color: "#c41414",
             bgColor: "#ffc8c8"
         },
         expired: {
             text: "หมดอายุ",
-            color: "#37474f",    
-            bgColor: "#eceff1"   
+            color: "#37474f",
+            bgColor: "#eceff1"
+        }
+    };
+
+    const handleCreateClick = async () => {
+        const token = localStorage.getItem("accessToken");
+
+        try {
+            const response = await fetch(`${BASE_URL}/donor/check-status`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resData = await response.json();
+
+            if (response.status === 403 || !resData.success) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถสร้างบริจาคได้',
+                    text: resData.message,
+                    confirmButtonColor: '#e74c3c'
+                });
+                return;
+            }
+            
+            navigate("/food-form");
+        } catch (error) {
+            console.error("Check Status Error:", error);
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ กรุณาลองใหม่อีกครั้ง");
         }
     };
 
@@ -211,7 +198,7 @@ export default function MyFoods() {
                                                 : "#37474f",
                                         }}
                                     >
-                                        {STATUS_CONFIG[food.foodStatus].text} {/* ข้อความภาษาไทยที่คุณดึงมาแสดงผลอยู่แล้ว */}
+                                        {STATUS_CONFIG[food.foodStatus]?.text || "ไม่ระบุสถานะ"}
                                     </span>
                                 </div>
 
@@ -270,7 +257,9 @@ export default function MyFoods() {
                 <div style={styles.header}>
                     <h1 style={styles.title}>รายการอาหารบริจาคของฉัน</h1>
                     <button
-                        style={styles.createBtn} onClick={() => navigate("/food-form")}
+                        style={styles.createBtn}
+                        // onClick={() => navigate("/food-form")}
+                        onClick={handleCreateClick}
                     >
                         <span style={{ fontSize: "20px", marginRight: "8px" }}  >+</span>{" "}
                         สร้างบริจาค

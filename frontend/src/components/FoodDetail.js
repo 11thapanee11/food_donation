@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import Swal from "sweetalert2";
+import { jwtDecode } from 'jwt-decode';
 
 export default function FoodDetail() {
     // const { id } = useParams();
@@ -14,24 +15,25 @@ export default function FoodDetail() {
     const incomingId = location.state?.id; // อาจจะเป็น foodId หรือ bookingId ขึ้นอยู่กับหน้าต้นทาง
     const navigate = useNavigate();
 
-
+    const [userId, setUserId] = useState(null);
     const [food, setFood] = useState(null);
     const [booking, setBooking] = useState(null);
     // const [bookingHistory, setBookingHistory] = useState([]); // สร้าง State เก็บประวัติผู้จองอาหาร
     const [loading, setLoading] = useState(true);
 
-    const currentUserId = localStorage.getItem("userId");
+    // const currentUserId = localStorage.getItem("userId");
 
     // เปรียบเทียบกับ donorId
     // หมายเหตุ: เช็คให้แน่ใจว่า donorId ใน formData เป็นอะไร (บางทีอาจจะเป็น object หรือ id)
     // const isOwner = currentUserId && String(food?.donor?.userId) === String(currentUserId);
-    const isOwner = food && food.donorId && String(food.donorId) === String(currentUserId);
+    const isOwner = food && food.donorId && String(food.donorId) === String(userId);
 
     const BASE_URL = "http://localhost:8082";
 
     // เช็กเงื่อนไขว่ามาจากหน้าจัดการรับบริจาคหรือไม่
     const isFromReceive = fromPage === "/receive";
     const isFromManage = fromPage === "/manage-foods";
+    // console.log("เช็คค่าที่รับมา:", { fromPage, isFromManage, incomingId });
 
     // เช็กสถานะการจองว่าเสร็จสมบูรณ์แล้วหรือไม่
     const isBookingCompleted = bookingStatus === "completed";
@@ -45,6 +47,23 @@ export default function FoodDetail() {
     const [reviews, setReviews] = useState([]);
 
     useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+
+        if (token && token !== "undefined" && token !== "null") {
+            try {
+                const decoded = jwtDecode(token);
+                setUserId(decoded?.sub);
+            } catch (error) {
+                console.error("Token Decode Error:", error);
+                setUserId(null);
+            }
+        } else {
+            setUserId(null);
+        }
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
         if (!incomingId) {
             console.error("ไม่พบ ID อาหาร");
             setLoading(false);
@@ -54,31 +73,26 @@ export default function FoodDetail() {
         window.scrollTo(0, 0);
         if (!incomingId) return;
 
-        // if (isFromReceive) {
-        //     // เคสที่ 1: กดมาจากหน้ารับบริจาค (ค่าส่งมาคือ bookingId)
-        //     fetch(`http://localhost:8082/bookings/${incomingId}`, {
-        //         headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
-        //     })
-        //         .then((res) => {
-        //             if (!res.ok) throw new Error("ไม่พบรายละเอียดข้อมูลการจองนี้");
-        //             return res.json();
-        //         })
-        //         .then((resData) => {
-        //             if (resData.success) {
-        //                 console.log(resData.data.food);
-        //                 setBooking(resData.data);
-        //                 setFood(resData.data.food);
-        //             } else {
-        //                 throw new Error(resData.message || "ไม่พบรายละเอียดข้อมูลการจองนี้");
-        //             }
-        //         })
-        //         .catch((err) => {
-        //             console.error("Error fetching booking:", err);
-        //             setFood(null);
-        //         })
-        //         .finally(() => setLoading(false));
+        const token = localStorage.getItem("accessToken");
+        const isValidToken = token && token !== "null" && token !== "undefined";
 
-        // } 
+        // สร้างฟังก์ชันกลางสำหรับดึงสถานะการจองซ้ำจากหลังบ้าน
+        const fetchBookingStatus = async (foodId) => {
+            if (!isValidToken) return false; // ถ้าไม่ได้ล็อกอิน ให้เป็น false เสมอ
+            try {
+                const res = await fetch(`http://localhost:8082/bookings/foods/${foodId}/check-booking`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const resData = await res.json();
+                // console.log("=== JSON FROM BACKEND ===", resData);
+                return resData?.data ?? false;
+                
+            } catch (err) {
+                console.error("Error checking booking status:", err);
+                return false;
+            }
+        };
+
         if (isFromReceive) {
             setLoading(true);
             fetch(`http://localhost:8082/bookings/${incomingId}`, {
@@ -101,11 +115,14 @@ export default function FoodDetail() {
                                     headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
                                 }).then(res => res.json());
 
-                                // รอให้ Promise ทำงานเสร็จ
                                 const [foodResult] = await Promise.all([foodPromise]);
 
-                                setFood(foodResult.data || foodResult);
-                                console.log(foodResult.data)
+                                // เรียกใช้ฟังก์ชันเช็คการจองซ้ำ ไม่ว่าจะมาจากหน้าไหน
+                                const actualFoodData = foodResult.data || foodResult;
+                                console.log("Food Data:", actualFoodData);
+
+                                setFood(actualFoodData);
+
                             } catch (error) {
                                 console.error("Error fetching food details:", error);
                                 setFood(null);
@@ -130,9 +147,16 @@ export default function FoodDetail() {
                     if (!res.ok) throw new Error("ไม่พบข้อมูลอาหารรายการนี้");
                     return res.json();
                 })
-                .then((resData) => {
+                .then(async (resData) => {
                     if (resData.success) {
-                        setFood(resData.data);
+                        const actualFoodData = resData.data;
+
+                        // เรียกใช้ฟังก์ชันเช็คการจองซ้ำ ไม่ว่าจะมาจากหน้าไหน
+                        const isBooked = await fetchBookingStatus(incomingId);
+                        actualFoodData.isCurrentByUserBooked = isBooked;
+                        // const actualFoodData = resData.data;
+                        setFood(actualFoodData);
+                        console.log(actualFoodData.isCurrentByUserBooked);
                         setBooking(null);
                     } else {
                         throw new Error(resData.message || "ไม่พบข้อมูลอาหารรายการนี้");
@@ -230,6 +254,48 @@ export default function FoodDetail() {
     }
 
     const handleReserveClick = () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+            Swal.fire({
+                title: 'กรุณาเข้าสู่ระบบ',
+                text: 'คุณต้องเข้าสู่ระบบก่อนจึงจะสามารถจองรายการอาหารได้',
+                icon: 'warning',
+                confirmButtonColor: '#ff8c00',
+                confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                showCancelButton: true,
+                cancelButtonText: 'ยกเลิก',
+                cancelButtonColor: '#a0a0a0',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // เปลี่ยนเส้นทางไปหน้า login (ปรับ path ตามสไตล์ของคุณ เช่น /login)
+                    navigate('/login');
+                }
+            });
+            return;
+        }
+
+        // if (food.isCurrentByUserBooked) {
+        //     Swal.fire({
+        //         title: 'คุณมีรายการจองนี้อยู่แล้ว',
+        //         text: 'คุณเคยทำรายการจองอาหารชิ้นนี้ไปแล้ว และอยู่ระหว่างดำเนินการ หรือรับไปแล้ว ไม่สามารถจองซ้ำได้ครับ',
+        //         icon: 'info',
+        //         confirmButtonColor: '#ff8c00',
+        //         confirmButtonText: 'ตกลง',
+        //         showCancelButton: true,
+        //         cancelButtonText: 'ดูรายการรับบริจาคของคุณ',
+        //         cancelButtonColor: '#a0a0a0',
+        //         reverseButtons: true
+        //     }).then((result) => {
+        //         // ถ้าผู้ใช้กดปุ่มสีเทา (ดูรายการรับบริจาค)
+        //         if (result.dismiss === Swal.DismissReason.cancel) {
+        //             navigate('/receive');
+        //         }
+        //     });
+        //     return;
+        // }
+
         Swal.fire({
             title: 'จองรายการอาหารบริจาค',
             html: `กรุณากรอกจำนวนที่ต้องการ จำกัดไม่เกิน ${food.limitPerPerson} <br />สามารถดูรหัสยืนยันได้รับที่รายการรับบริจาค`,
@@ -473,7 +539,7 @@ export default function FoodDetail() {
             // });
         }).then(async (result) => {
 
-            // console.log("Check Booking ID:", booking); // เช็คว่า booking เป็น object หรือเปล่า
+            // console.log("Check Booking ID:", booking);
 
             if (result.isConfirmed) {
                 const { reason, detail, file } = result.value;
@@ -504,7 +570,12 @@ export default function FoodDetail() {
                     const data = await response.json();
 
                     if (data.success) {
-                        Swal.fire("สำเร็จ!", "ส่งรายงานปัญหาเรียบร้อยแล้ว", "success");
+                        Swal.fire({
+                            icon: "success",
+                            title: "ส่งรายงานปัญหาเรียบร้อยแล้ว",
+                            confirmButtonColor: "#2ecc71"
+                        })
+                        // Swal.fire("สำเร็จ!", "ส่งรายงานปัญหาเรียบร้อยแล้ว", "success");
                     } else {
                         Swal.fire("เกิดข้อผิดพลาด", data.message || "ไม่สามารถบันทึกรายงานได้", "error");
                     }
@@ -587,67 +658,6 @@ export default function FoodDetail() {
         }
     };
 
-    // const handleToggleStatus = async (foodId) => {
-    //     // const result = await Swal.fire({
-    //     //     title: 'ยืนยันการปิดการแสดง',
-    //     //     text: "คุณต้องการปิดการแสดงผล ใช่หรือไม่",
-    //     //     showCancelButton: true,
-    //     //     confirmButtonColor: '#ff4d4d',
-    //     //     cancelButtonColor: '#b0b0b0',
-    //     //     confirmButtonText: 'ยืนยันการปิด',
-    //     //     cancelButtonText: 'ยกเลิก',
-    //     //     reverseButtons: true,
-    //     // });
-
-    //     // ตรวจสอบสถานะก่อนเริ่มทำงาน
-    //     if (food.foodStatus === 'deactivate') {
-    //         Swal.fire({
-    //             icon: 'info',
-    //             title: 'อาหารนี้ถูกปิดการแสดงผลแล้ว',
-    //             confirmButtonColor: '#3085d6'
-    //         });
-    //         return; // หยุดการทำงานทันที ไม่ต้องเปิด Swal ยืนยัน
-    //     }
-
-    //     // 2. ถ้าสถานะไม่ใช่ deactivated ถึงจะขึ้นกล่องยืนยัน
-    //     const result = await Swal.fire({
-    //         title: 'ยืนยันการปิดการแสดง',
-    //         text: "คุณต้องการปิดการแสดงผล ใช่หรือไม่",
-    //         showCancelButton: true,
-    //         confirmButtonColor: '#ff4d4d',
-    //         cancelButtonColor: '#b0b0b0',
-    //         confirmButtonText: 'ยืนยันการปิด',
-    //         cancelButtonText: 'ยกเลิก',
-    //         reverseButtons: true,
-    //     });
-
-    //     if (result.isConfirmed) {
-    //         try {
-    //             const response = await fetch(`${BASE_URL}/foods/${foodId}/deactivate`, {
-    //                 method: 'PUT',
-    //                 headers: {
-    //                     'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
-    //                     'Content-Type': 'application/json'
-    //                 }
-    //             });
-
-    //             if (response.ok) {
-    //                 Swal.fire({
-    //                     icon: "success",
-    //                     title: "ปิดการแสดงผลเรียบร้อยแล้ว",
-    //                     // text: "บันทึกรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับความคิดเห็น",
-    //                     confirmButtonColor: "#2ecc71"
-    //                 }).then(() => {
-    //                     navigate('/manage-foods');
-    //                 });
-    //             } else {
-    //                 throw new Error("ไม่สามารถปิดการแสดงผลได้");
-    //             }
-    //         } catch (error) {
-    //             Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-    //         }
-    //     }
-    // };
     const handleToggleStatus = async (food) => {
         // กำหนดสถานะใหม่ที่จะส่งไป
         const newStatus = food.foodStatus === 'disable' ? 'available' : 'disable';
@@ -697,6 +707,14 @@ export default function FoodDetail() {
             }
         }
     };
+
+    if (!food || (!isFromReceive && !isFromManage && food.foodStatus !== "available")) {
+        return (
+            <p style={{ ...styles.centerPage }}>
+                ไม่พบรายการอาหาร หรืออาหารนี้ไม่พร้อมใช้งาน
+            </p>
+        );
+    }
 
     return (
         <div style={styles.page}>
@@ -1033,8 +1051,20 @@ export default function FoodDetail() {
 
                     {/* ปุ่มกดจอง */}
                     {(!isFromReceive && !isOwner && !isFromManage) && (
-                        <button type="button" style={styles.reserveBtn} onClick={handleReserveClick}>
-                            จองรายการอาหาร
+                        // <button type="button" style={styles.reserveBtn} onClick={handleReserveClick}>
+                        //     จองรายการอาหาร
+                        // </button>
+                        <button
+                            onClick={handleReserveClick}
+                            disabled={food?.isCurrentByUserBooked}
+                            style={{
+                                ...styles.reserveBtn,
+                                backgroundColor: food?.isCurrentByUserBooked ? '#e0e0e0' : '#ff8c00',
+                                color: food?.isCurrentByUserBooked ? '#9c9c9c' : '#ffffff',
+                                cursor: food?.isCurrentByUserBooked ? 'not-allowed' : 'pointer',
+                            }}
+                        >
+                            {food?.isCurrentByUserBooked ? 'คุณจองรายการนี้แล้ว' : 'จองรายการอาหาร'}
                         </button>
                     )}
                     {/* <button
@@ -1047,7 +1077,7 @@ export default function FoodDetail() {
                 </div>
             </div>
 
-            {(isFromManage) && (
+            {(isFromManage && food && ['available', 'disable'].includes(food.foodStatus)) && (
                 <div style={{ display: 'flex', gap: '15px', marginTop: '20px', justifyContent: 'center' }}>
                     {/* ปุ่มย้อนกลับ: พื้นหลังสีเทาอ่อน ตัวหนังสือสีเข้ม */}
                     <button
@@ -1066,22 +1096,6 @@ export default function FoodDetail() {
                         ย้อนกลับ
                     </button>
 
-                    {/* ปุ่มปิดการแสดงผล: ขอบแดง พื้นหลังขาว ตัวหนังสือแดง */}
-                    {/* <button
-                        onClick={() => handleToggleStatus(food.id)}
-                        style={{
-                            padding: '10px 25px',
-                            borderRadius: '10px',
-                            border: '2px solid #ff4d4d',
-                            backgroundColor: 'transparent',
-                            color: '#ff4d4d',
-                            cursor: 'pointer',
-                            fontSize: '18px',
-                            width: '200px'
-                        }}
-                    >
-                        ปิดการแสดงผล
-                    </button> */}
                     <button
                         onClick={() => handleToggleStatus(food)} // ส่ง object food ไปเพื่อเช็คสถานะในฟังก์ชัน
                         style={{
@@ -1133,9 +1147,9 @@ const styles = {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        minHeight: "100vh",
+        minHeight: "80vh",
         fontSize: "18px",
-        color: "#666"
+        color: "#ff8c00"
     },
     leftColumn: {
         flex: "1.2",

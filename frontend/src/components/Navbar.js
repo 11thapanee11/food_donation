@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { jwtDecode } from 'jwt-decode';
 import profileMember from '../assets/images/member_profile.jpg'
 import profileAdmin from '../assets/images/admin_profile.jpg'
 import foodIcon from '../assets/images/new.png';
 import bookingIcon from '../assets/images/received.png';
 import cancelIcon from '../assets/images/cancel.png';
+import expiredIcon from '../assets/images/exp.png';
+import timeIcon from '../assets/images/time.png';
 
 export default function Navbar() {
     const location = useLocation();
@@ -15,7 +18,11 @@ export default function Navbar() {
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
 
+    const [userId, setUserId] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    const [myReadIds, setMyReadIds] = useState([]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -28,8 +35,6 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const isLoggedIn = !!localStorage.getItem("accessToken");
-
     useEffect(() => {
         // ตรวจสอบทั้งสถานะ isLoggedIn และมี Token หรือไม่
         if (isLoggedIn) {
@@ -37,11 +42,44 @@ export default function Navbar() {
         }
     }, [isLoggedIn]);
 
+    useEffect(() => {
+        // ดึงและเช็ค Token สดๆ ภายในเอฟเฟกต์รอบเดียวจบ
+        const token = localStorage.getItem("accessToken");
+
+        if (token && token !== "undefined" && token !== "null") {
+            try {
+                // ถอดรหัสสดๆ ข้างในนี้เลย ป้องกันการจำค่า null ข้ามเลเยอร์เรนเดอร์
+                const decoded = jwtDecode(token);
+
+                setUserId(decoded?.sub);
+                setIsAdmin(decoded?.isAdmin === true);
+                setIsLoggedIn(true);
+
+                // เรียกฟังก์ชันดึงการแจ้งเตือนหลังจากยืนยันแล้วว่าล็อกอินจริง
+                fetchNotifications();
+                fetchMyReadList(); // ดึงลิสต์ว่า "ฉัน" อ่านอันไหนไปแล้วบ้าง
+            } catch (error) {
+                console.error("Token Decode Error:", error);
+                // หาก Token ผิดพลาด ล้างสถานะทิ้งเพื่อความปลอดภัย
+                setUserId(null);
+                setIsAdmin(false);
+                setIsLoggedIn(false);
+            }
+        } else {
+            // กรณีไม่มี Token
+            setUserId(null);
+            setIsAdmin(false);
+            setIsLoggedIn(false);
+        }
+        setLoading(false);
+    }, [location.pathname]);
+
     const fetchNotifications = () => {
         setLoading(true);
 
         if (!navigator.geolocation) {
             console.warn("Browser ไม่รองรับ Geolocation");
+            setLoading(false);
             return;
         }
 
@@ -58,7 +96,6 @@ export default function Navbar() {
                             method: "GET",
                             headers: {
                                 "Content-Type": "application/json",
-                                // 2. ส่ง Token เพื่อระบุตัวตนและกรองรายการ "อาหารของคนอื่น"
                                 "Authorization": `Bearer ${token}`
                             }
                         }
@@ -66,109 +103,79 @@ export default function Navbar() {
 
                     if (!response.ok) throw new Error("ไม่สามารถดึงข้อมูลได้");
 
-                    const resData = await response.json(); // เปลี่ยนชื่อให้ชัดเจน
+                    const resData = await response.json();
 
-                    // ตรวจสอบว่า success เป็น true และ data เป็น array
                     if (resData.success && Array.isArray(resData.data)) {
                         setNotifications(resData.data);
                     } else {
                         console.warn("ข้อมูลว่างเปล่าหรือเกิดข้อผิดพลาด:", resData.message);
-                        setNotifications([]); // กำหนดเป็น Array ว่างเพื่อกัน Error
+                        setNotifications([]);
                     }
                 } catch (err) {
                     console.error("API Error:", err);
                 } finally {
-                    // 3. ปิดสถานะ Loading เสมอ ไม่ว่าจะสำเร็จหรือผิดพลาด
                     setLoading(false);
                 }
             },
             (error) => {
                 console.error("User ปฏิเสธการเข้าถึงตำแหน่ง:", error);
                 setLoading(false);
-                // กรณีปฏิเสธ อาจจะเรียก API ดึงเฉพาะแจ้งเตือนทั่วไปแทน
             }
         );
     };
 
-    const [readIds, setReadIds] = useState(() => {
-        return JSON.parse(localStorage.getItem('readNotifications') || '[]');
-    });
+    const fetchMyReadList = async () => {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        try {
+            const response = await fetch("http://localhost:8082/notifications/my-read-list", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const resData = await response.json();
+            if (resData.success) {
+                setMyReadIds(resData.data); // เซ็ตค่า เช่น [1, 2] เข้าไปใน State
+            }
+        } catch (error) {
+            console.error("ดึงสถานะการอ่านล้มเหลว:", error);
+        }
+    };
 
     const handleNotificationClick = async (n) => {
+        let targetId = n.foodId || (n.data ? n.data.foodId : null);
+        if (!targetId) return;
 
-        let targetId = null;
+        const token = localStorage.getItem("accessToken");
 
-        targetId = n.food?.foodId; // ดึงจาก n.food.foodId
+        try {
+            // ยิงบอกหลังบ้านตรงๆ ว่า "ฉัน (ตามตั๋ว JWT) ได้อ่านแจ้งเตือนไอดีนี้แล้วนะ"
+            const response = await fetch(`http://localhost:8082/notifications/read/${n.id}`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
 
-        console.log("Target ID identified:", targetId);
-
-        if (!targetId) {
-            console.error("ไม่พบ ID สำหรับการนำทาง!");
-            return;
-        }
-
-        const userId = localStorage.getItem("userId");
-
-        // 1. ดึง Object ทั้งหมดออกมา (ถ้าไม่มีให้เริ่มเป็น {})
-        const allReadStatus = JSON.parse(localStorage.getItem('readNotifications') || '{}');
-
-        // 2. ดึง Array ของ User คนนี้ (ถ้ายังไม่มีให้เริ่มเป็น [])
-        const userReadIds = allReadStatus[userId] || [];
-
-        // 3. ถ้ายังไม่อ่านในลิสต์ของคนนี้ ให้เพิ่มเข้าไป
-        if (!userReadIds.includes(n.notificationId)) {
-            const newUserReadIds = [...userReadIds, n.notificationId];
-
-            // อัปเดต Object รวม
-            allReadStatus[userId] = newUserReadIds;
-
-            // บันทึกกลับลง localStorage
-            localStorage.setItem('readNotifications', JSON.stringify(allReadStatus));
-
-            // อัปเดต State (ถ้ามี)
-            setReadIds(newUserReadIds);
+            const resData = await response.json();
+            if (resData.success) {
+                // เพิ่มไอดีที่เพิ่งอ่านเข้าไปใน State ทันที จุดแดงจะได้ดับเลยไม่ต้องรอรีโหลด
+                setMyReadIds(prev => [...prev, n.id]);
+            }
+        } catch (error) {
+            console.error(error);
         }
 
         setOpenNotifications(false);
 
-        // 2. อัปเดต Local State เพื่อให้จุดสีแดงหายไปทันทีโดยไม่ต้องรอโหลดหน้าใหม่
-        setNotifications(prev => prev.map(item =>
-            item.notificationId === n.notificationId ? { ...item, isRead: true } : item
-        ));
-
-        // ไปยังหน้าเป้าหมาย
-        // navigate(`/food-detail/${targetId}`, {
-        //     state: {
-        //         id: targetId,
-        //         fromPage: '/'
-        //     }
-        // });
-        navigate('/food-detail', { state: { id: targetId, fromPage: '/' } });
+        // navigate('/food-detail', { state: { id: targetId, fromPage: '/' } });
+        if (n.type === "food") {
+            navigate('/food-detail', { state: { id: targetId, fromPage: '/' } });
+        } else {
+            navigate('/food-form', { state: { id: targetId, fromPage: '/food-form' } });
+        }
     };
 
     const isRead = (notificationId) => {
-        const userId = localStorage.getItem("userId");
-        const allReadStatus = JSON.parse(localStorage.getItem('readNotifications') || '{}');
-        const userReadIds = allReadStatus[userId] || [];
-        return userReadIds.includes(notificationId);
+        return myReadIds.includes(notificationId);
     };
-
-    // const isRead = (notificationId) => {
-    //     const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-    //     return readNotifications.includes(notificationId);
-    // };
-
-    // const unreadCount = notifications.filter(n => !n.isRead).length;
-
-    // const toggleNotifications = () => {
-    //     if (!openNotifications) {
-    //         // ก่อนจะเปิดกล่อง ให้ไปดึงข้อมูลใหม่มาก่อน
-    //         fetchNotifications();
-    //     }
-    //     setOpenNotifications(!openNotifications);
-    // };
-
-
 
     const handleIconClick = () => {
         if (!isLoggedIn) {
@@ -190,12 +197,16 @@ export default function Navbar() {
     const iconMap = {
         food: foodIcon,
         booking: bookingIcon,
-        booking_cancel: cancelIcon
+        booking_cancel: cancelIcon,
+        warning: expiredIcon,
+        info: timeIcon
     };
     const headerMap = {
         food: 'มีอาหารใหม่ใกล้คุณ!',
         booking: 'มีผู้จองอาหาร!',
         booking_cancel: 'รายการจองถูกยกเลิก!',
+        warning: 'รายการอาหารหมดอายุ!',
+        info: 'รายการอาหารใกล้หมดอายุ!'
     };
 
     const handleBellClick = () => {
@@ -230,7 +241,7 @@ export default function Navbar() {
 
             {/* ตรงกลาง: Menu Links */}
             <div style={styles.menuSection}>
-                {localStorage.getItem("isAdmin") !== "true" && (
+                {!isAdmin && (
                     <>
                         <Link to="/" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
                         <Link to="/ranking" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
@@ -239,7 +250,7 @@ export default function Navbar() {
                 )}
                 {isLoggedIn && (
                     <>
-                        {localStorage.getItem("isAdmin") === "true" ? (
+                        {isAdmin ? (
                             // --- กรณีเป็นแอดมิน: แสดงเมนู Admin เท่านั้น ---
                             <>
                                 <Link to="/admin-dashboard" style={isAdminDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Dashboard</Link>
@@ -276,7 +287,7 @@ export default function Navbar() {
             {/* ฝั่งขวา: Icons & Dropdowns */}
             <div ref={dropdownRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "20px" }}>
 
-                {isLoggedIn && localStorage.getItem("isAdmin") !== "true" && (
+                {isLoggedIn && !isAdmin && (
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                         <button style={styles.iconBase}
                             onClick={handleBellClick}
@@ -288,7 +299,7 @@ export default function Navbar() {
                             }}>
                                 notifications
                             </span>
-                            {notifications.filter(n => !isRead(n.notificationId)).length > 0 && (
+                            {notifications.filter(n => !isRead(n.id)).length > 0 && (
                                 <span style={{
                                     position: "absolute",
                                     top: "0px",
@@ -316,11 +327,11 @@ export default function Navbar() {
                                     notifications.length > 0 ? (
                                         notifications.map((n) => {
                                             // เรียกใช้ฟังก์ชันตรวจสอบสถานะอ่าน
-                                            const readStatus = isRead(n.notificationId);
+                                            const readStatus = isRead(n.id);
 
                                             return (
                                                 <button
-                                                    key={n.notificationId}
+                                                    key={n.id}
                                                     type="button"
                                                     onClick={() => handleNotificationClick(n)}
                                                     style={{
@@ -336,18 +347,18 @@ export default function Navbar() {
                                                     }}
                                                 >
                                                     <div style={{ marginRight: '10px', marginTop: '2px' }}>
-                                                        <img src={iconMap[n.notificationType]} alt={n.notificationType} style={{ width: '30px', height: '30px' }} />
+                                                        <img src={iconMap[n.type]} alt={n.type} style={{ width: '30px', height: '30px' }} />
                                                     </div>
                                                     <div style={{ flex: 1 }}>
                                                         {/* เปลี่ยนจาก n.isRead เป็น readStatus */}
                                                         <p style={{ margin: 0, fontSize: '16px', fontWeight: readStatus ? '500' : 'bold', color: '#ff8c00' }}>
-                                                            {headerMap[n.notificationType]}
+                                                            {headerMap[n.type]}
                                                         </p>
                                                         <p style={{ margin: '4px 0', fontSize: '14px', color: '#555', fontWeight: readStatus ? '500' : 'bold' }}>
-                                                            {n.notificationMessage}
+                                                            {n.message}
                                                         </p>
                                                         <p style={{ margin: 0, color: '#aaa', fontSize: '11px', fontWeight: readStatus ? '500' : 'bold' }}>
-                                                            {new Date(n.notificationDate).toLocaleString('th-TH', {
+                                                            {new Date(n.date).toLocaleString('th-TH', {
                                                                 year: 'numeric', month: 'long', day: 'numeric',
                                                                 hour: '2-digit', minute: '2-digit'
                                                             })} น.
@@ -371,7 +382,7 @@ export default function Navbar() {
                     <button onClick={handleIconClick} style={styles.iconBase}>
                         {isLoggedIn ? (
                             <img
-                                src={localStorage.getItem("isAdmin") === "true" ? profileAdmin : profileMember}
+                                src={isAdmin ? profileAdmin : profileMember}
                                 alt="user avatar"
                                 style={styles.profileImg(openDropdown)}
                             />
@@ -387,13 +398,15 @@ export default function Navbar() {
 
                     {isLoggedIn && openDropdown && (
                         <div style={styles.profileDropdown}>
-                            <Link
-                                to="/profile"
-                                style={styles.dropdownItem}
-                                onClick={() => setOpenDropdown(false)}
-                            >
-                                ดูโปรไฟล์
-                            </Link>
+                            {!isAdmin && (
+                                <Link
+                                    to="/profile"
+                                    style={styles.dropdownItem}
+                                    onClick={() => setOpenDropdown(false)}
+                                >
+                                    ดูโปรไฟล์
+                                </Link>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 style={{ ...styles.dropdownItem, ...styles.logoutItem }}

@@ -18,7 +18,7 @@ export default function FoodForm() {
     const [isEditable, setIsEditable] = useState(!isEditMode);
 
     const [formData, setFormData] = useState({
-        foodImage: null,
+        fileImage: null,
         foodName: "",
         description: "",
         expiryDate: "",
@@ -35,8 +35,8 @@ export default function FoodForm() {
         latitude: "",
         longitude: "",
         foodStatus: "",
-        foodCategory: "",
-        donor: ""
+        foodCateId: "",
+        donorId: ""
     });
 
     const [errors, setErrors] = useState({});
@@ -59,7 +59,7 @@ export default function FoodForm() {
             // setFormData({ ...formData, foodImage: file });
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
-            setErrors({ ...errors, foodImage: "" });
+            setErrors({ ...errors, fileImage: "" });
         }
     };
 
@@ -70,6 +70,40 @@ export default function FoodForm() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState("");
+
+    const loadFoodData = () => {
+        if (isEditMode) {
+            fetch(`http://localhost:8082/foods/${foodId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลอาหารรายการนี้ได้");
+                    return res.json();
+                })
+                .then(resData => {
+                    if (resData.success) {
+                        console.log("=== ข้อมูลอาหารจาก API ===", resData.data);
+
+                        // แงะข้อมูลก้อนวัตถุอาหารออกมาจาก resData.data
+                        const foodInfo = resData.data;
+
+                        console.log("เช็คข้อมูลอาหาร (foodInfo):", foodInfo);
+
+                        setFormData({
+                            ...foodInfo, // กระจายข้อมูลอาหารเดิมลงฟอร์ม
+                            // ดึง ID หมวดหมู่เดิมออกมากดเลือกให้ตรงกับ Select Dropdown ในหน้าเว็บ
+                            foodCateId: foodInfo.foodCateId,
+                            fileImage: foodInfo.foodImage
+                            // foodCateId: foodInfo.foodCateId ?? foodInfo.foodCategory?.id ?? ""
+                        });
+
+                    } else {
+                        setFetchError(resData.message || "ไม่พบข้อมูลอาหารรายการนี้");
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching single food details:", err);
+                });
+        }
+    }
 
     useEffect(() => {
         // 1. ดึงข้อมูลหมวดหมู่มาใส่ใน Dropdown Select
@@ -96,35 +130,8 @@ export default function FoodForm() {
             .finally(() => setLoading(false));
 
         // 2. โหมดแก้ไข: ดึงข้อมูลอาหารเดิมมาหยอดใส่ฟอร์ม
-        if (isEditMode) {
-            fetch(`http://localhost:8082/foods/${foodId}`)
-                .then(res => {
-                    if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลอาหารรายการนี้ได้");
-                    return res.json();
-                })
-                .then(resData => {
-                    if (resData.success) {
-                        console.log("=== ข้อมูลอาหารจาก API ===", resData.data);
-
-                        // แงะข้อมูลก้อนวัตถุอาหารออกมาจาก resData.data
-                        const foodInfo = resData.data;
-                                        
-                        console.log("เช็คข้อมูลอาหาร (foodInfo):", foodInfo);
-
-                        setFormData({
-                            ...foodInfo, // กระจายข้อมูลอาหารเดิมลงฟอร์ม
-                            // ดึง ID หมวดหมู่เดิมออกมากดเลือกให้ตรงกับ Select Dropdown ในหน้าเว็บ
-                            foodCategory: foodInfo.foodCategory
-                        });
-                        
-                    } else {
-                        setFetchError(resData.message || "ไม่พบข้อมูลอาหารรายการนี้");
-                    }
-                })
-                .catch(err => {
-                    console.error("Error fetching single food details:", err);
-                });
-        }
+        loadFoodData();
+        
     }, [foodId, isEditMode]);
 
     // map ใหม่
@@ -174,17 +181,18 @@ export default function FoodForm() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Check: คลิก Submit แล้ว!");
+        // console.log("Check: คลิก Submit แล้ว!");
+        console.log("ปุ่ม Submit ถูกกดแล้ว! ข้อมูลปัจจุบัน:", formData);
 
         // 1. ประกาศดึง token มาสแตนด์บายไว้ใช้กับ header ตอนส่ง fetch ด้านล่างครับ
         const token = localStorage.getItem("accessToken");
 
         const skipFields = new Set([
-            "foodImage",
+            "fileImage",
             "description",
             "peopleCountPerMeal",
             "remainingUnit",
-            "donor",
+            "donorId",
             "foodStatus",
             "latitude",
             "longitude"
@@ -209,12 +217,19 @@ export default function FoodForm() {
             }
         });
 
+        // if (isEditMode) {
+        //     if (!formData.foodImage && !imageFile) {
+        //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+        //     }
+        // } else if (!imageFile) {
+        //     newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+        // }
         if (isEditMode) {
-            if (!formData.foodImage && !imageFile) {
-                newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+            if (!imagePreview && !imageFile && !formData.fileImage) {
+                newErrors.fileImage = "กรุณาเพิ่มรูปภาพ";
             }
         } else if (!imageFile) {
-            newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
+            newErrors.fileImage = "กรุณาเพิ่มรูปภาพ";
         }
 
         // ตรวจสอบวันที่
@@ -223,7 +238,10 @@ export default function FoodForm() {
         const pickupStartDate = new Date(formData.pickupDateStart);
         const pickupEndDate = new Date(formData.pickupDateEnd);
 
-        // 2. แก้ไขบั๊ก เติมวงเล็บ () ให้กับฟังก์ชัน .toDateString() ทั้งสองฝั่ง
+        if (expiryDate <= today) {
+            newErrors.expiryDate = "วันหมดอายุต้องเป็นวันที่ในอนาคต";
+        }
+
         if (pickupStartDate.toDateString() < today.toDateString()) {
             newErrors.pickupDateStart = "วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต";
         }
@@ -238,6 +256,9 @@ export default function FoodForm() {
             if (pickupStartDate.toDateString() === expiryDate.toDateString()) {
                 newErrors.pickupDateStart = "วันเริ่มรับต้องไม่ตรงกับวันหมดอายุ";
             }
+            if (pickupEndDate > expiryDate) {
+                newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่เกินวันหมดอายุ";
+            }
             if (pickupEndDate.toDateString() === expiryDate.toDateString()) {
                 newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่ตรงกับวันหมดอายุ";
             }
@@ -249,6 +270,25 @@ export default function FoodForm() {
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
+
+            const firstErrorField = Object.keys(newErrors)[0];
+            // console.log("คีย์แรกที่ระบบจะวิ่งไปหาคือ:", firstErrorField);
+
+            // เพิ่ม setTimeout ครอบตรงนี้ เพื่อรอให้ React Render หน้าจอเสร็จก่อน 50ms
+            setTimeout(() => {
+                // ค้นหาด้วย name attribute
+                const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+
+                if (errorElement) {
+                    console.log("เจอ Element แล้ว! กำลังเลื่อนหน้าจอไปที่:", errorElement);
+                    errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                } else {
+                    console.error(
+                        `หาไม่เจอ! บราวเซอร์มองไม่เห็นแท็กที่มี name="${firstErrorField}" บนหน้าจอ \n`
+                    );
+                }
+            }, 50); // หน่วงเวลาสั้นๆ 50 มิลลิวินาที
+
             return;
         }
 
@@ -258,8 +298,10 @@ export default function FoodForm() {
         // สร้าง FormData สำหรับส่งไป backend (เนื่องจากมีไฟล์รูปภาพ)
         const data = new FormData();
         if (imageFile) {
-            data.append("foodImage", imageFile);
+            data.append("fileImage", imageFile);
         }
+
+
 
         data.append("foodName", formData.foodName);
         data.append("description", formData.description);
@@ -274,7 +316,7 @@ export default function FoodForm() {
         data.append("limitPerPerson", Number.parseInt(formData.limitPerPerson, 10));
         data.append("latitude", Number.parseFloat(formData.latitude));
         data.append("longitude", Number.parseFloat(formData.longitude));
-        data.append("foodCategory", Number.parseInt(formData.foodCategory, 10));
+        data.append("foodCateId", Number.parseInt(formData.foodCateId, 10));
         data.append("foodStatus", formData.foodStatus);
 
         if (formData.peopleCountPerMeal !== "" && formData.peopleCountPerMeal != null) {
@@ -299,21 +341,20 @@ export default function FoodForm() {
                     try {
                         const errorData = await res.json();
                         throw new Error(errorData.message || "ไม่สามารถบันทึกข้อมูลได้");
-                    } catch (jsonError) {
+                    }
+                    catch (jsonError) {
                         throw new Error(jsonError.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
                     }
                 }
                 return res.json();
             })
-            .then((result) => { // 3. รับก้อน ApiResponse จากเซิร์ฟเวอร์
-                // เช็คค่าความสำเร็จสำเร็จผ่านฟิลด์ .success
+            .then((result) => { 
                 if (result.success) {
                     console.log("บันทึกสำเร็จ:", result);
                     setErrors({});
 
                     Swal.fire({
                         title: isEditMode ? "อัปเดตข้อมูลเรียบร้อย!" : "บันทึกข้อมูลเรียบร้อย!",
-                        // text: result.message,
                         icon: "success",
                         confirmButtonColor: "#2ecc71"
                     }).then(() => {
@@ -459,6 +500,7 @@ export default function FoodForm() {
                         type="button"
                         onClick={() => {
                             setIsEditable(false);
+                            loadFoodData();
                             // if (typeof setImageFile === "function") setImageFile(null);
                             // if (typeof setImagePreview === "function") setImagePreview(null);
                             // if (typeof fetchData === "function") fetchData();
@@ -605,7 +647,6 @@ export default function FoodForm() {
                             icon: 'success',
                             confirmButtonColor: '#2ecc71'
                         }).then(() => {
-                            // 💡 2. ปรับการดึงข้อมูลอาหารใหม่ให้สอดคล้องกับโครงสร้าง ApiResponse หลังบ้าน
                             fetch(`http://localhost:8082/foods/${foodId}`)
                                 .then(res => res.json())
                                 .then(updatedResData => {
@@ -613,7 +654,7 @@ export default function FoodForm() {
                                         const foodInfo = updatedResData.data; // แงะข้อมูลออกมาจาก .data
                                         setFormData({
                                             ...foodInfo,
-                                            foodCategory: foodInfo.foodCategory?.foodCateId || ""
+                                            foodCateId: foodInfo.foodCateId?.foodCateId || ""
                                         });
                                     }
                                 })
@@ -632,8 +673,7 @@ export default function FoodForm() {
         });
     };
 
-    console.log("หมวดหมู่ที่ถูกเลือก (formData):", formData.foodCateName);
-    console.log("รายการหมวดหมู่ทั้งหมด (categories):", categories);
+    console.log("หมวดหมู่ที่ถูกเลือก (formData):", formData.foodCateId);
 
     return (
         <div style={styles.page}>
@@ -684,6 +724,7 @@ export default function FoodForm() {
                             }}>
                                 <p style={{ ...styles.label, margin: 0, whiteSpace: "nowrap", fontSize: "18px", color: "#b4b4b4" }}>สถานะบริจาค :</p>
                                 <select
+                                    id="foodStatus"
                                     name="foodStatus"
                                     value={formData.foodStatus || "available"}
                                     onChange={handleChange}
@@ -714,6 +755,7 @@ export default function FoodForm() {
                     <div style={styles.imageUploadContainer}>
                         <button
                             type="button"
+                            name="fileImage"
                             onClick={handleClickUpload}
                             // style={{
                             //     ...styles.uploadBox,
@@ -729,7 +771,6 @@ export default function FoodForm() {
                         >
                             <input
                                 type="file"
-                                name="foodImage"
                                 accept="image/*"
                                 onChange={handleImageChange}
                                 style={{ display: "none" }}
@@ -754,8 +795,8 @@ export default function FoodForm() {
                         {renderFoodImage()}
 
                     </div>
-                    {errors.foodImage && (
-                        <div style={{ color: "red", marginBottom: "10px" }}>{errors.foodImage}</div>
+                    {errors.fileImage && (
+                        <div style={{ color: "red", marginBottom: "10px" }}>{errors.fileImage}</div>
                     )}
 
                     {/* Section 2: ข้อมูลอาหาร */}
@@ -783,7 +824,7 @@ export default function FoodForm() {
                         <div style={styles.inputGroup}>
                             <p style={styles.label}>หมวดหมู่</p>
                             <select
-                                name="foodCategory" // เปลี่ยนชื่อให้ตรงกับ state
+                                name="foodCateId" // เปลี่ยนชื่อให้ตรงกับ state
                                 value={String(formData.foodCateId || "")}
                                 disabled={!isEditable}
                                 style={{
@@ -800,7 +841,7 @@ export default function FoodForm() {
                                     </option>
                                 ))}
                             </select>
-                            {errors.foodCategory && <span style={{ color: "red" }}>{errors.foodCategory}</span>}
+                            {errors.foodCateId && <span style={{ color: "red" }}>{errors.foodCateId}</span>}
                         </div>
                     </div>
 

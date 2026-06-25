@@ -126,7 +126,7 @@ export default function AdminDashboard() {
                         </span>
                     </div>
                     <p style={{ fontSize: '20px', margin: '0 0' }}>จำนวนรายงานปัญหาทั้งหมด</p>
-                    <strong style={{ fontSize: '36px', color: '#f44336' }}>{stats.totalReport}</strong>
+                    <strong style={{ fontSize: '36px', color: '#f44336' }}>{stats.totalReports}</strong>
                     <div style={styles.reportStatus}>
                         <span style={{ color: 'red' }}>รอตรวจสอบ : {stats.pendingReport || 0}</span>
                         {" | "}

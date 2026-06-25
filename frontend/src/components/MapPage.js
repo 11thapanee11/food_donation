@@ -116,7 +116,7 @@ const MapPage = () => {
             })
             .then((resData) => { 
                 if (resData.success) {
-                    const validFoods = resData.data.filter(item => item.latitude && item.longitude);
+                    const validFoods = resData.data.filter(item => item.latitude && item.longitude && item.foodStatus === "available");
                     setFoods(validFoods);
                 } else {
                     throw new Error(resData.message || "โหลดข้อมูลพิกัดแผนที่ไม่สำเร็จ");

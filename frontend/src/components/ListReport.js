@@ -45,7 +45,7 @@ export default function ListReport() {
                         year: 'numeric',
                     })}</span>
                     <button
-                        style={{...styles.detailBtn, color: report.reportStatus === 'checked' ? '#777' : '#333'}}
+                        style={{...styles.detailBtn, color: report.reportStatus === 'checked' ? '#777' : '#ff8c00'}}
                         onClick={() => navigate('/report-detail', { state: { id: report.reportId, fromPage: '/manage-report' } })}
                     >
                         ดูรายละเอียด

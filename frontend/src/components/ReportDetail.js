@@ -13,81 +13,6 @@ export default function ReportDetail() {
 
     const navigate = useNavigate();
 
-    // useEffect(() => {
-    //     if (id) {
-    //         updateReportStatus(id);
-    //     }
-    // }, [id]);
-
-    // const updateReportStatus = async (reportId) => {
-    //     try {
-    //         const response = await fetch(`http://localhost:8082/report/${reportId}/status`, {
-    //             method: 'PUT',
-    //             headers: { 'Content-Type': 'application/json' },
-
-    //             body: JSON.stringify({
-    //                 status: "checked"
-    //             })
-    //         });
-
-    //         const result = await response.json(); // ดึงข้อมูล ApiResponse ที่ส่งกลับมา
-
-    //         if (result.success) {
-    //             console.log("ข้อความจากเซิร์ฟเวอร์:", result.message);
-    //             setReport(result.data); // อัปเดตข้อมูล report ใน State
-    //         } else {
-    //             console.error("เกิดข้อผิดพลาด:", result.message);
-    //         }
-    //     } catch (error) {
-    //         console.error("การเชื่อมต่อล้มเหลว:", error);
-    //     }
-    // };
-
-    // useEffect(() => {
-    //     if (!state?.id) return;
-
-    //     setLoading(true);
-    //     // ดึงข้อมูลรายงานก่อน
-    //     fetch(`http://localhost:8082/report/${state.id}`)
-    //         .then(res => res.json())
-    //         .then(async (response) => {
-    //             const reportData = response.data;
-    //             setReport(reportData);
-    //             console.log("รายงานที่ได้รับ:", reportData);
-
-    //             if (reportData.foodId || reportData.bookingId) {
-    //                 // ดึงข้อมูลแบบแยกกันเพื่อความปลอดภัย ถ้าตัวใดตัวหนึ่งพังจะไม่กระทบอีกตัว
-    //                 const fetchFood = reportData.foodId
-    //                     ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json())
-    //                     : Promise.resolve(null);
-
-    //                 const fetchBooking = reportData.bookingId
-    //                     ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json())
-    //                     : Promise.resolve(null);
-
-    //                 const [foodRes, bookingRes] = await Promise.all([fetchFood, fetchBooking]);
-
-    //                 // ตรวจสอบว่ามี .data หรือไม่ (ถ้ามีให้ดึง .data ถ้าไม่มีให้ใช้ตัวมันเอง)
-    //                 const foodDetail = foodRes?.data || foodRes;
-    //                 const bookingDetail = bookingRes?.data || bookingRes;
-
-    //                 console.log("Food Detail ที่เซ็ตลง State:", foodDetail);
-
-    //                 setReport(prev => ({
-    //                     ...prev,
-    //                     foodDetail: foodDetail,
-    //                     bookingDetail: bookingDetail
-    //                 }));
-    //             }
-    //             setLoading(false);
-
-    //         })
-    //         .catch(err => {
-    //             setError(err.message);
-    //             setLoading(false);
-    //         });
-    // }, [state]);
-
     useEffect(() => {
         if (!id) return;
 
@@ -141,10 +66,7 @@ export default function ReportDetail() {
     const handleAction = async (actionType) => {
         const isFood = actionType === 'food';
         const actionLabel = isFood ? "ปิดการแสดงอาหาร" : "ระงับบัญชีผู้ใช้";
-        // const targetName = isFood ? report.foodDetail?.foodName : report.foodDetail?.donorName;
 
-        // const detail = report.foodDetail;
-        // console.log("Current Detail Status:", detail);
         if (isFood && report.foodDetail.foodStatus === 'disable') {
             Swal.fire('อาหารรายการนี้ถูกปิดการแสดงผลไปแล้ว', '', 'info');
             return;
@@ -197,7 +119,7 @@ export default function ReportDetail() {
                     confirmButtonColor: '#2ecc71',
                     confirmButtonText: 'ยืนยัน',
                 });
-                navigate('/report-list');
+                navigate('/manage-report');
             } else {
                 throw new Error("เกิดข้อผิดพลาดจากฝั่ง Server");
             }
