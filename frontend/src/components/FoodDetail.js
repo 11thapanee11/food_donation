@@ -86,7 +86,7 @@ export default function FoodDetail() {
                 const resData = await res.json();
                 // console.log("=== JSON FROM BACKEND ===", resData);
                 return resData?.data ?? false;
-                
+
             } catch (err) {
                 console.error("Error checking booking status:", err);
                 return false;
@@ -663,6 +663,24 @@ export default function FoodDetail() {
         const newStatus = food.foodStatus === 'disable' ? 'available' : 'disable';
         const actionText = food.foodStatus === 'disable' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล';
 
+        // ถ้ากำลังจะเปิดการแสดงผล ให้เช็ควันหมดอายุก่อน
+        if (newStatus === 'available' && food.expiryDate) {
+            const expiryTime = new Date(food.expiryDate).getTime();
+            const currentTime = new Date().getTime();
+
+            // ถ้าเวลาหมดอายุน้อยกว่าเวลาปัจจุบัน แปลว่าหมดอายุแล้ว
+            if (expiryTime < currentTime) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถเปิดการแสดงผลได้',
+                    text: 'อาหารชิ้นนี้หมดอายุไปแล้ว ไม่สามารถเปิดใช้งานได้อีก',
+                    confirmButtonColor: '#ff4d4d',
+                    confirmButtonText: 'ตกลง'
+                });
+                return;
+            }
+        }
+
         const result = await Swal.fire({
             title: `ยืนยันการ${actionText}?`,
             icon: food.foodStatus === 'disable' ? 'question' : 'warning',
@@ -677,13 +695,6 @@ export default function FoodDetail() {
 
         if (result.isConfirmed) {
             try {
-                // const response = await fetch(`${BASE_URL}/foods/${foodId}/deactivate`, {
-                //     method: 'PUT',
-                //     headers: {
-                //         'Authorization': `Bearer ${localStorage.getItem("accessToken")}`,
-                //         'Content-Type': 'application/json'
-                //     }
-                // });
                 const response = await fetch(`${BASE_URL}/foods/${food.id}/status`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -700,7 +711,7 @@ export default function FoodDetail() {
                         navigate('/manage-foods');
                     });
                 } else {
-                    throw new Error("ไม่สามารถปิดการแสดงผลได้");
+                    throw new Error("ไม่สามารถเปิดหรือปิดการแสดงผลได้");
                 }
             } catch (error) {
                 Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');

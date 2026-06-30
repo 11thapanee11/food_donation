@@ -60,7 +60,10 @@ public class ReportService {
     }
 
     public List<ReportDto> getAllReports() {
-        return reportRepository.findAll().stream().map(r -> {
+        return reportRepository.findAll().stream()
+        // รียงลำดับจากใหม่ล่าสุด
+        .sorted(Comparator.comparing(Report::getReportDate).reversed())
+        .map(r -> {
             ReportDto dto = new ReportDto();
             dto.setReportId(r.getReportId());
             dto.setReason(r.getReportReason());

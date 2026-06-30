@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.Claims;
 
 @Component
 public class JwtUtil {
@@ -34,24 +35,16 @@ public class JwtUtil {
     //             .compact();
     // }
     // ใช้ userId เป็น subject
-    public String generateToken(String userId, long expirationMillis) {
+    public String generateToken(String userId, boolean isAdmin, long expirationMillis) {
         return Jwts.builder()
                 .setSubject(userId)
+                .claim("isAdmin", isAdmin) // ฝังสถานะแอดมินลงใน Payload ของ Token
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // public String extractEmail(String token) {
-    //     return Jwts.parserBuilder()
-    //             .setSigningKey(secretKey)
-    //             .build()
-    //             .parseClaimsJws(token)
-    //             .getBody()
-    //             .getSubject();
-    // }
-    // ดึง userId ออกมา
     public String extractUserId(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
@@ -59,6 +52,18 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+    
+    public boolean extractIsAdmin(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        
+        // ดึงคีย์ "isAdmin" ออกมา ถ้าเป็น null ให้ default เป็น false
+        Boolean isAdmin = claims.get("isAdmin", Boolean.class);
+        return isAdmin != null ? isAdmin : false;
     }
 
     // public boolean validateToken(String token, String email) {

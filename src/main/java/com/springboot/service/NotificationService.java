@@ -7,12 +7,14 @@ import com.springboot.model.*;
 import com.springboot.repository.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 @Service
 public class NotificationService {
+
     private NotificationRepository notificationRepository;
     private FoodRepository foodRepository;
     private BookingRepository bookingRepository;
@@ -24,6 +26,19 @@ public class NotificationService {
         this.bookingRepository = bookingRepository;
     }
 
+    private NotificationDto convertToDto(Notification n) {
+        NotificationDto dto = new NotificationDto();
+        dto.setId(n.getNotificationId());
+        dto.setMessage(n.getNotificationMessage());
+        dto.setDate(n.getNotificationDate());
+        dto.setType(n.getNotificationType());
+        if (n.getFood() != null)
+            dto.setFoodId(n.getFood().getFoodId());
+        if (n.getBooking() != null)
+            dto.setBookingId(n.getBooking().getBookingId());
+        return dto;
+    }
+
     public Notification createFoodNotification(Food food) {
         Notification notification = new Notification();
         notification.setNotificationMessage("มีอาหารใหม่ใกล้คุณ: " + food.getFoodName());
@@ -33,6 +48,23 @@ public class NotificationService {
         notification.setFood(food);
 
         return notificationRepository.save(notification);
+    }
+
+    public void createExpirationNotification(Food food, String message, String type) {
+        boolean isAlreadyNotified = notificationRepository.existsByFoodAndNotificationType(food, type);
+
+        if (isAlreadyNotified) {
+            return;
+        }
+
+        Notification notification = new Notification();
+        notification.setNotificationMessage(message);
+        notification.setNotificationDate(LocalDateTime.now());
+        notification.setNotificationType(type); // ใช้ type เป็น warning เพื่อแยกจาก food ใหม่
+        notification.setIsRead(false);
+        notification.setFood(food);
+
+        notificationRepository.save(notification);
     }
 
     public Notification createBookingNotification(Booking booking) {
@@ -96,12 +128,28 @@ public class NotificationService {
         return R * c;
     }
 
-    public List<Notification> getNearbyFoodNotifications(double userLat, double userLng, double radius,
+    // public List<Notification> getNearbyFoodNotifications(double userLat, double
+    // userLng, double radius,
+    // Integer userId) {
+    // // ดึง Notification ประเภท 'food' ทั้งหมดมาก่อน
+    // List<Notification> allFoodNotifications =
+    // notificationRepository.findByNotificationType("food");
+
+    // // กรองเฉพาะรายการที่ระยะทางอยู่ในรัศมี (ใช้ Haversine Formula)
+    // return allFoodNotifications.stream()
+    // .filter(n -> {
+    // Food food = n.getFood();
+    // boolean isNotOwner = !food.getDonor().getUserId().equals(userId);
+    // double dist = calculateDistance(userLat, userLng, food.getLatitude(),
+    // food.getLongitude());
+    // return isNotOwner && dist <= radius;
+    // })
+    // .toList();
+    // }
+    public List<NotificationDto> getNearbyFoodNotifications(double userLat, double userLng, double radius,
             Integer userId) {
-        // 1. ดึง Notification ประเภท 'food' ทั้งหมดมาก่อน
         List<Notification> allFoodNotifications = notificationRepository.findByNotificationType("food");
 
-        // 2. กรองเฉพาะรายการที่ระยะทางอยู่ในรัศมี (ใช้ Haversine Formula)
         return allFoodNotifications.stream()
                 .filter(n -> {
                     Food food = n.getFood();
@@ -109,12 +157,28 @@ public class NotificationService {
                     double dist = calculateDistance(userLat, userLng, food.getLatitude(), food.getLongitude());
                     return isNotOwner && dist <= radius;
                 })
+                .map(this::convertToDto) // <--- แปลงที่ตรงนี้
                 .toList();
     }
 
-    public List<Notification> getBookingNotifications(Integer userId) {
+    // public List<Notification> getBookingNotifications(Integer userId) {
+    // List<String> types = List.of("booking", "booking_cancel");
+    // return notificationRepository.findBookingsByDonorIdAndTypes(userId, types);
+    // }
+    public List<NotificationDto> getBookingNotifications(Integer userId) {
         List<String> types = List.of("booking", "booking_cancel");
-        return notificationRepository.findBookingsByDonorIdAndTypes(userId, types);
+        return notificationRepository.findBookingsByDonorIdAndTypes(userId, types)
+                .stream()
+                .map(this::convertToDto) // <--- แปลงที่ตรงนี้
+                .toList();
+    }
+
+    public List<NotificationDto> getExpirationNotifications(Integer userId) {
+        List<String> types = List.of("warning", "info");
+        return notificationRepository.findBookingsByDonorIdAndTypes(userId, types)
+                .stream()
+                .map(this::convertToDto) // <--- แปลงที่ตรงนี้
+                .toList();
     }
 
     // ดึงเฉพาะแจ้งเตือนการจองและการยกเลิก (สำหรับผู้บริจาค)
@@ -131,10 +195,25 @@ public class NotificationService {
     }
 
     // อัปเดตสถานะการอ่าน
-    public Notification markAsRead(Integer id) {
-        Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
-        notification.setIsRead(true);
-        return notificationRepository.save(notification);
+    // public Notification markAsRead(Integer id) {
+    // Notification notification = notificationRepository.findById(id)
+    // .orElseThrow(() -> new RuntimeException("Notification not found"));
+    // notification.setIsRead(true);
+    // return notificationRepository.save(notification);
+    // }
+
+    private final Map<String, List<Integer>> readNotifications = new ConcurrentHashMap<>();
+
+    // 1. บันทึกเมื่อยูสเซอร์กดอ่าน
+    public void markAsRead(String userId, int notificationId) {
+        readNotifications.computeIfAbsent(userId, k -> new ArrayList<>());
+        if (!readNotifications.get(userId).contains(notificationId)) {
+            readNotifications.get(userId).add(notificationId);
+        }
+    }
+
+    // 2. ดึงเฉพาะลิสต์ไอดีที่ "ยูสเซอร์คนนี้" เคยกดอ่านแล้ว ส่งกลับไปให้หน้าบ้าน
+    public List<Integer> getReadIdsForUser(String userId) {
+        return readNotifications.getOrDefault(userId, new ArrayList<>());
     }
 }

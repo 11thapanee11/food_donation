@@ -34,12 +34,6 @@ public class BookingService {
     }
 
     public Booking addBooking(BookingDto request, Recipient recipient) {
-        // หา User (Recipient) จาก email ของคนที่กำลังล็อกอินเข้ามาจอง
-        // User recipientUser = userRepository.findByEmail(email)
-        // .orElseThrow(() -> new RuntimeException("ไม่พบผู้ใช้"));
-
-        // recipientRepository.insertRecipientIfNotExist(recipientUser.getUserId());
-
         System.out.println("DEBUG: ค่า foodId ที่ได้รับจาก DTO คือ: " + request.getFoodId());
 
         if (request.getFoodId() == null) {
@@ -76,18 +70,11 @@ public class BookingService {
         booking.setBookingDate(LocalDateTime.now()); // บันทึกเวลาที่กดจอง ณ ปัจจุบัน
         booking.setConfirmationCode(generatedCode); // แมตช์กับ confirmationCode
 
-        // if (request.getBookingStatus() != null) {
-        // booking.setBookingStatus(request.getBookingStatus());
-        // } else {
-        // booking.setBookingStatus("PENDING"); // สถานะเริ่มต้น: รอรับอาหาร
-        // }
         booking.setBookingStatus("pending");
 
         // set FK เชื่อมความสัมพันธ์ตามที่คุณดีไซน์ไว้
         booking.setFood(food);
 
-        // Recipient recipient =
-        // recipientRepository.findById(recipientUser.getUserId()).orElse(null);
         booking.setRecipient(recipient);
 
         // print ค่าออก console เพื่อดูความถูกต้องสไตล์เดิมของคุณ
@@ -102,10 +89,10 @@ public class BookingService {
         // System.out.println("Recipient (User): " + recipient.getEmail());
         // System.out.println("================================");
 
-        // 6. บันทึกลง DB
+        // บันทึกลง DB
         Booking savedBooking = bookingRepository.save(booking);
 
-        // 7. สร้างการแจ้งเตือน
+        // สร้างการแจ้งเตือน
         notificationService.createBookingNotification(savedBooking);
 
         return savedBooking;
@@ -221,4 +208,20 @@ public class BookingService {
         // บันทึกการเปลี่ยนแปลงกลับลงฐานข้อมูล
         return bookingRepository.save(booking);
     }
+
+    public boolean checkUserBooking(Recipient recipient, Integer foodId, List<String> statuses) {
+        System.out.println("=== DEBUG CHECK BOOKING ===");
+        System.out.println("Checking Recipient ID: " + (recipient != null ? recipient.getUserId() : "null"));
+        System.out.println("Checking Food ID: " + foodId);
+        System.out.println("Checking Statuses: " + statuses);
+
+        // ดึงข้อมูล Food จาก foodId ที่ส่งเข้ามา
+        // Food food = foodRepository.findById(foodId)
+        //         .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร ID: " + foodId));
+
+        // ส่งคู่วัตถุพร้อมกับ List ของสถานะไปเช็คที่ Repository
+        return bookingRepository.existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(recipient.getUserId(), foodId, statuses);
+
+    }
+
 }

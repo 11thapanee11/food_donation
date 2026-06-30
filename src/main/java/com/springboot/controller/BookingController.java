@@ -25,7 +25,8 @@ public class BookingController {
     private final UserService userService;
     private final RecipientService recipientService;
 
-    public BookingController(BookingService bookingService, UserService userService, RecipientService recipientService) {
+    public BookingController(BookingService bookingService, UserService userService,
+            RecipientService recipientService) {
         this.bookingService = bookingService;
         this.userService = userService;
         this.recipientService = recipientService;
@@ -48,7 +49,8 @@ public class BookingController {
         try {
             Booking booking = bookingService.addBooking(request, recipient);
 
-            // ส่งข้อมูลวัตถุการจองกลับไปทั้งหมด เผื่อหน้าบ้านต้องการใช้ประโยชน์จาก ID หรือ Confirmation Code
+            // ส่งข้อมูลวัตถุการจองกลับไปทั้งหมด เผื่อหน้าบ้านต้องการใช้ประโยชน์จาก ID หรือ
+            // Confirmation Code
             return ResponseEntity.ok(new ApiResponse<>(true, "บันทึกการจองสำเร็จเรียบร้อยแล้ว!", booking));
 
         } catch (IllegalArgumentException e) {
@@ -56,7 +58,6 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(false, e.getMessage(), null));
 
-                    
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -84,13 +85,14 @@ public class BookingController {
                     .body(new ApiResponse<>(false, "ไม่พบข้อมูลใบจองเลขที่ " + bookingId, null));
         }
     }
-    // public ResponseEntity<Booking> getBookingDetail(@PathVariable Integer bookingId) {
-    //     try {
-    //         Booking booking = bookingService.getBookingDetail(bookingId);
-    //         return ResponseEntity.ok(booking);
-    //     } catch (RuntimeException err) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    //     }
+    // public ResponseEntity<Booking> getBookingDetail(@PathVariable Integer
+    // bookingId) {
+    // try {
+    // Booking booking = bookingService.getBookingDetail(bookingId);
+    // return ResponseEntity.ok(booking);
+    // } catch (RuntimeException err) {
+    // return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    // }
     // }
 
     // @DeleteMapping("/{bookingId}")
@@ -117,13 +119,26 @@ public class BookingController {
         }
     }
     // public ResponseEntity<Void> cancelBooking(@PathVariable Integer bookingId) {
-    //     try {
-    //         bookingService.cancelBooking(bookingId);
-    //         return ResponseEntity.ok().build(); // ส่งคืน void (200 OK บอดี้ว่าง)
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-    //     }
+    // try {
+    // bookingService.cancelBooking(bookingId);
+    // return ResponseEntity.ok().build(); // ส่งคืน void (200 OK บอดี้ว่าง)
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     // }
+    // }
+
+    @GetMapping("/foods/{foodId}/check-booking")
+    public ResponseEntity<ApiResponse<Boolean>> checkUserBooking(@PathVariable Integer foodId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        User user = userService.authenticate(authHeader);
+        Recipient recipient = recipientService.getOrCreateRecipient(user);
+
+        List<String> activeStatuses = List.of("pending", "completed");
+        boolean isAlreadyBooked = bookingService.checkUserBooking(recipient, foodId, activeStatuses);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "ตรวจสอบเสร็จสิ้น", isAlreadyBooked));
+    }
 
 }

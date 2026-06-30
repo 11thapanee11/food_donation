@@ -57,38 +57,6 @@ public class DonorService {
         });
     }
 
-    // @Transactional(propagation = Propagation.REQUIRES_NEW)
-    // public void updateTotalImpactAmount(Integer userId, double carbonReduction) {
-
-    // Donor donor = donorRepository.findById(userId).orElse(null);
-
-    // if (donor == null) {
-    // System.out.println("====== DONOR ROW NOT FOUND, CREATING NEW ROW FOR ID: " +
-    // userId + " ======");
-
-    // // donor = new Donor();
-    // // donor.setUserId(user.getUserId());
-    // // donor.setDonorStatus("ACTIVE");
-    // // donor.setTotalImpactAmount(0.0);
-    // User user = userRepository.findById(userId).orElse(null);
-
-    // donor = new Donor(user, "ACTIVE", 0.0);
-    // }
-
-    // // 3. คำนวณสะสมยอดคาร์บอน (ไม่ว่าจะเป็นแถวเก่าหรือเพิ่งสร้างใหม่)
-    // double currentImpact = donor.getTotalImpactAmount() != null ?
-    // donor.getTotalImpactAmount() : 0.0;
-    // donor.setTotalImpactAmount(currentImpact + carbonReduction);
-
-    // // 4. บันทึกข้อมูลกลับลงตาราง donor
-    // donorRepository.saveAndFlush(donor); // ใช้ saveAndFlush เพื่อบังคับ
-    // insert/update ทันที
-
-    // System.out
-    // .println("====== SUCCESS: SAVED DONOR IMPACT TOTAL AS -> " +
-    // donor.getTotalImpactAmount() + " ======");
-    // }
-
     public void updateTotalImpactAmount(Integer donorId, double carbonReduction) {
 
         // 1. ค้นหา Donor ที่ถูกสร้างรอไว้แล้วตั้งแต่ตอน addFood จากฐานข้อมูล
@@ -108,14 +76,6 @@ public class DonorService {
         System.out.println("====== SUCCESS: UPDATE EXISTING DONOR IMPACT COMPLETED FOR ID: " + donorId + " -> TOTAL: "
                 + donor.getTotalImpactAmount() + " ======");
     }
-
-    // public Double getImpactSummary(Integer userId) {
-    // Donor donor = donorRepository.findById(userId)
-    // .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลผู้บริจาคไอดี: " +
-    // userId));
-    // return donor.getTotalImpactAmount() != null ? donor.getTotalImpactAmount() :
-    // 0.0;
-    // }
 
     public Map<String, Object> getImpactSummary(Integer userId) {
 
@@ -159,6 +119,10 @@ public class DonorService {
 
         donor.setDonorStatus(newStatus);
         donorRepository.save(donor);
+    }
+
+    public Donor getDonorByUserId(Integer userId) {
+        return donorRepository.findByUserUserId(userId);
     }
 
 }

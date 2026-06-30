@@ -13,7 +13,7 @@ import org.hibernate.annotations.OnDeleteAction;
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long notificationId;
+    private Integer notificationId;
 
     @Column(nullable = false, length = 100)
     private String notificationMessage;
@@ -37,11 +37,11 @@ public class Notification {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Food food;
 
-    public Long getNotificationId() {
+    public Integer getNotificationId() {
         return notificationId;
     }
 
-    public void setNotificationId(Long notificationId) {
+    public void setNotificationId(Integer notificationId) {
         this.notificationId = notificationId;
     }
 

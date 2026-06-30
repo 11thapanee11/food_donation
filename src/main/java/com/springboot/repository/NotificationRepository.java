@@ -44,4 +44,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
             @Param("types") List<String> types);
 
     List<Notification> findByIsReadFalse();
+
+    boolean existsByFoodAndNotificationType(Food food, String type);
 }

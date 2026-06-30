@@ -40,4 +40,16 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         int countCompleteBookingsByDonorId(@Param("donorId") Integer donorId);
 
         long countByBookingStatus(String status);
+
+        // boolean existsByRecipientUserUserIdAndFoodFoodId(Integer userId, Integer
+        // foodId);
+        boolean existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(Integer recipientId, Integer foodId,
+                        List<String> statuses);
+        // @Query("SELECT COUNT(b) > 0 FROM Booking b " +
+        // "WHERE b.recipient.userId = :recipientId " +
+        // "AND b.food.foodId = :foodId " +
+        // "AND b.bookingStatus IN :statuses")
+        // boolean checkExistingBooking(@Param("recipientId") Integer recipientId,
+        // @Param("foodId") Integer foodId,
+        // @Param("statuses") List<String> statuses);
 }

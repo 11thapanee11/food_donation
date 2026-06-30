@@ -14,15 +14,6 @@ import java.util.*;
 @Repository
 public interface DonorRepository extends JpaRepository<Donor, Integer> {
 
-    // - ถ้าตาราง donor ยังไม่มี id นี้ -> มันจะ INSERT สร้างแถวใหม่ให้สถานะเป็น ACTIVE และใส่ยอดคาร์บอนเริ่มต้นให้
-    // - ถ้าตาราง donor มี id นี้อยู่แล้ว -> มันจะวิ่งไป UPDATE บวกยอดคาร์บอนสะสมเพิ่มเข้าไปให้ทันที!
-    // @Modifying
-    // @Transactional
-    // @Query(value = "INSERT INTO donor (user_id, donor_status, total_impact_amount) " +
-    //         "VALUES (:userId, 'ACTIVE', :carbonReduction) " +
-    //         "ON DUPLICATE KEY UPDATE total_impact_amount = COALESCE(total_impact_amount, 0.0) + :carbonReduction", nativeQuery = true)
-    // void saveOrUpdateDonorImpact(@Param("userId") Integer userId, @Param("carbonReduction") double carbonReduction);
-
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO donor (user_id, donor_status, total_impact_amount) VALUES (:userId, 'ACTIVE', 0.0) ON DUPLICATE KEY UPDATE user_id = user_id", nativeQuery = true)
@@ -33,5 +24,7 @@ public interface DonorRepository extends JpaRepository<Donor, Integer> {
 
     @Query("SELECT d FROM Donor d JOIN User u ON d.userId = u.userId")
     List<Donor> findAllDonors();
+
+    Donor findByUserUserId(Integer userId);
 
 }

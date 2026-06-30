@@ -95,7 +95,7 @@ public class FoodController {
     public ResponseEntity<ApiResponse<Food>> addFood(
             @RequestHeader("Authorization") String authHeader,
             @ModelAttribute FoodDto foodDto,
-            @RequestParam(value = "foodImage", required = false) MultipartFile image) {
+            @RequestParam(value = "fileImage", required = false) MultipartFile image) {
         try {
 
             String imagePath = null;
@@ -135,7 +135,7 @@ public class FoodController {
     public ResponseEntity<ApiResponse<Void>> updateFood(
             @PathVariable Integer id,
             @ModelAttribute FoodDto foodDto,
-            @RequestParam(value = "foodImage", required = false) MultipartFile image) {
+            @RequestParam(value = "fileImage", required = false) MultipartFile image) {
         try {
             String imagePath = null;
             if (image != null && !image.isEmpty()) {

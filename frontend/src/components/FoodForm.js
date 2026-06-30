@@ -44,8 +44,43 @@ export default function FoodForm() {
     // ฟังก์ชันจัดการการเปลี่ยนแปลงค่าใน Input
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-        setErrors({ ...errors, [name]: "" }); // เคลียร์ error เมื่อมีการกรอก
+
+        if (name === "expiryDate" && value) {
+
+            // 1. นำค่าวันที่หมดอายุที่เลือกมาสร้างเป็นอ็อบเจกต์ Date
+            const expiryDateObj = new Date(value);
+
+            // 2. ลบออก 4 ชั่วโมงตามที่วางแผนไว้
+            expiryDateObj.setHours(expiryDateObj.getHours() - 4);
+
+            // 3. จัดฟอร์แมต วันที่ (ให้กลายเป็น YYYY-MM-DD)
+            const year = expiryDateObj.getFullYear();
+            const month = String(expiryDateObj.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มจาก 0 เลยต้อง +1
+            const date = String(expiryDateObj.getDate()).padStart(2, '0');
+            const endDateFormatted = `${year}-${month}-${date}`; // ได้ฟอร์แมต "2026-07-05" ที่อินพุตต้องการพอดี
+
+            // 4. จัดฟอร์แมต เวลา (ให้กลายเป็น HH:mm)
+            const hours = String(expiryDateObj.getHours()).padStart(2, '0');
+            const minutes = String(expiryDateObj.getMinutes()).padStart(2, '0');
+            const endTimeFormatted = `${hours}:${minutes}`; // ได้ฟอร์แมต "11:12"
+
+            // 5. อัปเดตลงสเตตพร้อมกัน
+            setFormData((prev) => ({
+                ...prev,
+                expiryDate: value,
+                pickupDateEnd: endDateFormatted,   // ต้องมั่นใจว่าตรงกับ name ของ input วันที่สิ้นสุด
+                pickupEndTime: endTimeFormatted    // ต้องมั่นใจว่าตรงกับ name ของ input เวลาสิ้นสุด
+            }));
+
+        } else {
+            // ถ้าเป็นฟิลด์อื่นๆ (ชื่ออาหาร, จำนวน ฯลฯ) ให้ทำงานตามปกติของคุณ
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+        // setFormData({ ...formData, [name]: value });
+        // setErrors({ ...errors, [name]: "" }); // เคลียร์ error เมื่อมีการกรอก
     };
 
     // ฟังก์ชันจัดการรูปภาพ
@@ -105,6 +140,8 @@ export default function FoodForm() {
         }
     }
 
+    const isExpired = formData.foodStatus === 'expired' || formData.foodStatus === 'disable';
+
     useEffect(() => {
         // 1. ดึงข้อมูลหมวดหมู่มาใส่ใน Dropdown Select
         fetch("http://localhost:8082/food-categories", {
@@ -131,7 +168,7 @@ export default function FoodForm() {
 
         // 2. โหมดแก้ไข: ดึงข้อมูลอาหารเดิมมาหยอดใส่ฟอร์ม
         loadFoodData();
-        
+
     }, [foodId, isEditMode]);
 
     // map ใหม่
@@ -217,13 +254,6 @@ export default function FoodForm() {
             }
         });
 
-        // if (isEditMode) {
-        //     if (!formData.foodImage && !imageFile) {
-        //         newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-        //     }
-        // } else if (!imageFile) {
-        //     newErrors.foodImage = "กรุณาเพิ่มรูปภาพ";
-        // }
         if (isEditMode) {
             if (!imagePreview && !imageFile && !formData.fileImage) {
                 newErrors.fileImage = "กรุณาเพิ่มรูปภาพ";
@@ -238,7 +268,7 @@ export default function FoodForm() {
         const pickupStartDate = new Date(formData.pickupDateStart);
         const pickupEndDate = new Date(formData.pickupDateEnd);
 
-        if (expiryDate <= today) {
+        if (expiryDate <= today && !isEditMode) {
             newErrors.expiryDate = "วันหมดอายุต้องเป็นวันที่ในอนาคต";
         }
 
@@ -348,7 +378,7 @@ export default function FoodForm() {
                 }
                 return res.json();
             })
-            .then((result) => { 
+            .then((result) => {
                 if (result.success) {
                     console.log("บันทึกสำเร็จ:", result);
                     setErrors({});
@@ -481,7 +511,10 @@ export default function FoodForm() {
         if (!foodId) {
             return (
                 <>
-                    <button type="button" style={styles.cancelBtn} onClick={() => navigate("/my-foods")}>
+                    <button type="button" style={styles.cancelBtn}
+                        onClick={() => {
+                            navigate("/my-foods")
+                        }}>
                         ยกเลิก
                     </button>
                     <button type="submit" style={styles.submitBtn}>
@@ -501,9 +534,7 @@ export default function FoodForm() {
                         onClick={() => {
                             setIsEditable(false);
                             loadFoodData();
-                            // if (typeof setImageFile === "function") setImageFile(null);
-                            // if (typeof setImagePreview === "function") setImagePreview(null);
-                            // if (typeof fetchData === "function") fetchData();
+                            setErrors({});
                         }}
                         style={styles.cancelBtn}
                     >
@@ -522,59 +553,61 @@ export default function FoodForm() {
         }
 
         // เคสสุดท้าย: เข้ามาดูข้อมูลเดิมเฉย ๆ และยังไม่ได้กดแก้ไข (View Mode - isEditable เป็น false)
-        return (
-            <>
-                {/* ปุ่มลบ */}
-                <button
-                    type="button"
-                    onClick={() => handleDeleteFood(formData.foodId)}
-                    style={{
-                        ...styles.cancelBtn,
-                        backgroundColor: "#ff3333",
-                        color: "#fff",
-                        border: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        cursor: "pointer"
-                    }}
-                >
-                    <span className="material-icons-outlined" style={{ fontSize: "18px" }}>delete</span>{" "}
-                    ลบรายการอาหาร
-                </button>
+        if (!isExpired) {
+            return (
+                <>
+                    {/* ปุ่มลบ */}
+                    <button
+                        type="button"
+                        onClick={() => handleDeleteFood(formData.foodId)}
+                        style={{
+                            ...styles.cancelBtn,
+                            backgroundColor: "#ff3333",
+                            color: "#fff",
+                            border: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            cursor: "pointer"
+                        }}
+                    >
+                        <span className="material-icons-outlined" style={{ fontSize: "18px" }}>delete</span>{" "}
+                        ลบรายการอาหาร
+                    </button>
 
-                {/* ปุ่มแก้ไข */}
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();  // หยุดการทำงานเริ่มต้นของฟอร์ม
-                        e.stopPropagation(); // ป้องกันไม่ให้ Event ลอยขึ้นไปหาแท็กฟอร์มด้านบน
-                        setIsEditable(true); // เปลี่ยนโหมดอย่างเดียวตามที่ต้องการ
-                        window.scrollTo({
-                            top: 0,
-                            behavior: "smooth" // "smooth" จะเลื่อนแบบสมูทละมุนตา / ถ้าอยากให้วาปไปทันทีให้ใช้ "auto" ครับ
-                        });
-                    }}
-                    style={{
-                        ...styles.submitBtn,
-                        backgroundColor: "#ff8c00",
-                        color: "#fff",
-                        border: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        cursor: "pointer"
-                    }}
-                >
-                    <span className="material-icons-outlined" style={{ fontSize: "18px" }}>edit</span>{" "}
-                    แก้ไขรายการอาหาร
-                </button>
-            </>
-        );
+                    {/* ปุ่มแก้ไข */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();  // หยุดการทำงานเริ่มต้นของฟอร์ม
+                            e.stopPropagation(); // ป้องกันไม่ให้ Event ลอยขึ้นไปหาแท็กฟอร์มด้านบน
+                            setIsEditable(true); // เปลี่ยนโหมดอย่างเดียวตามที่ต้องการ
+                            window.scrollTo({
+                                top: 0,
+                                behavior: "smooth" // "smooth" จะเลื่อนแบบสมูทละมุนตา / ถ้าอยากให้วาปไปทันทีให้ใช้ "auto" ครับ
+                            });
+                        }}
+                        style={{
+                            ...styles.submitBtn,
+                            backgroundColor: "#ff8c00",
+                            color: "#fff",
+                            border: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            cursor: "pointer"
+                        }}
+                    >
+                        <span className="material-icons-outlined" style={{ fontSize: "18px" }}>edit</span>{" "}
+                        แก้ไขรายการอาหาร
+                    </button>
+                </>
+
+            );
+        }
     };
 
     const handleConfirmDelivery = () => {
-        // ประกาศดึง token มาสแตนด์บายไว้ใช้งานกับ Headers ด้านล่างครับ
         const token = localStorage.getItem("accessToken");
 
         if (!foodId) {
@@ -686,8 +719,7 @@ export default function FoodForm() {
 
                 <form onSubmit={handleSubmit}>
 
-                    {isEditMode && (
-
+                    {isEditMode && !isExpired && (
                         <div style={{
                             display: "flex",
                             flexDirection: "column",
@@ -696,26 +728,19 @@ export default function FoodForm() {
                             width: "100%",
                             marginBottom: "10px"
                         }}>
-
-                            {/* <div style={{
-                                display: "flex",
-                                gap: "15px",               // ระยะห่างระหว่างปุ่มส่งมอบกับ Dropdown สถานะ
-                                alignItems: "center",
-                                marginTop: "10px",
-                                marginBottom: "15px"
-                            }}> */}
-                            <button
-                                type="button"
-                                style={styles.confirmDeliveryBtn}
-                                onClick={handleConfirmDelivery}
-                            >
-                                {/* SVG ไอคอนเครื่องหมายถูกวงกลม (ตามรูปภาพเป๊ะๆ) */}
-                                <span className="material-symbols-outlined">
-                                    check_circle
-                                </span>{""}
-                                ยืนยันการส่งมอบอาหาร
-                            </button>
-                            {/* </div> */}
+                            {formData.foodStatus !== 'closed' && (
+                                <button
+                                    type="button"
+                                    style={styles.confirmDeliveryBtn}
+                                    onClick={handleConfirmDelivery}
+                                >
+                                    {/* SVG ไอคอนเครื่องหมายถูกวงกลม (ตามรูปภาพเป๊ะๆ) */}
+                                    <span className="material-symbols-outlined">
+                                        check_circle
+                                    </span>{""}
+                                    ยืนยันการส่งมอบอาหาร
+                                </button>
+                            )}
 
                             <div style={{
                                 display: "flex",
@@ -852,7 +877,7 @@ export default function FoodForm() {
                             value={formData.description}
                             placeholder="กรอกรายละเอียด"
                             // style={{ ...styles.input, height: "80px", paddingTop: "10px", resize: "none" }}
-                            disabled={!isEditable}
+                            disabled={!isEditable} ฏโ
                             style={{
                                 ...styles.input,
                                 color: isEditable ? "#000" : "#a6a6a6",
@@ -869,11 +894,13 @@ export default function FoodForm() {
                                 type="datetime-local"
                                 name="expiryDate"
                                 value={formData.expiryDate}
-                                disabled={!isEditable}
+                                disabled={isEditMode}
                                 style={{
                                     ...styles.input,
-                                    color: isEditable ? "#000" : "#a6a6a6",
-                                    cursor: isEditable ? "pointer" : "not-allowed"
+                                    // color: "#a6a6a6",
+                                    // cursor: "not-allowed",
+                                    color: isEditMode ? "#a6a6a6" : "#757575",
+                                    cursor: isEditMode ? "not-allowed" : "pointer"
                                 }}
                                 onChange={handleChange}
                             />

@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.springboot.dto.*;
 import com.springboot.service.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.springboot.model.*;
 import java.util.*;
 
@@ -63,6 +66,28 @@ public class DonorController {
         donorService.updateDonorStatus(id, newStatus);
 
         return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะสำเร็จ", null));
+    }
+
+    @GetMapping("/check-status")
+    public ResponseEntity<ApiResponse<String>> checkDonorStatus(@RequestHeader("Authorization") String authHeader) {
+        try {
+            User user = userService.authenticate(authHeader);
+
+            // 2. ไปดึงข้อมูลจากตารางลูก (Donor) มาตรวจเช็ค
+            Donor donor = donorService.getDonorByUserId(user.getUserId());
+
+            if (donor != null && "deactivate".equalsIgnoreCase(donor.getDonorStatus())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse<>(false,
+                                "สิทธิ์การบริจาคของคุณถูกระงับ ไม่สามารถเพิ่มรายการอาหารได้", null));
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "บัญชีใช้งานได้ปกติ", null));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาด: " + e.getMessage(), null));
+        }
     }
 
 }

@@ -94,7 +94,7 @@ public class NotificationController {
     // return ResponseEntity.ok(listNotification);
     // }
     @GetMapping("/food")
-    public ResponseEntity<ApiResponse<List<Notification>>> getListNotification(
+    public ResponseEntity<ApiResponse<List<NotificationDto>>> getListNotification(
             @RequestParam double lat,
             @RequestParam double lng,
             @RequestParam(defaultValue = "5.0") double radius,
@@ -104,13 +104,15 @@ public class NotificationController {
             User user = userService.authenticate(authHeader);
             Integer userId = user.getUserId();
 
-            List<Notification> foodList = notificationService.getNearbyFoodNotifications(lat, lng, radius, userId);
-            List<Notification> bookingList = notificationService.getBookingNotifications(userId);
+            List<NotificationDto> foodList = notificationService.getNearbyFoodNotifications(lat, lng, radius, userId);
+            List<NotificationDto> bookingList = notificationService.getBookingNotifications(userId);
+            List<NotificationDto> expirationList = notificationService.getExpirationNotifications(userId);
 
-            List<Notification> listNotification = new ArrayList<>();
+            List<NotificationDto> listNotification = new ArrayList<>();
             listNotification.addAll(foodList);
             listNotification.addAll(bookingList);
-            listNotification.sort(Comparator.comparing(Notification::getNotificationDate).reversed());
+            listNotification.addAll(expirationList);
+            listNotification.sort(Comparator.comparing(NotificationDto::getDate).reversed());
 
             return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", listNotification));
         } catch (Exception e) {
@@ -119,16 +121,16 @@ public class NotificationController {
         }
     }
 
-    @PutMapping("/read/{id}")
-    public ResponseEntity<ApiResponse<String>> markAsRead(@PathVariable Integer id) {
-        try {
-            notificationService.markAsRead(id);
-            return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะการอ่านสำเร็จ", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการอัปเดต", null));
-        }
-    }
+    // @PutMapping("/read/{id}")
+    // public ResponseEntity<ApiResponse<String>> markAsRead(@PathVariable Integer id) {
+    //     try {
+    //         notificationService.markAsRead(id);
+    //         return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะการอ่านสำเร็จ", null));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการอัปเดต", null));
+    //     }
+    // }
 
     // @PutMapping("/read/{id}")
     // public ResponseEntity<?> markAsRead(@PathVariable Long id) {
@@ -142,5 +144,41 @@ public class NotificationController {
     // public ResponseEntity<List<Notification>> getDonorNotifications() {
     // return ResponseEntity.ok(notificationService.getDonorNotifications());
     // }
+
+    // API 1: ดึงลิสต์ไอดีที่ฉันเคยอ่านแล้ว
+    @GetMapping("/my-read-list")
+    public ResponseEntity<ApiResponse<List<Integer>>> getMyReadList(@RequestHeader("Authorization") String authHeader) {
+        try {
+            User user = userService.authenticate(authHeader);
+            Integer userId = user.getUserId();
+            String userIdStr = String.valueOf(userId);
+            List<Integer> myReadIds = notificationService.getReadIdsForUser(userIdStr);
+            
+            // เรียกใช้ ApiResponse.success() ครอบข้อมูลอาร์เรย์ไว้
+            return ResponseEntity.ok(new ApiResponse<>(true,"ดึงข้อมูลสำเร็จ", myReadIds));
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false,"เกิดข้อผิดพลาด: " + e.getMessage(), null));
+        }
+    }
+
+    // API 2: ยิงมาบันทึกว่าอ่านแล้ว
+    @PostMapping("/read/{id}")
+    public ResponseEntity<ApiResponse<Void>> markRead(@PathVariable int id, @RequestHeader("Authorization") String authHeader) {
+        try {
+            User user = userService.authenticate(authHeader);
+            Integer userId = user.getUserId();
+            String userIdStr = String.valueOf(userId);
+            notificationService.markAsRead(userIdStr, id);
+            
+            // ส่ง success กลับไปดื้อๆ แบบไม่ต้องมี data แนบไป
+            return ResponseEntity.ok(new ApiResponse<>(true,"บันทึกสถานะอ่านแล้วสำเร็จ", null));
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "ไม่สามารถบันทึกสถานะได้: " + e.getMessage(), null));
+        }
+    }
 
 }
