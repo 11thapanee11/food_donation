@@ -90,7 +90,7 @@ public class DonorService {
     }
 
     public List<DonorDto> getListTotalImpact() {
-        return donorRepository.findAllByOrderByTotalImpactAmountDesc()
+        return donorRepository.findTopDonorsByImpact()
                 .stream()
                 .map(d -> new DonorDto(
                         d.getUser().getFirstName(),

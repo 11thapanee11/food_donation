@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, Marker, OverlayView } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
 
-// ตั้งค่าสไตล์ขนาดกล่องแผนที่ให้พอดีกับหน้าจอ
+// ตั้งค่าสไตล์ขนาดกล่องแผนที่พอดีกับหน้าจอ
 const mapContainerStyle = {
     width: "100%",
     height: "calc(100vh - 64px)",
@@ -19,7 +19,7 @@ const MapPage = () => {
     const [selectedFood, setSelectedFood] = useState(null); // เก็บหมุดที่ผู้ใช้คลิกเลือกเพื่อเปิดป้ายชื่อ
     const [isPageLoading, setIsPageLoading] = useState(true);
 
-    // 1. เรียกใช้งาน useJsApiLoader ในการดึงสคริปต์แผนที่จากกูเกิล
+    // เรียกใช้งาน useJsApiLoader ในการดึงสคริปต์แผนที่จากกูเกิล
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: "AIzaSyCz2II4Ff_LEqyvP03ls-0qb6-PVZWxw-0"
     });
@@ -29,54 +29,6 @@ const MapPage = () => {
 
     // สร้าง State สำหรับคุมจุดกึ่งกลางของแผนที่
     const [centerPos, setCenterPos] = useState(defaultCenter);
-
-    // // ดึงพิกัดปัจจุบันจากเบราว์เซอร์ทันทีที่เปิดหน้านี้
-    // useEffect(() => {
-    //     if (navigator.geolocation) {
-    //         navigator.geolocation.getCurrentPosition(
-    //             (position) => {
-    //                 const currentCoords = {
-    //                     lat: position.coords.latitude,
-    //                     lng: position.coords.longitude
-    //                 };
-    //                 setCenterPos(currentCoords); // อัปเดตศูนย์กลางแผนที่ตามตำแหน่งปัจจุบันจริง
-    //             },
-    //             (error) => {
-    //                 console.error("Error getting geolocation: ", error);
-    //                 // ถ้าดึงพิกัดไม่ได้ หรือผู้ใช้ปฏิเสธ ระบบจะใช้ค่า defaultCenter อัตโนมัติ ไม่แครชครับ
-    //             },
-    //             { enableHighAccuracy: true } // ใช้โหมดความแม่นยำสูง
-    //         );
-    //     }
-    // }, []);
-
-    // // ดึงพิกัดอาหารทั้งหมดมาจากหลังบ้าน Spring Boot
-    // useEffect(() => {
-    //     setIsPageLoading(true);
-    //     // สั่งเปิดหน้าดาวน์โหลดรอไว้ก่อน
-    //     const token = localStorage.getItem("accessToken");
-
-    //     fetch("http://localhost:8082/foods", {
-    //         method: "GET",
-    //         headers: {
-    //             "Authorization": token ? `Bearer ${token}` : "",
-    //             "Content-Type": "application/json"
-    //         }
-    //     })
-    //         .then((res) => {
-    //             if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่สำเร็จ");
-    //             return res.json();
-    //         })
-    //         .then((data) => {
-    //             const validFoods = data.filter(item => item.latitude && item.longitude);
-    //             setFoods(validFoods);
-    //             setIsPageLoading(false); 
-    //         })
-    //         .catch((err) => {
-    //             console.error("Error fetching map coordinates:", err);
-    //             setIsPageLoading(false);
-    //         });
-    // }, []);
     
     // ดึงพิกัดปัจจุบันจากเบราว์เซอร์ทันทีที่เปิดหน้านี้
     useEffect(() => {
@@ -168,25 +120,25 @@ const MapPage = () => {
                 // }
                 center={centerPos}
             >
-                {/* วนลูปสร้างหมุดปัก (Marker) ตามพิกัดในฐานข้อมูล */}
+                {/* วนลูปสร้างหมุดปัก Marker ตามพิกัดในฐานข้อมูล */}
                 {foods.map((food) => (
 
                     <Marker
                         key={food.id}
                         position={{
-                            lat: Number(food.latitude),  //
-                            lng: Number(food.longitude)  //
+                            lat: Number(food.latitude),
+                            lng: Number(food.longitude)
                         }}
-                        // เมื่อเมาส์ชี้ (Mouse Over) -> ให้เก็บข้อมูลเพื่อเปิดป้าย InfoWindow
+                        // เมื่อเมาส์ชี้ Mouse Over ให้เก็บข้อมูลเพื่อเปิดป้าย InfoWindow
                         onMouseOver={() => setSelectedFood(food)}
 
-                        // เมื่อเมาส์เลื่อนออก (Mouse Out) -> ให้ปิดป้าย InfoWindow ทันที
+                        // เมื่อเมาส์เลื่อนออก Mouse Out ให้ปิดป้าย InfoWindow ทันที
                         onMouseOut={() => setSelectedFood(null)}
 
-                        // เมื่อกดคลิก (Click) -> ให้เปลี่ยนหน้าไปยังหน้ารายละเอียดอาหารชิ้นนั้น
+                        // เมื่อกดคลิก Click ให้เปลี่ยนหน้าไปยังหน้ารายละเอียดอาหารชิ้นนั้น
                         onClick={() => navigate('/food-detail', { state: { id: food.id, fromPage: '/map' } })}
                         icon={{
-                            // แต่งไอคอนหมุดเป็นจุดกลมๆ สีส้มพาสเทลตามดีไซน์เว็บของคุณ
+                            // แต่งไอคอนหมุดเป็นจุดกลมๆ
                             url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='8' cy='8' r='6' fill='%23ff8c00' stroke='white' stroke-width='2'/></svg>",
                             scaledSize: { width: 18, height: 18 }
                         }}

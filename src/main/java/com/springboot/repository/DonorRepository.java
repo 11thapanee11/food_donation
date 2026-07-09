@@ -20,7 +20,9 @@ public interface DonorRepository extends JpaRepository<Donor, Integer> {
     // void insertDonorIfNotExist(@Param("userId") Integer userId);
 
     // ดึง Donor เรียงตามค่าพลังงานที่ลดได้ (มากไปน้อย)
-    List<Donor> findAllByOrderByTotalImpactAmountDesc();
+    @Query("SELECT d FROM Donor d WHERE d.totalImpactAmount > 0 ORDER BY d.totalImpactAmount DESC")
+    List<Donor> findTopDonorsByImpact();
+    // List<Donor> findAllByOrderByTotalImpactAmountDesc();
 
     @Query("SELECT d FROM Donor d JOIN User u ON d.userId = u.userId")
     List<Donor> findAllDonors();

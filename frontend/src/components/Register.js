@@ -52,7 +52,7 @@ function Register() {
             newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง";
         }
 
-        // 3. เบอร์โทรศัพท์
+        // เบอร์โทรศัพท์
         if (!formData.phoneNumber.trim()) {
             newErrors.phoneNumber = "กรุณากรอกเบอร์โทรศัพท์";
         } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
@@ -61,7 +61,7 @@ function Register() {
             newErrors.phoneNumber = "ต้องขึ้นต้นด้วย 06, 08 หรือ 09";
         }
 
-        // 4. รหัสผ่าน
+        // รหัสผ่าน
         if (!formData.password.trim()) {
             newErrors.password = "กรุณากรอกรหัสผ่าน";
         } else if (formData.password.length < 8 || formData.password.length > 16) {
@@ -70,7 +70,7 @@ function Register() {
             newErrors.password = "ใช้ได้เฉพาะ A-Z, 0-9 และ ! # _ .";
         }
 
-        // 5. ยืนยันรหัสผ่าน
+        // ยืนยันรหัสผ่าน
         if (!formData.confirmPassword.trim()) {
             newErrors.confirmPassword = "กรุณายืนยันรหัสผ่าน";
         } else if (formData.password !== formData.confirmPassword) {
@@ -81,57 +81,6 @@ function Register() {
         return Object.keys(newErrors).length === 0;
     };
 
-    // const handleSubmit = async (e) => {
-    //     e.preventDefault();
-
-    //     if (!validateForm()) return;
-
-    //     try {
-    //         const response = await fetch("http://localhost:8082/register", {
-    //             method: "POST",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify(formData)
-    //         });
-
-    //         const result = await response.json();
-
-    //         if (response.status === 409) {
-    //             Swal.fire({
-    //                 icon: 'error',
-    //                 title: 'สมัครสมาชิกไม่สำเร็จ',
-    //                 text: result.message,
-    //                 confirmButtonColor: '#d63031'
-    //             });
-    //         } else if (!response.ok) {
-    //             Swal.fire({
-    //                 icon: 'error',
-    //                 title: 'เกิดข้อผิดพลาด',
-    //                 text: 'ไม่สามารถบันทึกข้อมูลได้',
-    //                 confirmButtonColor: '#d63031'
-    //             });
-    //         } else {
-    //             Swal.fire({
-    //                 icon: 'success',
-    //                 title: 'สำเร็จ!',
-    //                 text: result.message,
-    //                 confirmButtonColor: '#2ecc71'
-    //             }).then(() => {
-    //                 // redirect หรือ refresh หน้า
-    //                 navigate("/login")
-    //             });
-    //         }
-
-    //         // alert(result.message);
-    //     } catch (error) {
-    //         console.error("Error:", error);
-    //         Swal.fire({
-    //             icon: 'error',
-    //             title: 'เกิดข้อผิดพลาด',
-    //             text: 'ไม่สามารถสมัครสมาชิกได้',
-    //             confirmButtonColor: '#d63031'
-    //         });
-    //     }
-    // };
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -144,9 +93,9 @@ function Register() {
                 body: JSON.stringify(formData)
             });
 
-            const result = await response.json(); // บรรจุโครงสร้าง { success, message, data }
+            const result = await response.json();
 
-            // 💡 เปลี่ยนมาเช็คจากตัวแปร success ที่ส่งมาจากหลังบ้านตรงๆ ได้เลยครับ
+            // เปลี่ยนมาเช็คจากตัวแปร success ที่ส่งมาจากหลังบ้านตรงๆ ได้เลยครับ
             if (result.success) {
                 Swal.fire({
                     icon: 'success',
@@ -157,8 +106,7 @@ function Register() {
                     navigate("/login");
                 });
             } else {
-                // 💡 หาก success เป็น false (ไม่ว่าจะเกิดจากรหัสไม่ตรงกัน, อีเมลซ้ำ 409, หรือระบบล่ม 500)
-                // เราดึงข้อความแจ้งเตือนตรงๆ จากหลังบ้าน (result.message) มาแสดงผลได้ทันที
+                // หาก success เป็น false
                 Swal.fire({
                     icon: 'error',
                     title: 'สมัครสมาชิกไม่สำเร็จ',
@@ -304,11 +252,11 @@ const styles = {
     },
     row: {
         display: "flex",
-        gap: "30px"
+        gap: "20px",
     },
     inputBox: {
         flex: 1,
-        marginBottom: "15px"
+        marginBottom: "0px"
     },
     label: {
         fontSize: "16px",

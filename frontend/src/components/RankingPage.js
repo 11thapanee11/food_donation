@@ -1,15 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-// สมมติข้อมูลที่ดึงมาจาก API หลังบ้าน (เรียงลำดับจากมากไปน้อย)
-// const leaderboardData = [
-//     { id: 1, name: "น้ำผึ้ง ฮันนี่", totalCo2: 450.0 },
-//     { id: 2, name: "ดาว เสาร์", totalCo2: 380.2 },
-//     { id: 3, name: "ถั่ว แดง", totalCo2: 295.8 },
-//     { id: 4, name: "แกง ส้ม", totalCo2: 150.0 },
-//     { id: 5, name: "ส้ม ออเรนจ์", totalCo2: 120.4 },
-//     { id: 6, name: "เพิ่ม พูน", totalCo2: 105.4 },
-// ];
-
 export default function RankingPage() {
     const [leaderboardData, setLeaderboardData] = useState([]);
 
@@ -45,7 +35,6 @@ export default function RankingPage() {
             </div>
             <h1 style={styles.mainTitle}>อันดับผู้บริจาค</h1>
 
-            {/* ส่วนที่ 1: โพเดียมอันดับ 1-3 (2 -> 1 -> 3) */}
             <div style={styles.podiumContainer}>
 
                 {/* --- อันดับ 2 --- */}

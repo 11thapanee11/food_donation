@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Navbar from './components/Navbar'
 import Home from './components/Home'
@@ -72,6 +72,22 @@ const PublicOnlyRoute = () => {
 };
 
 function App() {
+  useEffect(() => {
+    const handlePageShow = (event) => {
+      // event.persisted จะเป็น true ก็ต่อเมื่อหน้านี้ถูกดึงมาจากความจำเก่า (BFcache/Back Button)
+      if (event.persisted) {
+        // สั่งให้หน้าเว็บรีเฟรชตัวเองด่วน เพื่อดึงข้อมูลล่าสุดและเช็ค Token ใหม่
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   return (
     <Router>
       <Navbar />
@@ -79,6 +95,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path='/map' element={<MapPage />} />
         <Route path='/ranking' element={<RankingPage />} />
+        <Route path='/food-detail' element={<FoodDetail />} />
 
         {/* กลุ่มหน้าสำหรับคนยังไม่ได้ล็อกอิน (ถ้าล็อกอินแล้ว พิมพ์มาหน้าล็อกอินจะโดนดีดออก) */}
         <Route element={<PublicOnlyRoute />}>
