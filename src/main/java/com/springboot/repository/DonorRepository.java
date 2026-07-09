@@ -14,10 +14,10 @@ import java.util.*;
 @Repository
 public interface DonorRepository extends JpaRepository<Donor, Integer> {
 
-    @Modifying
-    @Transactional
-    @Query(value = "INSERT INTO donor (user_id, donor_status, total_impact_amount) VALUES (:userId, 'ACTIVE', 0.0) ON DUPLICATE KEY UPDATE user_id = user_id", nativeQuery = true)
-    void insertDonorIfNotExist(@Param("userId") Integer userId);
+    // @Modifying
+    // @Transactional
+    // @Query(value = "INSERT INTO donor (user_id, donor_status, total_impact_amount) VALUES (:userId, 'ACTIVE', 0.0) ON DUPLICATE KEY UPDATE user_id = user_id", nativeQuery = true)
+    // void insertDonorIfNotExist(@Param("userId") Integer userId);
 
     // ดึง Donor เรียงตามค่าพลังงานที่ลดได้ (มากไปน้อย)
     List<Donor> findAllByOrderByTotalImpactAmountDesc();

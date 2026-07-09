@@ -12,7 +12,7 @@ public class Donor {
     private Integer userId;
 
     @OneToOne
-    @MapsId
+    @MapsId //ใช้ Primary Key (PK) ร่วมกัน
     @JoinColumn(name = "user_id")
     private User user;
 

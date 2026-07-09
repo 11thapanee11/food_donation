@@ -36,18 +36,6 @@ public class DonorService {
     }
 
     public Donor getOrCreateDonor(User user) {
-        // 1. ลองหาดูก่อน
-        // return donorRepository.findById(user.getUserId()).orElseGet(() -> {
-        // // 2. ถ้าไม่มีจริงๆ ให้สร้างใหม่ (ด้วย JPA)
-        // Donor newDonor = new Donor();
-        // newDonor.setUserId(user.getUserId());
-        // newDonor.setDonorStatus("ACTIVE");
-        // newDonor.setTotalImpactAmount(0.0);
-
-        // // 3. บันทึกและคืนค่ากลับไป
-        // return donorRepository.save(newDonor);
-        // });
-
         return donorRepository.findById(user.getUserId()).orElseGet(() -> {
             Donor newDonor = new Donor();
             newDonor.setUser(user); // ใช้ MapsId ให้ Hibernate จัดการ PK
@@ -58,19 +46,17 @@ public class DonorService {
     }
 
     public void updateTotalImpactAmount(Integer donorId, double carbonReduction) {
-
-        // 1. ค้นหา Donor ที่ถูกสร้างรอไว้แล้วตั้งแต่ตอน addFood จากฐานข้อมูล
         Donor donor = donorRepository.findById(donorId)
                 .orElseThrow(() -> new RuntimeException(
                         "ไม่พบข้อมูลผู้บริจาคไอดี: " + donorId + " (กรุณาตรวจสอบว่ามีแถวในตาราง donor หรือยัง)"));
 
-        // 2. ดึงยอดเก่ามาคำนวณสะสม (ป้องกันกรณี totalImpactAmount ในเบสเป็น NULL)
+        // ดึงยอดเก่ามาคำนวณสะสม (ป้องกันกรณี totalImpactAmount ในเบสเป็น NULL)
         double currentImpact = donor.getTotalImpactAmount() != null ? donor.getTotalImpactAmount() : 0.0;
 
-        // 3. เซ็ตค่าผลรวมใหม่เข้าไปที่ Object Properties
+        // เซ็ตค่าผลรวมใหม่เข้าไปที่ Object Properties
         donor.setTotalImpactAmount(currentImpact + carbonReduction);
 
-        // 4. บันทึกการเปลี่ยนแปลงกลับลงตาราง donor
+        // บันทึกการเปลี่ยนแปลงกลับลงตาราง donor
         donorRepository.save(donor);
 
         System.out.println("====== SUCCESS: UPDATE EXISTING DONOR IMPACT COMPLETED FOR ID: " + donorId + " -> TOTAL: "

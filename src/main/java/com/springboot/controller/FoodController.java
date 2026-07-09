@@ -123,14 +123,6 @@ public class FoodController {
     }
 
     // อัพเดทอาหาร
-    // @PutMapping("/{id}")
-    // @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    // public ResponseEntity<Food> updateFood(@PathVariable Integer id, @RequestBody
-    // Food food) {
-    // food.setFoodId(id);
-    // Food updated = foodService.updateFood(food);
-    // return ResponseEntity.ok(updated);
-    // }
     @PutMapping(value = "/{id}")
     public ResponseEntity<ApiResponse<Void>> updateFood(
             @PathVariable Integer id,
@@ -153,20 +145,6 @@ public class FoodController {
                     .body(new ApiResponse<>(false, "ไม่สามารถอัปเดตข้อมูลอาหารได้: " + e.getMessage(), null));
         }
     }
-    // public ResponseEntity<Map<String, String>> updateFood(
-    // @PathVariable Integer id, // 1. รับ ID อาหารจาก URL
-    // @ModelAttribute FoodDto foodDto // 2. รับข้อมูลฟอร์มพร้อมรูปภาพ (Multipart)
-    // ) throws IOException {
-    // try {
-    // // เรียก Service เพื่ออัปเดตโดยตรง โดยส่งแค่ id และข้อมูลใหม่เข้าไป
-    // foodService.updateFood(id, foodDto);
-
-    // return ResponseEntity.ok(Map.of("message", "อัปเดตข้อมูลอาหารสำเร็จ"));
-    // } catch (RuntimeException e) {
-    // return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    // .body(Map.of("message", "fail: " + e.getMessage()));
-    // }
-    // }
 
     // ลบอาหาร
     @DeleteMapping("/{id}")
@@ -179,38 +157,15 @@ public class FoodController {
                     .body(new ApiResponse<>(false, "ไม่สามารถลบข้อมูลอาหารได้: " + e.getMessage(), null));
         }
     }
-    // public ResponseEntity<Void> deleteFood(@PathVariable Integer id) {
-    // foodService.deleteFood(id);
-    // return ResponseEntity.noContent().build();
-    // }
 
     @GetMapping("/my-donations")
     public ResponseEntity<ApiResponse<List<Food>>> getFoodByDonor(@RequestHeader("Authorization") String authHeader) {
-        // String token = authHeader.replace("Bearer ", "");
-        // String email = jwtUtil.extractEmail(token);
-
-        // if (!jwtUtil.validateToken(token, email)) {
-        // return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        // .body(new ApiResponse<>(false, "Token ไม่ถูกต้องหรือหมดอายุ", null));
-        // }
 
         User user = userService.authenticate(authHeader);
 
         List<Food> foods = foodService.findFoodsByDonorId(user.getUserId());
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรายการอาหารบริจาคของฉันสำเร็จ", foods));
     }
-    // public ResponseEntity<List<Food>>
-    // getFoodByDonor(@RequestHeader("Authorization") String authHeader) {
-    // String token = authHeader.replace("Bearer ", "");
-    // if (!jwtUtil.validateToken(token, jwtUtil.extractEmail(token))) {
-    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    // }
-
-    // String email = jwtUtil.extractEmail(token);
-    // List<Food> foods = foodService.findFoodsByDonorEmail(email);
-
-    // return ResponseEntity.ok(foods);
-    // }
 
     @PutMapping("/{foodId}/deliver")
     public ResponseEntity<ApiResponse<Booking>> verifyConfirmCode(

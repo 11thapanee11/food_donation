@@ -36,14 +36,14 @@ function Register() {
             return null;
         };
 
-        // 1. ชื่อ & นามสกุล
+        // ชื่อ & นามสกุล
         const fNameErr = validateName(formData.firstName, "ชื่อ");
         if (fNameErr) newErrors.firstName = fNameErr;
 
         const lNameErr = validateName(formData.lastName, "นามสกุล");
         if (lNameErr) newErrors.lastName = lNameErr;
 
-        // 2. อีเมล
+        // อีเมล
         if (!formData.email.trim()) {
             newErrors.email = "กรุณากรอกอีเมล";
         } else if (formData.email.length > 155) {

@@ -276,26 +276,6 @@ export default function FoodDetail() {
             return;
         }
 
-        // if (food.isCurrentByUserBooked) {
-        //     Swal.fire({
-        //         title: 'คุณมีรายการจองนี้อยู่แล้ว',
-        //         text: 'คุณเคยทำรายการจองอาหารชิ้นนี้ไปแล้ว และอยู่ระหว่างดำเนินการ หรือรับไปแล้ว ไม่สามารถจองซ้ำได้ครับ',
-        //         icon: 'info',
-        //         confirmButtonColor: '#ff8c00',
-        //         confirmButtonText: 'ตกลง',
-        //         showCancelButton: true,
-        //         cancelButtonText: 'ดูรายการรับบริจาคของคุณ',
-        //         cancelButtonColor: '#a0a0a0',
-        //         reverseButtons: true
-        //     }).then((result) => {
-        //         // ถ้าผู้ใช้กดปุ่มสีเทา (ดูรายการรับบริจาค)
-        //         if (result.dismiss === Swal.DismissReason.cancel) {
-        //             navigate('/receive');
-        //         }
-        //     });
-        //     return;
-        // }
-
         Swal.fire({
             title: 'จองรายการอาหารบริจาค',
             html: `กรุณากรอกจำนวนที่ต้องการ จำกัดไม่เกิน ${food.limitPerPerson} <br />สามารถดูรหัสยืนยัน ได้ที่รายการรับบริจาค`,
@@ -398,7 +378,7 @@ export default function FoodDetail() {
     const handleCancelBooking = () => {
         if (!booking) return;
 
-        // ดึงไอดีใบจองออกมาใช้
+        // ดึงไอดีใบจองออกมา
         const bookingId = booking.bookingId || booking.id;
 
         Swal.fire({
@@ -420,7 +400,6 @@ export default function FoodDetail() {
                     }
                 });
 
-                // ยิง API เส้น PUT เพื่อยกเลิกรายการ
                 fetch(`http://localhost:8082/bookings/${bookingId}/cancel`, {
                     method: "PUT",
                     headers: {
@@ -1073,9 +1052,6 @@ export default function FoodDetail() {
 
                     {/* ปุ่มกดจอง */}
                     {(!isFromReceive && !isOwner && !isFromManage) && (
-                        // <button type="button" style={styles.reserveBtn} onClick={handleReserveClick}>
-                        //     จองรายการอาหาร
-                        // </button>
                         <button
                             onClick={handleReserveClick}
                             disabled={food?.isCurrentByUserBooked}
@@ -1089,13 +1065,6 @@ export default function FoodDetail() {
                             {food?.isCurrentByUserBooked ? 'คุณจองรายการนี้แล้ว' : 'จองรายการอาหาร'}
                         </button>
                     )}
-                    {/* <button
-                        style={styles.reserveBtn}
-                        onClick={handleReserveClick} // เรียกใช้ฟังก์ชันด้านบน
-                    >
-                        จองรายการอาหาร
-                    </button> */}
-
                 </div>
             </div>
 
