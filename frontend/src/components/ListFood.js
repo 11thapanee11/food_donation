@@ -99,7 +99,7 @@ export default function ListFood() {
                     <button style={styles.detailBtn}>ดูรายละเอียด</button>
                 </div>
             ))} */}
-            {foods.map((food) => {
+            {foods.slice().reverse().map((food) => {
                 // ดึงค่า config ตามสถานะ (ถ้าไม่ตรงกับ key เลย ให้ใช้ค่า default หรือแสดงข้อความว่าง)
                 const statusInfo = STATUS_CONFIG[food.foodStatus] || { text: food.status, color: "gray" };
 

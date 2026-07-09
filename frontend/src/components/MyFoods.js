@@ -164,7 +164,7 @@ export default function MyFoods() {
 
         return (
             <div style={styles.list}>
-                {myFoods.map((food) => {
+                {[...myFoods].reverse().map((food) => {
 
                     const foodStatusText = STATUS_TEXTS[food.foodStatus] || food.foodStatus || "ไม่ระบุ";
 

@@ -130,7 +130,7 @@ export default function Profile() {
                     }
                 });
 
-                const result = await response.json(); // แปลงเป็น ApiResponse object
+                const result = await response.json();
 
                 if (!response.ok) {
                     throw new Error(result.message || "ไม่สามารถโหลดข้อมูลสมาชิกได้");
@@ -341,7 +341,7 @@ export default function Profile() {
                                     onFocus={(e) => { e.target.style.outline = "none"; }}
                                     onChange={handleChange}
                                 />
-                                {errors.firstName && <span className="register-error">{errors.firstName}</span>}
+                                {errors.firstName && <p style={styles.errorText}>{errors.firstName}</p>}
                             </div>
 
                             <div style={styles.fieldGroup}>
@@ -354,7 +354,7 @@ export default function Profile() {
                                     onFocus={(e) => { e.target.style.outline = "none"; }}
                                     onChange={handleChange}
                                 />
-                                {errors.lastName && <span className="register-error">{errors.lastName}</span>}
+                                {errors.lastName && <p style={styles.errorText}>{errors.lastName}</p>}
                             </div>
 
                             <div style={styles.fieldGroup}>
@@ -372,7 +372,7 @@ export default function Profile() {
                                     onFocus={(e) => { e.target.style.outline = "none"; }}
                                     onChange={handleChange}
                                 />
-                                {errors.phoneNumber && <span className="register-error">{errors.phoneNumber}</span>}
+                                {errors.phoneNumber && <p style={styles.errorText}>{errors.phoneNumber}</p>}
                             </div>
                         </div>
 
@@ -505,5 +505,13 @@ const styles = {
         padding: "100px",
         color: "#ff8c00",
         fontSize: "20px"
+    },
+    errorText: {
+        color: "red",
+        fontSize: "14px",
+        marginTop: "5px",
+        marginBottom: "0px",
+        display: "block",
+        textAlign: "left"
     },
 };

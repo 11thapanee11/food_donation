@@ -6,7 +6,7 @@ import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 // import { useParams } from "react-router-dom";
 
 export default function FoodForm() {
-    const token = localStorage.getItem("accessToken");
+    // const token = localStorage.getItem("accessToken");
 
     const navigate = useNavigate();
 
@@ -47,29 +47,29 @@ export default function FoodForm() {
 
         if (name === "expiryDate" && value) {
 
-            // 1. นำค่าวันที่หมดอายุที่เลือกมาสร้างเป็นอ็อบเจกต์ Date
+            // นำค่าวันที่หมดอายุที่เลือกมาสร้างเป็นอ็อบเจกต์ Date
             const expiryDateObj = new Date(value);
 
-            // 2. ลบออก 4 ชั่วโมงตามที่วางแผนไว้
+            // ลบออก 4 ชั่วโมงตามที่วางแผนไว้
             expiryDateObj.setHours(expiryDateObj.getHours() - 4);
 
-            // 3. จัดฟอร์แมต วันที่ (ให้กลายเป็น YYYY-MM-DD)
+            // จัดฟอร์แมต วันที่ (ให้กลายเป็น YYYY-MM-DD)
             const year = expiryDateObj.getFullYear();
             const month = String(expiryDateObj.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มจาก 0 เลยต้อง +1
             const date = String(expiryDateObj.getDate()).padStart(2, '0');
             const endDateFormatted = `${year}-${month}-${date}`; // ได้ฟอร์แมต "2026-07-05" ที่อินพุตต้องการพอดี
 
-            // 4. จัดฟอร์แมต เวลา (ให้กลายเป็น HH:mm)
+            // จัดฟอร์แมต เวลา (ให้กลายเป็น HH:mm)
             const hours = String(expiryDateObj.getHours()).padStart(2, '0');
             const minutes = String(expiryDateObj.getMinutes()).padStart(2, '0');
             const endTimeFormatted = `${hours}:${minutes}`; // ได้ฟอร์แมต "11:12"
 
-            // 5. อัปเดตลงสเตตพร้อมกัน
+            // อัปเดตลงสเตตพร้อมกัน
             setFormData((prev) => ({
                 ...prev,
                 expiryDate: value,
-                pickupDateEnd: endDateFormatted,   // ต้องมั่นใจว่าตรงกับ name ของ input วันที่สิ้นสุด
-                pickupEndTime: endTimeFormatted    // ต้องมั่นใจว่าตรงกับ name ของ input เวลาสิ้นสุด
+                pickupDateEnd: endDateFormatted,
+                pickupEndTime: endTimeFormatted
             }));
 
         } else {
@@ -143,7 +143,7 @@ export default function FoodForm() {
     const isExpired = formData.foodStatus === 'expired' || formData.foodStatus === 'disable';
 
     useEffect(() => {
-        // 1. ดึงข้อมูลหมวดหมู่มาใส่ใน Dropdown Select
+        // ดึงข้อมูลหมวดหมู่มาใส่ใน Dropdown Select
         fetch("http://localhost:8082/food-categories", {
             headers: {
                 "Content-Type": "application/json"
@@ -166,7 +166,7 @@ export default function FoodForm() {
             })
             .finally(() => setLoading(false));
 
-        // 2. โหมดแก้ไข: ดึงข้อมูลอาหารเดิมมาหยอดใส่ฟอร์ม
+        // โหมดแก้ไข: ดึงข้อมูลอาหารเดิมมาหยอดใส่ฟอร์ม
         loadFoodData();
 
     }, [foodId, isEditMode]);
@@ -243,9 +243,15 @@ export default function FoodForm() {
                 if (value === "" || value === null || value === undefined) {
                     newErrors[key] = "กรุณากรอกข้อมูล";
                 }
+                // if (key.toLowerCase().includes('date') || key.toLowerCase().includes('time')) {
+                //     newErrors[key] = "กรุณาเลือกวันที่/เวลาให้ครบถ้วน";
+                // }
                 else if (typeof value === "number" && value <= 0 && key !== "remainingUnit") {
                     // ถ้าฟิลด์ตัวเลขอื่นๆ ห้ามเป็น 0 ให้เช็คตรงนี้เพิ่มเติมได้ครับ
                 }
+                // else {
+                //     newErrors[key] = "กรุณากรอกข้อมูล";
+                // }
                 else if (value instanceof Date) {
                     if (Number.isNaN(value.getTime())) {
                         newErrors[key] = "กรุณาเลือกวันที่/เวลา";
@@ -272,7 +278,7 @@ export default function FoodForm() {
             newErrors.expiryDate = "วันหมดอายุต้องเป็นวันที่ในอนาคต";
         }
 
-        if (pickupStartDate.toDateString() < today.toDateString()) {
+        if (formData.pickupDateStart && pickupStartDate.toDateString() < today.toDateString()) {
             newErrors.pickupDateStart = "วันที่เริ่มรับต้องไม่ใช่วันที่ในอดีต";
         }
 
@@ -283,15 +289,40 @@ export default function FoodForm() {
 
         // วันรับต้องไม่ตรงกับวันหมดอายุ
         if (expiryDate) {
-            if (pickupStartDate.toDateString() === expiryDate.toDateString()) {
-                newErrors.pickupDateStart = "วันเริ่มรับต้องไม่ตรงกับวันหมดอายุ";
-            }
+            // if (pickupStartDate.toDateString() === expiryDate.toDateString()) {
+            //     newErrors.pickupDateStart = "วันเริ่มรับต้องไม่ตรงกับวันหมดอายุ";
+            // }
             if (pickupEndDate > expiryDate) {
                 newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่เกินวันหมดอายุ";
             }
-            if (pickupEndDate.toDateString() === expiryDate.toDateString()) {
-                newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่ตรงกับวันหมดอายุ";
-            }
+            //     // if (pickupEndDate.toDateString() === expiryDate.toDateString()) {
+            //     //     newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่ตรงกับวันหมดอายุ";
+            //     // }
+        }
+
+        // วันหมดอายุจริง
+        const expiryDateActual = new Date(formData.expiryDate);
+
+        // วันหมดอายุลบออก 4 ชั่วโมง
+        const maxPickupDeadline = new Date(formData.expiryDate);
+        maxPickupDeadline.setHours(maxPickupDeadline.getHours() - 4);
+
+        // วันที่สิ้นสุดรับ + เวลาสิ้นสุดรับ
+        // (สมมติว่าผู้ใช้กรอก pickupDateEnd เป็น "2026-07-05" และ pickupEndTime เป็น "11:12")
+        const currentPickupEndCombined = new Date(`${formData.pickupDateEnd}T${formData.pickupEndTime}`);
+
+        //  ตรวจสอบเงื่อนไขความปลอดภัย
+        if (currentPickupEndCombined > expiryDateActual) {
+            // เลือกเวลาเกินวันหมดอายุจริงไปแล้ว
+            newErrors.pickupEndTime = "เวลาสิ้นสุดการรับ ต้องไม่เกินวันหมดอายุ";
+        }
+        else if (currentPickupEndCombined > maxPickupDeadline) {
+            // ถ้าผู้ใช้พยายามจะขยับเวลาให้รับได้ช้ากว่าเส้นตาย 4 ชั่วโมง จะพ่น Error ทันที
+            // newErrors.pickupDateEnd = "เวลาสิ้นสุดการรับ ต้องล่วงหน้าอย่างน้อย 4 ชั่วโมงก่อนวันหมดอายุ";
+
+            // หรือถ้าอยากแยกฟิลด์แสดงเออเร่อตรงเวลาด้วย:
+            // newErrors.pickupEndTime = "เวลาสิ้นสุดการรับเกินกำหนด";
+            newErrors.pickupEndTime = "เวลาสิ้นสุดการรับ ต้องล่วงหน้าอย่างน้อย 4 ชั่วโมงก่อนวันหมดอายุ";
         }
 
         if (!formData.latitude || !formData.longitude) {
@@ -559,7 +590,7 @@ export default function FoodForm() {
                     {/* ปุ่มลบ */}
                     <button
                         type="button"
-                        onClick={() => handleDeleteFood(formData.foodId)}
+                        onClick={() => handleDeleteFood(formData.id)}
                         style={{
                             ...styles.cancelBtn,
                             backgroundColor: "#ff3333",
@@ -899,7 +930,7 @@ export default function FoodForm() {
                                     ...styles.input,
                                     // color: "#a6a6a6",
                                     // cursor: "not-allowed",
-                                    color: isEditMode ? "#a6a6a6" : "#757575",
+                                    color: isEditMode ? "#a6a6a6" : "#000",
                                     cursor: isEditMode ? "not-allowed" : "pointer"
                                 }}
                                 onChange={handleChange}

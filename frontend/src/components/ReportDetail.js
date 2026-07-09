@@ -19,26 +19,45 @@ export default function ReportDetail() {
         const loadDataAndUpdateStatus = async () => {
             setLoading(true);
             try {
-                // 1. ดึงข้อมูลรายงานก่อน
+                //ดึงข้อมูลรายงานก่อน
                 const reportRes = await fetch(`http://localhost:8082/report/${id}`);
                 const reportResponse = await reportRes.json();
                 let reportData = reportResponse.data;
 
-                // 2. ถ้าสถานะยังเป็น WAITING ให้สั่งเปลี่ยนเป็น CHECKED ก่อนแสดงผล
-                if (reportData.status === 'pending') {
-                    const updateRes = await fetch(`http://localhost:8082/report/${id}/status`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: "checked" })
-                    });
-                    const updateResult = await updateRes.json();
+                //ถ้าสถานะยังเป็น pending ให้สั่งเปลี่ยนเป็น CHECKED ก่อนแสดงผล
+                // if (reportData.status === 'pending') {
+                //     const updateRes = await fetch(`http://localhost:8082/report/${id}/status`, {
+                //         method: 'PUT',
+                //         headers: { 'Content-Type': 'application/json' },
+                //         body: JSON.stringify({ status: "checked" })
+                //     });
+                //     const updateResult = await updateRes.json();
 
-                    if (updateResult.success) {
-                        reportData = updateResult.data; // อัปเดตข้อมูลเป็นชุดล่าสุดที่มีสถานะ CHECKED แล้ว
+                //     if (updateResult.success) {
+                //         // reportData = updateResult.data; // อัปเดตข้อมูลเป็นชุดล่าสุดที่มีสถานะ CHECKED แล้ว
+                //         reportData = {
+                //             ...reportData,
+                //             status: "checked"
+                //         };
+                //     }
+                // }
+
+                if (reportData.reportStatus === 'pending') {
+                    try {
+                        await fetch(`http://localhost:8082/report/${id}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: "checked" })
+                        });
+
+                        // บังคับเปลี่ยนค่าในตัวแปรโลคอลให้เป็น checked ทันทีเพื่อนำไปแสดงผลในหน้านี้ต่อได้เลย
+                        // reportData.status = "checked";
+                    } catch (error) {
+                        console.error("Failed to update status on backend:", error);
                     }
                 }
 
-                // 3. ดึงข้อมูล Food/Booking ต่อ
+                // ดึงข้อมูล Food/Booking ต่อ
                 if (reportData.foodId || reportData.bookingId) {
                     const fetchFood = reportData.foodId ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json()) : Promise.resolve(null);
                     const fetchBooking = reportData.bookingId ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json()) : Promise.resolve(null);

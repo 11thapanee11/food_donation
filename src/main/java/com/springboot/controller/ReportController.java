@@ -125,4 +125,14 @@ public class ReportController {
 
         return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะสำเร็จ", null));
     }
+    // @PutMapping("/{id}/status")
+    // public ResponseEntity<ApiResponse<Report>> updateStatus(
+    //         @PathVariable Integer id,
+    //         @RequestBody Map<String, String> body) { // รับเป็น JSON Body
+
+    //     String newStatus = body.get("status");
+    //     Report updatedReport = reportService.updateReportStatus(id, newStatus);
+
+    //     return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะสำเร็จ", updatedReport));
+    // }
 }

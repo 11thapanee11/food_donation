@@ -4,34 +4,6 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // useEffect(() => {
-    //     // ใช้ fetch แทน axios
-    //     const fetchStats = async () => {
-    //         try {
-    //             const response = await fetch('http://localhost:8082/dashboard/stats');
-    //             if (!response.ok) throw new Error('ไม่สามารถดึงข้อมูลได้');
-    //             const data = await response.json();
-    //             setStats(data);
-    //         } catch (err) {
-    //             console.error("Error fetching stats:", err);
-    //         }
-    //     };
-    //     fetchStats();
-    // }, []);
-
-    // const [stats, setStats] = useState({
-    //     totalUsers: 10,
-    //     totalFoods: 24,
-    //     totalCarbon: 1017.4,
-    //     completed: 17,
-    //     pending: 4,
-    //     cancelled: 2,
-    //     expired: 1,
-    //     totalReports: 3,
-    //     waitingReports: 1,
-    //     checkedReports: 2
-    // });
-
     useEffect(() => {
         const fetchStats = async () => {
             try {

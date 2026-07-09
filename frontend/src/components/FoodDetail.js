@@ -298,7 +298,7 @@ export default function FoodDetail() {
 
         Swal.fire({
             title: 'จองรายการอาหารบริจาค',
-            html: `กรุณากรอกจำนวนที่ต้องการ จำกัดไม่เกิน ${food.limitPerPerson} <br />สามารถดูรหัสยืนยันได้รับที่รายการรับบริจาค`,
+            html: `กรุณากรอกจำนวนที่ต้องการ จำกัดไม่เกิน ${food.limitPerPerson} <br />สามารถดูรหัสยืนยัน ได้ที่รายการรับบริจาค`,
             input: 'number',
             inputAttributes: {
                 min: '1',
@@ -311,6 +311,18 @@ export default function FoodDetail() {
             cancelButtonColor: '#a0a0a0',
             buttonsStyling: true,
             reverseButtons: true,
+            // กดปุ่มลบ หรือ จุดทศนิยม จะพิมพ์ไม่ติด
+            didOpen: () => {
+                const input = Swal.getInput();
+                if (input) {
+                    input.onkeydown = (e) => {
+                        // บล็อกเครื่องหมายลบ (-), เครื่องหมายบวก (+), และจุดทศนิยม (.) และตัว e/E (Exponent)
+                        if (e.key === '-' || e.key === '+' || e.key === '.' || e.key === 'e' || e.key === 'E') {
+                            e.preventDefault();
+                        }
+                    };
+                }
+            },
             inputValidator: (value) => {
                 if (!value || Number.parseInt(value) <= 0) {
                     return 'กรุณากรอกจำนวนเป็นตัวเลขที่มากกว่า 0';
@@ -356,8 +368,7 @@ export default function FoodDetail() {
                         }
                         return res.json();
                     })
-                    .then((resData) => { // 1. ปรับเป็นชื่อ resData ให้ตรงจริตชุดข้อมูลห่อหุ้ม API
-                        // 2. ตรวจสอบเงื่อนไขตัวแปร success จากหลังบ้านจริง ๆ
+                    .then((resData) => {
                         if (resData.success) {
                             Swal.fire({
                                 title: 'จองสำเร็จเรียบร้อย!',
@@ -368,7 +379,7 @@ export default function FoodDetail() {
                                 navigate('/receive');
                             });
                         } else {
-                            // 3. ถ้าหลังบ้านบอกว่าจองไม่ผ่าน (เช่น โควต้าเต็มพอดี) ให้โยนข้อความไปแสดงที่บล็อกแจ้งเตือนด้านล่าง
+                            // ถ้าหลังบ้านบอกว่าจองไม่ผ่าน (เช่น โควต้าเต็มพอดี) ให้โยนข้อความไปแสดงที่บล็อกแจ้งเตือนด้านล่าง
                             throw new Error(resData.message || "จองอาหารไม่สำเร็จเนื่องจากเงื่อนไขระบบ");
                         }
                     })

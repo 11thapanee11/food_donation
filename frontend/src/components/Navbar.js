@@ -219,6 +219,7 @@ export default function Navbar() {
     const originPath = location.state?.fromPage || '';
 
     // ดึงลอจิกเช็กสถานะเมนูสว่าง (Active) ออกมาด้านบน (เคลียร์เกณฑ์ SonarQube S6766)
+    const isProfileActive = currentPath === "/profile";
     const isHomeActive = currentPath === "/" || (currentPath === "/food-detail" && originPath === "/");
     const isRankingActive = currentPath === "/ranking";
     const isMapActive = currentPath === "/map" || (currentPath === "/food-detail" && originPath === "/map");
@@ -369,7 +370,7 @@ export default function Navbar() {
                                         })
                                     ) : (
                                         <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#888", textAlign: "center", padding: '20px' }}>
-                                            ยังไม่มีการแจ้งเตือนใหม่
+                                            ยังไม่มีการแจ้งเตือน
                                         </p>
                                     )
                                 )}
@@ -384,7 +385,7 @@ export default function Navbar() {
                             <img
                                 src={isAdmin ? profileAdmin : profileMember}
                                 alt="user avatar"
-                                style={styles.profileImg(openDropdown)}
+                                style={styles.profileImg(openDropdown || isProfileActive) }
                             />
                         ) : (
                             <i className="material-icons" style={{

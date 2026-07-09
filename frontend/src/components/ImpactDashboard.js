@@ -1,20 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
 export default function ImpactDashboard() {
-    // สมมติข้อมูลรายการบริจาคที่ดึงมาจากฐานข้อมูลหลังบ้าน
-    // const [impactData] = useState([
-    //     { id: 1, date: "17 กุมภาพันธ์ 2569", name: "ส้มสายน้ำผึ", weight: 2, carbon: 8.2 },
-    //     { id: 2, date: "15 กุมภาพันธ์ 2569", name: "โดนัท", weight: 0.2, carbon: 4.5 },
-    //     { id: 3, date: "13 กุมภาพันธ์ 2569", name: "ขนมปัง", weight: 0.5, carbon: 5.8 },
-    //     { id: 4, date: "13 กุมภาพันธ์ 2569", name: "ขนมปัง", weight: 0.5, carbon: 5.8 },
-    //     { id: 5, date: "12 กุมภาพันธ์ 2569", name: "ส้มสายน้ำผึ", weight: 2, carbon: 8.2 },
-    //     { id: 6, date: "12 กุมภาพันธ์ 2569", name: "ส้มสายน้ำผึ", weight: 3, carbon: 10.0 },
-    // ]);
-
-    // ค่าสรุปสถิติด้านบน (สามารถใช้ฟังก์ชันคำนวณจาก Array หรือดึงตรงๆ มาจาก API ก็ได้ครับ)
-    // const totalCarbon = 75.5;
-    // const totalWeight = 250;
-    // const totalMeals = 50;
 
     const [summary, setSummary] = useState({
         totalCarbon: 0,
@@ -62,8 +48,8 @@ export default function ImpactDashboard() {
     }, []);
 
     // ⏳ แสดงสถานะระหว่างโหลดข้อมูล หรือกรณีเกิด Error
-    if (loading) return <div className="loading-container">กำลังโหลดข้อมูลแดชบอร์ด...</div>;
-    if (error) return <div className="error-container">เกิดข้อผิดพลาด: {error}</div>;
+    if (loading) return <div style={styles.loading}>กำลังโหลดข้อมูลแดชบอร์ด...</div>;
+    if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
 
     return (
         <div style={styles.container}>
@@ -305,5 +291,16 @@ const styles = {
         color: "#ff8c00",
         // fontWeight: "600",
         textAlign: "right"
-    }
+    },
+    loading: {
+        textAlign: "center",
+        padding: "100px",
+        color: "#ff8c00",
+        fontSize: "20px"
+    },
+    error: {
+        textAlign: "center",
+        padding: "100px",
+        color: "red"
+    },
 };

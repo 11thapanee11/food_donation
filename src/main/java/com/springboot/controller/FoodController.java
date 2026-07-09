@@ -49,7 +49,7 @@ public class FoodController {
         List<FoodDto> foods;
 
         foods = foodService.getAllFoods();
-        return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารทั้งหมดสำเร็จ (ยกเว้นของผู้บริจาค)", foods));
+        return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารทั้งหมดสำเร็จ", foods));
     }
 
     @GetMapping("/{id}")
