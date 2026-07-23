@@ -3,6 +3,9 @@ package com.springboot.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
 @Table(name = "review")
 public class Review {
@@ -20,8 +23,9 @@ public class Review {
     @Column(name = "review_date", nullable = false)
     private LocalDateTime reviewDate;
 
-    @ManyToOne
-    @JoinColumn(name = "booking_booking_id", nullable = false)
+    @OneToOne
+    @JoinColumn(name = "booking_booking_id", nullable = false, unique = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Booking booking;
 
     @ManyToOne

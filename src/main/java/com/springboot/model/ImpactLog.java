@@ -18,7 +18,7 @@ public class ImpactLog {
     private LocalDate createAt;
 
     @OneToOne
-    @JoinColumn(name = "booking_booking_id", nullable = false)
+    @JoinColumn(name = "booking_booking_id", nullable = false, unique = true)
     private Booking booking;
 
     public ImpactLog() {

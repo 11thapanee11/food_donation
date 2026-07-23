@@ -1,0 +1,44 @@
+package com.springboot.scheduler;
+
+import java.time.LocalDateTime;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import com.springboot.model.*;
+import com.springboot.repository.BookingRepository;
+import com.springboot.repository.FoodRepository;
+import java.util.List;
+
+@Component
+public class BookingScheduler {
+
+    private FoodRepository foodRepository;
+    private BookingRepository bookingRepository;
+
+    public BookingScheduler(FoodRepository foodRepository, BookingRepository bookingRepository) {
+        this.foodRepository = foodRepository;
+        this.bookingRepository = bookingRepository;
+    }
+
+    @Scheduled(cron = "0 */5 * * * *")
+    public void clearExpiredFoodBookings() {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Booking> stuckBookings = bookingRepository.findByBookingStatusAndFood_ExpiryDateBefore("pending", now);
+
+        if (!stuckBookings.isEmpty()) {
+            for (Booking booking : stuckBookings) {
+                booking.setBookingStatus("cancelled");
+                bookingRepository.save(booking);
+
+                Food food = booking.getFood();
+                if (food != null) {
+                    food.setRemainingUnit(food.getRemainingUnit() + booking.getBookingUnit());
+                    foodRepository.save(food);
+                }
+            }
+            System.out.println("เคลียร์รายการจองที่อาหารหมดอายุไปแล้วจำนวน: " + stuckBookings.size() + " รายการ");
+        }
+    }
+}

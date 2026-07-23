@@ -5,7 +5,7 @@ export const decodeToken = (token) => {
         if (!token) return null;
         
         // เรียกบรรทัดเดียวจบ ตัว Library จะจัดการแกะโครงสร้างทั้งหมดให้เอง
-        return jwtDecode(token); 
+        return jwtDecode(token);
     } catch (error) {
         console.error("Invalid token format:", error);
         return null;

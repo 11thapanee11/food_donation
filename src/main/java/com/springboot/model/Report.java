@@ -32,7 +32,7 @@ public class Report {
     private String reportStatus = "pending";
 
     @OneToOne
-    @JoinColumn(name = "booking_booking_id", nullable = false)
+    @JoinColumn(name = "booking_booking_id", nullable = false, unique = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Booking booking;
 

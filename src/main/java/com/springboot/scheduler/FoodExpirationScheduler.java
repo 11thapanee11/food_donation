@@ -29,14 +29,14 @@ public class FoodExpirationScheduler {
         runExpiryCheck();
     }
 
-    // 2. รันทันทีที่สตาร์ทแอปพลิเคชันเสร็จ เผื่อกรณีข้ามรอบเที่ยงคืนมาตอนปิดเครื่อง
+    // รันทันทีที่สตาร์ทแอปพลิเคชันเสร็จ เผื่อกรณีข้ามรอบเที่ยงคืนมาตอนปิดเครื่อง
     @EventListener(ApplicationReadyEvent.class)
     public void checkExpiredFoodOnStartup() {
         System.out.println("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะอาหารย้อนหลัง...");
         runExpiryCheck(); // สั่งให้ไปทำงานที่ฟังก์ชันหลักเช่นกัน
     }
 
-    // 3. ฟังก์ชันหลักที่รวบรวม Logic ทั้งหมดไว้ที่เดียว
+    // ฟังก์ชันหลักที่รวบรวม Logic ทั้งหมดไว้ที่เดียว
     private void runExpiryCheck() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime tomorrow = now.plusHours(24);
@@ -56,7 +56,7 @@ public class FoodExpirationScheduler {
                     "warning");
         }
 
-        // จัดการอาหารที่ใกล้หมดอายุ (ภายใน 24 ชม.)
+        // จัดการอาหารที่ใกล้หมดอายุ ภายใน 24 ชม.
         List<Food> nearExpiryFoods = foodRepository.findByExpiryDateBetweenAndFoodStatus(cutoffTime, tomorrow, "available");
         System.out.println("ตรวจพบอาหารใกล้หมดอายุจำนวน: " + nearExpiryFoods.size() + " รายการ");
 

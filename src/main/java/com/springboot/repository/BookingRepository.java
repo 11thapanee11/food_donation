@@ -6,6 +6,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.springboot.model.*;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Repository
@@ -49,7 +51,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         // "WHERE b.recipient.userId = :recipientId " +
         // "AND b.food.foodId = :foodId " +
         // "AND b.bookingStatus IN :statuses")
-        // boolean checkExistingBooking(@Param("recipientId") Integer recipientId,
-        // @Param("foodId") Integer foodId,
-        // @Param("statuses") List<String> statuses);
+        // boolean checkExistingBooking(@Param("recip
+
+        // ค้นหาการจองที่มีสาถนะ pending และวันหมดอายุ
+        List<Booking> findByBookingStatusAndFood_ExpiryDateBefore(String status, LocalDateTime time);
 }

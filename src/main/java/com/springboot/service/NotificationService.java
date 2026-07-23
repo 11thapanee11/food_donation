@@ -44,7 +44,6 @@ public class NotificationService {
         notification.setNotificationMessage("มีอาหารใหม่ใกล้คุณ: " + food.getFoodName());
         notification.setNotificationDate(LocalDateTime.now());
         notification.setNotificationType("food");
-        notification.setIsRead(false);
         notification.setFood(food);
 
         return notificationRepository.save(notification);
@@ -61,7 +60,6 @@ public class NotificationService {
         notification.setNotificationMessage(message);
         notification.setNotificationDate(LocalDateTime.now());
         notification.setNotificationType(type); // ใช้ type เป็น warning เพื่อแยกจาก food ใหม่
-        notification.setIsRead(false);
         notification.setFood(food);
 
         notificationRepository.save(notification);
@@ -77,7 +75,6 @@ public class NotificationService {
         notification.setNotificationMessage(message);
         notification.setNotificationDate(LocalDateTime.now());
         notification.setNotificationType("booking"); // กำหนดประเภทแยกชัดเจนว่าเป็นฝั่ง booking
-        notification.setIsRead(false);
 
         // เชื่อมความสัมพันธ์ของ Object ตามโครงสร้างตาราง
         notification.setFood(booking.getFood());
@@ -97,7 +94,6 @@ public class NotificationService {
         notification.setNotificationMessage(message);
         notification.setNotificationDate(LocalDateTime.now());
         notification.setNotificationType("booking_cancel");
-        notification.setIsRead(false);
 
         notification.setFood(booking.getFood());
         notification.setBooking(booking);
@@ -180,27 +176,6 @@ public class NotificationService {
                 .map(this::convertToDto) // <--- แปลงที่ตรงนี้
                 .toList();
     }
-
-    // ดึงเฉพาะแจ้งเตือนการจองและการยกเลิก (สำหรับผู้บริจาค)
-    // public List<Notification> getDonorNotifications() {
-    // return
-    // notificationRepository.findByNotificationTypeInOrderByNotificationDateDesc(
-    // Arrays.asList("booking", "booking_cancel")
-    // );
-    // }
-
-    // ดึงแจ้งเตือนที่ยังไม่ได้อ่าน
-    public List<Notification> getUnreadNotifications() {
-        return notificationRepository.findByIsReadFalse();
-    }
-
-    // อัปเดตสถานะการอ่าน
-    // public Notification markAsRead(Integer id) {
-    // Notification notification = notificationRepository.findById(id)
-    // .orElseThrow(() -> new RuntimeException("Notification not found"));
-    // notification.setIsRead(true);
-    // return notificationRepository.save(notification);
-    // }
 
     private final Map<String, List<Integer>> readNotifications = new ConcurrentHashMap<>();
 

@@ -24,9 +24,6 @@ public class Notification {
     @Column(nullable = false, length = 20)
     private String notificationType;
 
-    @Column(nullable = false)
-    private Boolean isRead = false;
-
     @ManyToOne
     @JoinColumn(name = "booking_booking_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -67,14 +64,6 @@ public class Notification {
 
     public void setNotificationType(String notificationType) {
         this.notificationType = notificationType;
-    }
-
-    public Boolean getIsRead() {
-        return isRead;
-    }
-
-    public void setIsRead(Boolean isRead) {
-        this.isRead = isRead;
     }
 
     public Food getFood() {
