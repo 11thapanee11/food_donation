@@ -28,17 +28,15 @@ public class ReviewController {
             @RequestHeader("Authorization") String authHeader,
             @RequestBody ReviewDto dto) {
         try {
-            // 1. ดึง User จาก Token
             User user = userService.authenticate(authHeader);
             Recipient recipient = recipientService.getOrCreateRecipient(user);
 
-            // 2. ส่ง user เพื่อให้ Service ดึงค่า recipient ภายใน
             reviewService.saveReview(dto, recipient);
 
             return ResponseEntity.ok(new ApiResponse<>(true, "บันทึกรีวิวเรียบร้อยแล้ว", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาด: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "ไม่สามารถบันทึกข้อมูลได้: " + e.getMessage(), null));
         }
     }
 
@@ -52,10 +50,15 @@ public class ReviewController {
     }
 
     @GetMapping("/food/{foodId}")
-    // @GetMapping("/api/v1/reviews/food/{foodId}")
     public ResponseEntity<ApiResponse<List<ReviewDto>>> getReviewsByFood(@PathVariable Integer foodId) {
         List<ReviewDto> reviews = reviewService.getReviewsByFoodId(foodId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรีวิวสำเร็จ", reviews));
+        if (reviews != null) {
+            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", reviews));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูล", null));
+        }
+        // return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรีวิวสำเร็จ", reviews));
     }
 
 }

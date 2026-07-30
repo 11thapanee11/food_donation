@@ -2,6 +2,8 @@ package com.springboot.scheduler;
 
 import java.time.LocalDateTime;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +21,12 @@ public class BookingScheduler {
     public BookingScheduler(FoodRepository foodRepository, BookingRepository bookingRepository) {
         this.foodRepository = foodRepository;
         this.bookingRepository = bookingRepository;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void checkExpiredFoodBookingOnStartup() {
+        System.out.println("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะการจองอาหารย้อนหลัง...");
+        clearExpiredFoodBookings(); // สั่งให้ไปทำงานที่ฟังก์ชันหลักเช่นกัน
     }
 
     @Scheduled(cron = "0 */5 * * * *")

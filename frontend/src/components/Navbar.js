@@ -91,7 +91,7 @@ export default function Navbar() {
 
                 try {
                     const response = await fetch(
-                        `http://localhost:8082/notifications/food?lat=${latitude}&lng=${longitude}&radius=5`,
+                        `http://localhost:8082/notifications?lat=${latitude}&lng=${longitude}&radius=5`,
                         {
                             method: "GET",
                             headers: {
@@ -272,18 +272,6 @@ export default function Navbar() {
 
                 )}
             </div>
-            {/* <div style={styles.menuSection}>
-                <Link to="/home" style={location.pathname === "/home" ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
-                <Link to="/ranking" style={location.pathname === "/ranking" ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
-                <Link to="/map" style={location.pathname === "/map" ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
-                {isLoggedIn && (
-                    <>
-                        <Link to="/receive" style={location.pathname === "/receive" ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
-                        <Link to="/my-foods" style={location.pathname === "/my-foods" || location.pathname === "/food-form" ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
-                        <Link to="/impact-dashboard" style={location.pathname === "/impact-dashboard" ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
-                    </>
-                )}
-            </div> */}
 
             {/* ฝั่งขวา: Icons & Dropdowns */}
             <div ref={dropdownRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "20px" }}>
@@ -432,8 +420,8 @@ const styles = {
         alignItems: "center",
         justifyContent: "space-between",
         gap: "20px",
-        boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
-        fontFamily: "'Noto Sans Thai', sans-serif"
+        boxShadow: "0 3px 10px #0000001a",
+        position: "relative"
     },
     logoSection: {
         display: "flex",

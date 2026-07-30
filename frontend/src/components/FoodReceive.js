@@ -44,7 +44,7 @@ export default function FoodReceive() {
         const token = localStorage.getItem("accessToken");
         setLoading(true);
 
-        // 1. ดึงข้อมูลการจองทั้งหมด
+        // ดึงข้อมูลการจองทั้งหมด
         fetch("http://localhost:8082/bookings", {
             headers: { "Authorization": `Bearer ${token}` }
         })
@@ -53,7 +53,7 @@ export default function FoodReceive() {
                 if (resData.success && Array.isArray(resData.data)) {
                     const bookings = resData.data;
 
-                    // 2. ดึงข้อมูล Food ของทุกรายการ (ใช้ Promise.all เพื่อเรียกพร้อมกัน)
+                    // ดึงข้อมูล Food ของทุกรายการ (ใช้ Promise.all เพื่อเรียกพร้อมกัน)
                     const bookingsWithFood = await Promise.all(
                         bookings.map(async (booking) => {
                             try {

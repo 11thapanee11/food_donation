@@ -14,7 +14,7 @@ import com.springboot.service.*;
 @Service
 public class DashboardService {
     private final FoodRepository foodRepository;
-    private BookingRepository bookingRepository;
+    private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
     private final ImpactLogRepository impactLogRepository;

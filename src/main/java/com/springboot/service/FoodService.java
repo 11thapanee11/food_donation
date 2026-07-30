@@ -284,8 +284,13 @@ public class FoodService {
         // Food savedFood = foodRepository.saveAndFlush(food);
 
         // สร้างการแจ้งเตือน
-        // notificationService.createNotification(food);
-        notificationService.createFoodNotification(savedFood);
+        // notificationService.createFoodNotification(savedFood);
+        try {
+            notificationService.createFoodNotification(savedFood);
+        } catch (Exception e) {
+            System.err.println("ไม่สามารถบันทึกการแจ้งเตือนได้: " + e.getMessage());
+        }
+
 
         return savedFood;
     }
@@ -432,6 +437,16 @@ public class FoodService {
                 .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร"));
         food.setFoodStatus(status);
         foodRepository.save(food);
+    }
+
+    // ดึงรายการอาหารที่หมดอายุแล้ว (cutoffTime คือ ผ่านเวลา expiry มาเกินกำหนด)
+    public List<Food> getExpiredFoods(LocalDateTime cutoffTime) {
+        return foodRepository.findByExpiryDateBeforeAndFoodStatus(cutoffTime, "available");
+    }
+
+    // ดึงรายการอาหารที่ใกล้หมดอายุ (ระหว่าง cutoffTime ถึง 24 ชม. ข้างหน้า)
+    public List<Food> getNearExpiryFoods(LocalDateTime cutoffTime, LocalDateTime tomorrow) {
+        return foodRepository.findByExpiryDateBetweenAndFoodStatus(cutoffTime, tomorrow, "available");
     }
 
 }

@@ -34,49 +34,31 @@ public class ReportController {
             @RequestParam(value = "report_image", required = false) MultipartFile image) {
 
         if (dto.getBookingId() == null) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, "ผิดพลาด: ไม่พบ Booking ID", null));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, "ไม่สามารถบันทึกข้อมูลได้", null));
         }
-        // if (dto.getRecipientId() == null) {
-        // return ResponseEntity.badRequest().body(new ApiResponse<>(false, "ผิดพลาด:
-        // ไม่พบ User ID", null));
-        // }
 
         User user = userService.authenticate(authHeader);
         Recipient recipient = recipientService.getOrCreateRecipient(user);
 
         String imagePath = null;
-        // if (image != null && !image.isEmpty()) {
-        // try {
-        // String fileName = UUID.randomUUID().toString() + "_" +
-        // image.getOriginalFilename();
-        // image.transferTo(new File("uploads/report/" + fileName));
-        // imagePath = "images/report/" + fileName;
-        // } catch (Exception e) {
-        // return ResponseEntity.internalServerError().body(new ApiResponse<>(false,
-        // "อัปโหลดไฟล์ล้มเหลว", null));
-        // }
-        // }
         if (image != null && !image.isEmpty()) {
             try {
-                // 1. กำหนด Path หลัก
                 String uploadDir = "D:/Project/food_donation/uploads/report/";
                 File directory = new File(uploadDir);
 
-                // 2. ถ้าโฟลเดอร์ไม่มี ให้สร้างขึ้นมา
+                // ถ้าโฟลเดอร์ไม่มี ให้สร้างขึ้นมา
                 // if (!directory.exists()) {
                 // directory.mkdirs();
                 // }
 
                 String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
 
-                // 3. บันทึกไฟล์
                 File dest = new File(directory, fileName);
                 image.transferTo(dest);
 
                 imagePath = "/images/report/" + fileName;
             } catch (Exception e) {
-                // พิมพ์ Error ลงใน Console ของ Java เพื่อดูว่าติดตรงไหน
-                e.printStackTrace();
+                // e.printStackTrace();
                 return ResponseEntity.internalServerError()
                         .body(new ApiResponse<>(false, "อัปโหลดไฟล์ล้มเหลว: " + e.getMessage(), null));
             }
@@ -95,14 +77,11 @@ public class ReportController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<ReportDto>>> getListReport() {
         try {
-            // เรียกใช้ Service ที่คุณเขียนไว้
             List<ReportDto> reports = reportService.getAllReports();
 
-            // ส่ง Response กลับไปพร้อมสถานะ Success
             return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรายงานสำเร็จ", reports));
 
         } catch (Exception e) {
-            // กรณีเกิดข้อผิดพลาด ให้ส่ง error message กลับไป
             return ResponseEntity.status(500)
                     .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการดึงข้อมูล: " + e.getMessage(), null));
         }

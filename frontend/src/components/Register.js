@@ -2,7 +2,7 @@ import React, { useState } from "react";
 // import '../css/register.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
-import registerImg from '../assets/images/register_img.jpg'
+import registerImg from '../assets/images/register_image.png'
 
 function Register() {
     const navigate = useNavigate();
@@ -247,7 +247,7 @@ const styles = {
         color: "#328d7d",
         marginBottom: "5px",
         fontWeight: "bold",
-        marginTop: "10px",
+        marginTop: "20px",
         fontSize: "30px"
     },
     row: {
@@ -297,9 +297,9 @@ const styles = {
         display: "block"
     },
     image: {
-        width: "460px",
+        width: "390px",
         borderRadius: "15px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+        // boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
         marginTop: "30px"
     }
 };

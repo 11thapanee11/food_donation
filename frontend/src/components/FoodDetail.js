@@ -269,7 +269,6 @@ export default function FoodDetail() {
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // เปลี่ยนเส้นทางไปหน้า login (ปรับ path ตามสไตล์ของคุณ เช่น /login)
                     navigate('/login');
                 }
             });
@@ -865,23 +864,6 @@ export default function FoodDetail() {
                     ) : (
                         <div style={styles.reviewCard}>
                             <h4 style={styles.reviewTitle}>รีวิวจากผู้รับบริจาค</h4>
-
-                            {/* เพิ่มการตรวจสอบว่ามีรีวิวหรือไม่ */}
-                            {/* {booking?.review ? (
-                                <>
-                                    <div style={styles.reviewHeader}>
-                                        <span style={styles.reviewerName}>{booking.review.reviewerName}</span>
-                                        <span style={styles.reviewDate}>{booking.review.date}</span>
-                                    </div>
-                                    <div style={styles.stars}>
-                                        {"★".repeat(booking.review.rating)}
-                                        {"☆".repeat(5 - booking.review.rating)}
-                                    </div>
-                                    <p style={styles.reviewContent}>
-                                        {booking.review.comment}
-                                    </p>
-                                </> */}
-
                             {reviews.length > 0 ? (
                                 reviews.map((item, index) => (
                                     <div key={index} style={{ marginTop: '15px' }}>
@@ -892,10 +874,6 @@ export default function FoodDetail() {
                                             </span>
                                         </div>
                                         <div style={{ marginLeft: "8px" }}>
-                                            {/* <div style={{ ...styles.starButton }}>
-                                                {"★".repeat(item.ratingScore)}
-                                                {"☆".repeat(5 - item.ratingScore)}
-                                            </div> */}
                                             <div style={styles.ratingStarsContainer}>
                                                 {[1, 2, 3, 4, 5].map((star) => (
                                                     <span

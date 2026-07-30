@@ -63,10 +63,10 @@ const MapPage = () => {
             }
         })
             .then((res) => {
-                if (!res.ok) throw new Error("โหลดข้อมูลพิกัดแผนที่ไม่สำเร็จ");
+                if (!res.ok) throw new Error("ไม่พบข้อมูล");
                 return res.json();
             })
-            .then((resData) => { 
+            .then((resData) => {
                 if (resData.success) {
                     const validFoods = resData.data.filter(item => item.latitude && item.longitude && item.foodStatus === "available");
                     setFoods(validFoods);

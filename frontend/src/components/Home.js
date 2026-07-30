@@ -187,7 +187,7 @@ export default function Home() {
                             </div>
                         ))
                     ) : (
-                        <p style={styles.noData}>ไม่พบผลลัพธ์ที่ตรงกับเงื่อนไขการค้นหา</p>
+                        <p style={styles.noData}>ไม่พบรายการอาหาร</p>
                     )}
                 </div>
             </div>

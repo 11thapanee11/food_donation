@@ -49,17 +49,21 @@ public class FoodController {
         List<FoodDto> foods;
 
         foods = foodService.getAllFoods();
+        
+        if (foods == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลอาหาร", null));
+        }
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารทั้งหมดสำเร็จ", foods));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FoodDto>> getFoodById(@PathVariable Integer id) {
-        // เรียกใช้เมธอดใหม่ใน Service ที่คืนค่าเป็น DTO
         FoodDto foodDto = foodService.getFoodById(id);
 
         if (foodDto == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลอาหารที่ระบุ", null));
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลอาหาร", null));
         }
 
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลอาหารสำเร็จ", foodDto));
@@ -118,13 +122,13 @@ public class FoodController {
                     .body(new ApiResponse<>(false, "อัปโหลดไฟล์ล้มเหลว: " + e.getMessage(), null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(false, "ไม่สามารถเพิ่มข้อมูลอาหารได้: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "ไม่สามารถบันทึกข้อมูลได้" + e.getMessage(), null));
         }
     }
 
     // อัพเดทอาหาร
     @PutMapping(value = "/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateFood(
+    public ResponseEntity<ApiResponse<Void>> editFood(
             @PathVariable Integer id,
             @ModelAttribute FoodDto foodDto,
             @RequestParam(value = "fileImage", required = false) MultipartFile image) {
@@ -134,7 +138,7 @@ public class FoodController {
                 imagePath = saveFoodImage(image);
             }
             foodService.updateFood(id, foodDto, imagePath);
-            return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตข้อมูลอาหารสำเร็จ", null));
+            return ResponseEntity.ok(new ApiResponse<>(true, "แก้ไขข้อมูลอาหารสำเร็จ", null));
 
         } catch (IOException e) {
             // จับเฉพาะข้อผิดพลาดเรื่องไฟล์
@@ -142,7 +146,7 @@ public class FoodController {
                     .body(new ApiResponse<>(false, "อัปโหลดไฟล์ล้มเหลว: " + e.getMessage(), null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(false, "ไม่สามารถอัปเดตข้อมูลอาหารได้: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "ไม่สามารถแก้ไขข้อมูลอาหารได้ " + e.getMessage(), null));
         }
     }
 
@@ -159,11 +163,16 @@ public class FoodController {
     }
 
     @GetMapping("/my-donations")
-    public ResponseEntity<ApiResponse<List<Food>>> getFoodByDonor(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<ApiResponse<List<Food>>> getFoodsByDonorId(@RequestHeader("Authorization") String authHeader) {
 
         User user = userService.authenticate(authHeader);
 
         List<Food> foods = foodService.findFoodsByDonorId(user.getUserId());
+
+        if (foods == null || foods.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลรายการอาหาร", null));
+        }
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรายการอาหารบริจาคของฉันสำเร็จ", foods));
     }
 
@@ -214,5 +223,7 @@ public class FoodController {
         return ResponseEntity.ok(
                 new ApiResponse<>(true, "อัปเดตสถานะเป็น " + newStatus + " สำเร็จ", null));
     }
+
+    
 
 }

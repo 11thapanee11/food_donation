@@ -18,7 +18,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
         // ค้นหาใบจองล่าสุดของอาหารชิ้นนี้ ที่สถานะยังรอการส่งมอบอยู่ (เงื่อนไขตรงตาม
         // Entity เป๊ะๆ)
-        Optional<Booking> findFirstByFoodFoodIdAndBookingStatusOrderByBookingDateDesc(Integer foodId,
+        Optional<Booking> findByFoodFoodIdAndBookingStatus(Integer foodId,
                         String bookingStatus);
 
         // หาน้ำหนักรวมจาก Booking เฉพาะรายการที่เป็นของ Donor คนนี้ และสถานะเป็น

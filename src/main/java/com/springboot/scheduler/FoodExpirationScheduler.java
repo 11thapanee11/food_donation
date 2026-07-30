@@ -1,8 +1,7 @@
 package com.springboot.scheduler;
 
 import com.springboot.model.Food;
-import com.springboot.repository.FoodRepository;
-import com.springboot.service.NotificationService;
+import com.springboot.service.*;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -14,11 +13,11 @@ import java.util.List;
 @Component
 public class FoodExpirationScheduler {
 
-    private FoodRepository foodRepository;
+    private FoodService foodService;
     private NotificationService notificationService;
 
-    public FoodExpirationScheduler(FoodRepository foodRepository, NotificationService notificationService) {
-        this.foodRepository = foodRepository;
+    public FoodExpirationScheduler(FoodService foodService, NotificationService notificationService) {
+        this.foodService = foodService;
         this.notificationService = notificationService;
     }
 
@@ -43,12 +42,11 @@ public class FoodExpirationScheduler {
         LocalDateTime cutoffTime = now.plusHours(2);
 
         // จัดการอาหารที่หมดอายุแล้ว
-        List<Food> expiredFoods = foodRepository.findByExpiryDateBeforeAndFoodStatus(cutoffTime, "available");
+        List<Food> expiredFoods = foodService.getExpiredFoods(cutoffTime);
         System.out.println("ตรวจพบอาหารหมดอายุจำนวน: " + expiredFoods.size() + " รายการ");
 
         for (Food food : expiredFoods) {
-            food.setFoodStatus("expired");
-            foodRepository.save(food);
+            foodService.updateFoodStatus(food.getFoodId(), "expired");
 
             notificationService.createExpirationNotification(
                     food,
@@ -57,7 +55,7 @@ public class FoodExpirationScheduler {
         }
 
         // จัดการอาหารที่ใกล้หมดอายุ ภายใน 24 ชม.
-        List<Food> nearExpiryFoods = foodRepository.findByExpiryDateBetweenAndFoodStatus(cutoffTime, tomorrow, "available");
+        List<Food> nearExpiryFoods = foodService.getNearExpiryFoods(cutoffTime, tomorrow);
         System.out.println("ตรวจพบอาหารใกล้หมดอายุจำนวน: " + nearExpiryFoods.size() + " รายการ");
 
         for (Food food : nearExpiryFoods) {

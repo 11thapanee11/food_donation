@@ -72,6 +72,11 @@ public class BookingController {
         User user = userService.authenticate(authHeader);
 
         List<BookingDto> myBookings = bookingService.getListBooking(user.getUserId());
+
+        if (myBookings == null || myBookings.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลการจอง", null));
+        }
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลประวัติการจองสำเร็จ", myBookings));
     }
 
@@ -82,7 +87,7 @@ public class BookingController {
             return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรายละเอียดการจองสำเร็จ", booking));
         } catch (RuntimeException err) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลใบจองเลขที่ " + bookingId, null));
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลการจองเลขที่ " + bookingId, null));
         }
     }
     // public ResponseEntity<Booking> getBookingDetail(@PathVariable Integer
@@ -112,7 +117,7 @@ public class BookingController {
             return ResponseEntity.ok(new ApiResponse<>(true, "ยกเลิกรายการจองอาหารเรียบร้อยแล้ว", null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(false, e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "ไม่สามารถยกเลิกรายการจองได้", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดภายในระบบ ไม่สามารถยกเลิกรายการจองได้", null));

@@ -59,7 +59,7 @@ public class NotificationService {
         Notification notification = new Notification();
         notification.setNotificationMessage(message);
         notification.setNotificationDate(LocalDateTime.now());
-        notification.setNotificationType(type); // ใช้ type เป็น warning เพื่อแยกจาก food ใหม่
+        notification.setNotificationType(type);
         notification.setFood(food);
 
         notificationRepository.save(notification);
@@ -179,7 +179,7 @@ public class NotificationService {
 
     private final Map<String, List<Integer>> readNotifications = new ConcurrentHashMap<>();
 
-    // 1. บันทึกเมื่อยูสเซอร์กดอ่าน
+    // บันทึกเมื่อยูสเซอร์กดอ่าน
     public void markAsRead(String userId, int notificationId) {
         readNotifications.computeIfAbsent(userId, k -> new ArrayList<>());
         if (!readNotifications.get(userId).contains(notificationId)) {
@@ -187,7 +187,7 @@ public class NotificationService {
         }
     }
 
-    // 2. ดึงเฉพาะลิสต์ไอดีที่ "ยูสเซอร์คนนี้" เคยกดอ่านแล้ว ส่งกลับไปให้หน้าบ้าน
+    // ดึงเฉพาะลิสต์ไอดีที่ "ยูสเซอร์คนนี้" เคยกดอ่านแล้ว ส่งกลับไปให้หน้าบ้าน
     public List<Integer> getReadIdsForUser(String userId) {
         return readNotifications.getOrDefault(userId, new ArrayList<>());
     }

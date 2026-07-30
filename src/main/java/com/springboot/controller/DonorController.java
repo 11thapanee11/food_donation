@@ -29,11 +29,14 @@ public class DonorController {
         try {
             List<DonorDto> donors = donorService.getAllDonors();
 
-            // ส่งคืนโดยใช้ ApiResponse
+            if (donors == null || donors.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "ไม่พบข้อมูลผู้บริจาค", null));
+            }
+
             return ResponseEntity.ok(
                     new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", donors));
         } catch (Exception e) {
-            // ในกรณี Error ก็ส่ง ApiResponse กลับไปเช่นกัน
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "เกิดข้อผิดพลาด: " + e.getMessage(), null));
         }
@@ -48,24 +51,41 @@ public class DonorController {
         // ดึงก้อนข้อมูล Map ที่มี 3 ค่าสถิติกลับมา
         Map<String, Object> summaryData = donorService.getImpactSummary(user.getUserId());
 
+        if (summaryData == null || summaryData.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูล", null));
+        }
+
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสถิติมวลรวมสำเร็จ", summaryData));
     }
 
     @GetMapping("/ranking")
     public ResponseEntity<ApiResponse<List<DonorDto>>> getListTotalImpact() {
         List<DonorDto> listTotalImpact = donorService.getListTotalImpact(); // แปลงเป็น DTO ก่อนส่ง
-        return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", listTotalImpact));
+        if (listTotalImpact != null) {
+            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", listTotalImpact));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูล", null));
+        }
+        // return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ",
+        // listTotalImpact));
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<String>> updateStatus(
+    public ResponseEntity<ApiResponse<String>> updateDonorStatus(
             @PathVariable Integer id,
             @RequestBody Map<String, String> body) {
+        try {
 
-        String newStatus = body.get("status");
-        donorService.updateDonorStatus(id, newStatus);
+            String newStatus = body.get("status");
+            donorService.updateDonorStatus(id, newStatus);
 
-        return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะสำเร็จ", null));
+            return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะสำเร็จ", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "ไม่สามารถแก้ไขสถานะบัญชีผู้ใช้งานได้: " + e.getMessage(), null));
+        }
     }
 
     @GetMapping("/check-status")

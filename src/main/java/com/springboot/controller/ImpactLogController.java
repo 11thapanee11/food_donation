@@ -19,7 +19,7 @@ public class ImpactLogController {
     private final UserService userService;
     private final ImpactLogService impactLogService;
 
-    public ImpactLogController (UserService userService, ImpactLogService impactLogService) {
+    public ImpactLogController(UserService userService, ImpactLogService impactLogService) {
         this.userService = userService;
         this.impactLogService = impactLogService;
     }
@@ -27,11 +27,16 @@ public class ImpactLogController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<ImpactLogDto>>> getListImpactLog(
             @RequestHeader("Authorization") String authHeader) {
-        
+
         User user = userService.authenticate(authHeader);
 
         List<ImpactLogDto> listImpactLog = impactLogService.getListImpactLog(user.getUserId());
-        
+
+        if (listImpactLog == null || listImpactLog.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "ไม่พบข้อมูลผลกระทบ", null));
+        }
+
         return ResponseEntity.ok(new ApiResponse<>(true, "ดึงลิสต์ประวัติผลกระทบสำเร็จ", listImpactLog));
     }
 }

@@ -159,17 +159,18 @@ public class BookingService {
     public void cancelBooking(Integer bookingId) {
         System.out.println("กำลังอัปเดตสถานะยกเลิกใบจอง ID: " + bookingId);
 
-        // 1. ค้นหาใบจองเดิมก่อน
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลการจองรหัส: " + bookingId));
 
-        // 2. อัปเดตสถานะเป็น CANCELLED
         booking.setBookingStatus("cancelled");
 
-        // 3. เซฟการเปลี่ยนแปลงกลับลงฐานข้อมูล
         Booking savedBooking = bookingRepository.save(booking);
 
-        notificationService.createCancelBookingNotification(savedBooking);
+        try {
+            notificationService.createCancelBookingNotification(savedBooking);
+        } catch (Exception e) {
+            System.err.println("ไม่สามารถบันทึกการแจ้งเตือนได้: " + e.getMessage());
+        }
 
         // คืนจำนวนอาหารกลับเข้าคลัง
         Food food = booking.getFood();
@@ -181,7 +182,7 @@ public class BookingService {
         // ค้นหาใบจองล่าสุดของอาหารนี้ ที่สถานะเป็น "PENDING"
         // (หรือสถานะรอส่งมอบที่คุณกำหนดไว้ในระบบ)
         Booking booking = bookingRepository
-                .findFirstByFoodFoodIdAndBookingStatusOrderByBookingDateDesc(foodId, "pending")
+                .findByFoodFoodIdAndBookingStatus(foodId, "pending")
                 .orElseThrow(() -> new IllegalArgumentException(
                         "ไม่พบรายการจองที่อยู่ระหว่างรอดำเนินการสำหรับอาหารชิ้นนี้"));
 
@@ -196,7 +197,7 @@ public class BookingService {
 
         // ตรวจสอบรหัสยืนยัน
         if (!codeAsInt.equals(booking.getConfirmationCode())) {
-            throw new IllegalArgumentException("รหัสยืนยันไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
+            throw new IllegalArgumentException("รหัสยืนยันไม่ถูกต้อง");
         }
 
         // อัปเดตสถานะใบจองเป็นส่งมอบสำเร็จ
@@ -217,10 +218,11 @@ public class BookingService {
 
         // ดึงข้อมูล Food จาก foodId ที่ส่งเข้ามา
         // Food food = foodRepository.findById(foodId)
-        //         .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร ID: " + foodId));
+        // .orElseThrow(() -> new RuntimeException("ไม่พบรายการอาหาร ID: " + foodId));
 
         // ส่งคู่วัตถุพร้อมกับ List ของสถานะไปเช็คที่ Repository
-        return bookingRepository.existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(recipient.getUserId(), foodId, statuses);
+        return bookingRepository.existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(recipient.getUserId(), foodId,
+                statuses);
 
     }
 
