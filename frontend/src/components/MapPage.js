@@ -15,7 +15,7 @@ const mapContainerStyle = {
 const MapPage = () => {
     const navigate = useNavigate();
 
-    const [foods, setFoods] = useState([]); // เก็บรายการอาหารทั้งหมดที่ดึงมาจากฐานข้อมูล
+    const [foods, setFoods] = useState([]);
     const [selectedFood, setSelectedFood] = useState(null); // เก็บหมุดที่ผู้ใช้คลิกเลือกเพื่อเปิดป้ายชื่อ
     const [isPageLoading, setIsPageLoading] = useState(true);
 
@@ -43,14 +43,13 @@ const MapPage = () => {
                 },
                 (error) => {
                     console.error("Error getting geolocation: ", error);
-                    // ถ้าดึงพิกัดไม่ได้ หรือผู้ใช้ปฏิเสธ ระบบจะใช้ค่า defaultCenter อัตโนมัติ ไม่แครชครับ
+                    // ถ้าดึงพิกัดไม่ได้ หรือผู้ใช้ปฏิเสธ ระบบจะใช้ค่า defaultCenter อัตโนมัติ ไม่แครช
                 },
                 { enableHighAccuracy: true } // ใช้โหมดความแม่นยำสูง
             );
         }
     }, []);
 
-    // ดึงพิกัดอาหารทั้งหมดมาจากหลังบ้าน Spring Boot
     useEffect(() => {
         setIsPageLoading(true);
         const token = localStorage.getItem("accessToken");
@@ -81,7 +80,7 @@ const MapPage = () => {
             });
     }, []);
 
-    // กรณีดักสเตตัส Loading หน้าจอภาพรวม (แสดงก้อน Loading นุ่มๆ ละมุนตา)
+    // กรณีดักสเตตัส Loading หน้าจอภาพรวม แสดงก้อน Loading
     if (isPageLoading) {
         return (
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "80vh", gap: "16px" }}>
@@ -115,8 +114,8 @@ const MapPage = () => {
                 zoom={17}
                 // center={
                 //     foods.length > 0 && foods[0].latitude && foods[0].longitude
-                //         ? { lat: Number(foods[0].latitude), lng: Number(foods[0].longitude) } // 1. ยึดพิกัดอาหารในระบบก่อน
-                //         : centerPos // 2. ถ้าไม่มีอาหาร ให้วิ่งไปที่พิกัดปัจจุบัน (ที่เพิ่งขออนุญาตมา) หรือค่า Default สำรอง
+                //         ? { lat: Number(foods[0].latitude), lng: Number(foods[0].longitude) } // ยึดพิกัดอาหารในระบบก่อน
+                //         : centerPos // ถ้าไม่มีอาหาร ให้วิ่งไปที่พิกัดปัจจุบัน (ที่เพิ่งขออนุญาตมา) หรือค่า Default สำรอง
                 // }
                 center={centerPos}
             >
@@ -145,7 +144,7 @@ const MapPage = () => {
                     />
                 ))}
 
-                {/* เปิดหน้าต่างป้ายชื่อขนาดเล็ก (InfoWindow) เมื่อผู้ใช้กดคลิกที่หมุด */}
+                {/* เปิดหน้าต่างป้ายชื่อขนาดเล็ก InfoWindow เมื่อผู้ใช้กดคลิกที่หมุด */}
                 {selectedFood && (
                     <OverlayView
                         position={{

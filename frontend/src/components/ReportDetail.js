@@ -24,24 +24,6 @@ export default function ReportDetail() {
                 const reportResponse = await reportRes.json();
                 let reportData = reportResponse.data;
 
-                //ถ้าสถานะยังเป็น pending ให้สั่งเปลี่ยนเป็น CHECKED ก่อนแสดงผล
-                // if (reportData.status === 'pending') {
-                //     const updateRes = await fetch(`http://localhost:8082/report/${id}/status`, {
-                //         method: 'PUT',
-                //         headers: { 'Content-Type': 'application/json' },
-                //         body: JSON.stringify({ status: "checked" })
-                //     });
-                //     const updateResult = await updateRes.json();
-
-                //     if (updateResult.success) {
-                //         // reportData = updateResult.data; // อัปเดตข้อมูลเป็นชุดล่าสุดที่มีสถานะ CHECKED แล้ว
-                //         reportData = {
-                //             ...reportData,
-                //             status: "checked"
-                //         };
-                //     }
-                // }
-
                 if (reportData.reportStatus === 'pending') {
                     try {
                         await fetch(`http://localhost:8082/report/${id}/status`, {
@@ -49,9 +31,6 @@ export default function ReportDetail() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: "checked" })
                         });
-
-                        // บังคับเปลี่ยนค่าในตัวแปรโลคอลให้เป็น checked ทันทีเพื่อนำไปแสดงผลในหน้านี้ต่อได้เลย
-                        // reportData.status = "checked";
                     } catch (error) {
                         console.error("Failed to update status on backend:", error);
                     }
@@ -95,7 +74,6 @@ export default function ReportDetail() {
             return;
         }
 
-        // 1. ใช้ Swal.fire แทน window.confirm
         const result = await Swal.fire({
             title: `ยืนยันการ${actionLabel}?`,
             // text: `รายการ: ${targetName || 'ไม่ระบุชื่อ'}`,
@@ -109,7 +87,7 @@ export default function ReportDetail() {
             reverseButtons: true,
         });
 
-        if (!result.isConfirmed) return; // ถ้ากดยกเลิก ให้จบฟังก์ชัน
+        if (!result.isConfirmed) return;
 
         try {
             const token = localStorage.getItem("accessToken");
@@ -143,7 +121,6 @@ export default function ReportDetail() {
                 throw new Error("เกิดข้อผิดพลาดจากฝั่ง Server");
             }
         } catch (err) {
-            // 3. ใช้ Swal.fire แทน alert แจ้งเตือนข้อผิดพลาด
             Swal.fire({
                 title: 'ผิดพลาด!',
                 text: err.message,
@@ -187,7 +164,7 @@ export default function ReportDetail() {
         });
     };
 
-    // ฟังก์ชันตัดเลขวินาทีของเวลา (เช่น 13:00:00 -> 13:00)
+    // ฟังก์ชันตัดเลขวินาทีของเวลา 13:00
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
         // เอาเฉพาะตำแหน่งชั่วโมงและนาที (5 ตัวแรก)
@@ -216,16 +193,10 @@ export default function ReportDetail() {
                         alt="Problem"
                         style={styles.mainImage}
                     />
-                    {/* <div style={styles.donorInfo}>
-                        <p>บริจาคโดย: {report.foodDetail?.donorName}</p>
-                        <h3>{report.foodDetail?.foodName}</h3>
-                        <p>{report.foodDescription}</p>
-                    </div> */}
                     <div style={styles.infoList}>
                         <p style={{ fontSize: "18px", marginTop: "16px", marginBottom: "0", color: "#333" }}>
                             <span style={{ color: "#ff8c00", fontWeight: "bold" }}>บริจาคโดย</span>
                             <span> {report.foodDetail?.donorName}</span>
-                            {/* <span> {getDonorName()}</span> */}
                         </p>
                         <span style={{ fontSize: "22px", fontWeight: "bold", color: "#333", margin: "0" }}>
                             {report.foodDetail?.foodName}
@@ -419,7 +390,7 @@ const styles = {
     btnDeactivate: {
         width: '60%',
         padding: '12px',
-        backgroundColor: '#000', // ปุ่มสีดำให้ดูเป็นทางการ
+        backgroundColor: '#000',
         color: '#fff',
         borderRadius: '8px',
         border: 'none',
@@ -430,7 +401,7 @@ const styles = {
     btnSuspend: {
         width: '60%',
         padding: '12px',
-        backgroundColor: '#ff4d4f', // สีแดงเตือน
+        backgroundColor: '#ff4d4f',
         color: '#fff',
         borderRadius: '8px',
         border: 'none',
@@ -476,8 +447,8 @@ const styles = {
         fontWeight: "500"
     },
     bookingDetailCard: {
-        backgroundColor: "#ffe8cc", // สีครีมส้มพาสเทลละมุน
-        borderRadius: "15px",        // ขอบมนโค้งสวยงาม
+        backgroundColor: "#ffe8cc",
+        borderRadius: "15px",
         padding: "30px",
         marginBottom: "20px",
         display: "flex",
@@ -504,10 +475,10 @@ const styles = {
     bookingLabel: {
         // fontWeight: "bold",
         color: "#333333",
-        width: "160px"              // ล็อกความกว้างเพื่อให้เครื่องหมาย : แนวตรงกันสวยงาม
+        width: "160px"
     },
     bookingValue: {
-        color: "#328d7d",           // สีเขียวพาสเทลเข้มตามภาพต้นฉบับ
+        color: "#328d7d",
         fontWeight: "500",
     },
     loading: {

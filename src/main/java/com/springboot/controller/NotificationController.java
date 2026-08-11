@@ -25,20 +25,6 @@ public class NotificationController {
         this.userService = userService;
     }
 
-    // ดึงแจ้งเตือนทั้งหมด
-    // @GetMapping
-    // public ResponseEntity<ApiResponse<List<Notification>>> getAllNotifications() {
-    //     try {
-    //         List<Notification> notifications = notificationService.getAllNotifications();
-    //         return ResponseEntity.ok(
-    //                 new ApiResponse<>(true, "ดึงข้อมูลการแจ้งเตือนทั้งหมดสำเร็จ", notifications));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการดึงข้อมูลการแจ้งเตือน: " + e.getMessage(),
-    //                         null));
-    //     }
-    // }
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<NotificationDto>>> getListNotification(
             @RequestParam double lat,
@@ -60,36 +46,12 @@ public class NotificationController {
             listNotification.addAll(expirationList);
             listNotification.sort(Comparator.comparing(NotificationDto::getDate).reversed());
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", listNotification));
+            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลสำเร็จ", listNotification));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, "ไม่สามารถดึงข้อมูลได้: " + e.getMessage(), null));
+                    .body(ApiResponse.error("ไม่สามารถดึงข้อมูลได้: " + e.getMessage()));
         }
     }
-
-    // @PutMapping("/read/{id}")
-    // public ResponseEntity<ApiResponse<String>> markAsRead(@PathVariable Integer id) {
-    //     try {
-    //         notificationService.markAsRead(id);
-    //         return ResponseEntity.ok(new ApiResponse<>(true, "อัปเดตสถานะการอ่านสำเร็จ", null));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการอัปเดต", null));
-    //     }
-    // }
-
-    // @PutMapping("/read/{id}")
-    // public ResponseEntity<?> markAsRead(@PathVariable Long id) {
-    // notificationService.markAsRead(id); // ใน Service ให้หา id นี้แล้ว set isRead
-    // = true
-    // return ResponseEntity.ok().build();
-    // }
-
-    // หน้าสำหรับผู้บริจาค
-    // @GetMapping("/donor")
-    // public ResponseEntity<List<Notification>> getDonorNotifications() {
-    // return ResponseEntity.ok(notificationService.getDonorNotifications());
-    // }
 
     // API 1 ดึงลิสต์ไอดีที่ฉันเคยอ่านแล้ว
     @GetMapping("/my-read-list")
@@ -98,32 +60,31 @@ public class NotificationController {
             User user = userService.authenticate(authHeader);
             Integer userId = user.getUserId();
             String userIdStr = String.valueOf(userId);
+
             List<Integer> myReadIds = notificationService.getReadIdsForUser(userIdStr);
-            
-            // เรียกใช้ ApiResponse.success() ครอบข้อมูลอาร์เรย์ไว้
-            return ResponseEntity.ok(new ApiResponse<>(true,"ดึงข้อมูลสำเร็จ", myReadIds));
-            
+            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลสำเร็จ", myReadIds));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false,"เกิดข้อผิดพลาด: " + e.getMessage(), null));
+                    .body(ApiResponse.error("เกิดข้อผิดพลาด: " + e.getMessage()));
         }
     }
 
     // API 2 ยิงมาบันทึกว่าอ่านแล้ว
     @PostMapping("/read/{id}")
-    public ResponseEntity<ApiResponse<Void>> markRead(@PathVariable int id, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<ApiResponse<Void>> markRead(@PathVariable int id,
+            @RequestHeader("Authorization") String authHeader) {
         try {
             User user = userService.authenticate(authHeader);
             Integer userId = user.getUserId();
             String userIdStr = String.valueOf(userId);
+
             notificationService.markAsRead(userIdStr, id);
-            
-            // ส่ง success กลับไปดื้อๆ แบบไม่ต้องมี data แนบไป
-            return ResponseEntity.ok(new ApiResponse<>(true,"บันทึกสถานะอ่านแล้วสำเร็จ", null));
-            
+            return ResponseEntity.ok(ApiResponse.success("บันทึกสถานะอ่านแล้วสำเร็จ"));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "ไม่สามารถบันทึกสถานะได้: " + e.getMessage(), null));
+                    .body(ApiResponse.error("ไม่สามารถบันทึกสถานะได้: " + e.getMessage()));
         }
     }
 

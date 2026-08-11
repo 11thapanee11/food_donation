@@ -4,7 +4,6 @@ export default function RankingPage() {
     const [leaderboardData, setLeaderboardData] = useState([]);
 
     useEffect(() => {
-        // ดึงข้อมูลจาก API
         fetch('http://localhost:8082/donor/ranking')
             .then(res => res.json())
             .then(response => {

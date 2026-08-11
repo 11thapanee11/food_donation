@@ -28,14 +28,15 @@ public class DashboardController {
 
             if (stats == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(false, "ไม่พบข้อมูลสถิติแดชบอร์ด", null));
+                        .body(ApiResponse.error("ไม่พบข้อมูลสถิติแดชบอร์ด"));
             }
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลแดชบอร์ดสำเร็จ", stats));
+            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลแดชบอร์ดสำเร็จ", stats));
+
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการดึงข้อมูลแดชบอร์ด: " + e.getMessage(), null));
+                    .body(ApiResponse.error("เกิดข้อผิดพลาดในการดึงข้อมูลแดชบอร์ด: " + e.getMessage()));
         }
     }
+
 }

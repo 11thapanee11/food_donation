@@ -36,14 +36,12 @@ export default function Navbar() {
     }, []);
 
     useEffect(() => {
-        // ตรวจสอบทั้งสถานะ isLoggedIn และมี Token หรือไม่
         if (isLoggedIn) {
             fetchNotifications();
         }
     }, [isLoggedIn]);
 
     useEffect(() => {
-        // ดึงและเช็ค Token สดๆ ภายในเอฟเฟกต์รอบเดียวจบ
         const token = localStorage.getItem("accessToken");
 
         if (token && token !== "undefined" && token !== "null") {
@@ -214,11 +212,10 @@ export default function Navbar() {
         setOpenDropdown(false);
     };
 
-    // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า (เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร)
+    // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร
     const currentPath = location.pathname;
     const originPath = location.state?.fromPage || '';
 
-    // ดึงลอจิกเช็กสถานะเมนูสว่าง (Active) ออกมาด้านบน (เคลียร์เกณฑ์ SonarQube S6766)
     const isProfileActive = currentPath === "/profile";
     const isHomeActive = currentPath === "/" || (currentPath === "/food-detail" && originPath === "/");
     const isRankingActive = currentPath === "/ranking";
@@ -455,18 +452,6 @@ const styles = {
         display: "flex",
         alignItems: "center"
     },
-    // notificationBadge: {
-    //     position: "absolute",
-    //     right: 0,
-    //     top: "40px",
-    //     backgroundColor: "#fff",
-    //     boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-    //     borderRadius: "5px",
-    //     width: "250px",
-    //     zIndex: 1000,
-    //     padding: "10px"
-    // },
-
     notificationBadge: {
         position: "absolute",
         top: "40px",

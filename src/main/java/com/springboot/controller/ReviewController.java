@@ -32,33 +32,33 @@ public class ReviewController {
             Recipient recipient = recipientService.getOrCreateRecipient(user);
 
             reviewService.saveReview(dto, recipient);
+            return ResponseEntity.ok(ApiResponse.success("บันทึกรีวิวเรียบร้อยแล้ว"));
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "บันทึกรีวิวเรียบร้อยแล้ว", null));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(false, "ไม่สามารถบันทึกข้อมูลได้: " + e.getMessage(), null));
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("ไม่สามารถบันทึกข้อมูลได้: " + e.getMessage()));
         }
     }
 
     @GetMapping("/check/{bookingId}")
     public ResponseEntity<ApiResponse<Review>> checkReview(@PathVariable Integer bookingId) {
         Review review = reviewService.getReviewByBookingId(bookingId);
+
         if (review != null) {
-            return ResponseEntity.ok(new ApiResponse<>(true, "พบรีวิวแล้ว", review));
+            return ResponseEntity.ok(ApiResponse.success("พบรีวิวแล้ว", review));
         }
-        return ResponseEntity.ok(new ApiResponse<>(false, "ยังไม่มีรีวิว", null));
+        return ResponseEntity.ok(ApiResponse.error("ยังไม่มีรีวิว"));
     }
 
     @GetMapping("/food/{foodId}")
     public ResponseEntity<ApiResponse<List<ReviewDto>>> getReviewsByFood(@PathVariable Integer foodId) {
         List<ReviewDto> reviews = reviewService.getReviewsByFoodId(foodId);
-        if (reviews != null) {
-            return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลสำเร็จ", reviews));
-        } else {
+
+        if (reviews == null || reviews.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(false, "ไม่พบข้อมูล", null));
+                    .body(ApiResponse.error("ไม่พบข้อมูล"));
         }
-        // return ResponseEntity.ok(new ApiResponse<>(true, "ดึงข้อมูลรีวิวสำเร็จ", reviews));
+        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลรีวิวสำเร็จ", reviews));
     }
 
 }

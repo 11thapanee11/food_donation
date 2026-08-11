@@ -17,28 +17,23 @@ public class FoodCategoryController {
         this.foodCategoryService = foodCategoryService;
     }
 
-    // ดึงทั้งหมด
     @GetMapping
     public ResponseEntity<ApiResponse<List<FoodCategoryDto>>> getListFoodCategory() {
         try {
             List<FoodCategoryDto> categories = foodCategoryService.getAllCategories();
+
             if (categories == null || categories.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(false, "ไม่พบหมวดหมู่อาหาร", null));
+                        .body(ApiResponse.error("ไม่พบหมวดหมู่อาหาร"));
             }
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "ดึงข้อมูลหมวดหมู่อาหารทั้งหมดสำเร็จ", categories));
+
+            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลหมวดหมู่อาหารทั้งหมดสำเร็จ", categories));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในการดึงข้อมูลหมวดหมู่: " + e.getMessage(), null));
+                    .body(ApiResponse.error("เกิดข้อผิดพลาดในการดึงข้อมูลหมวดหมู่: " + e.getMessage()));
         }
     }
-    // public ResponseEntity<List<FoodCategoryDto>> getListFoodCategory() {
-    // List<FoodCategoryDto> categories = foodCategoryService.getAllCategories();
-    // return ResponseEntity.ok(categories);
-    // }
 
-    // ดึงตาม id
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FoodCategoryDto>> getCategoryById(@PathVariable Integer id) {
         try {
@@ -46,19 +41,14 @@ public class FoodCategoryController {
 
             if (category == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(false, "ไม่พบข้อมูลหมวดหมู่อาหาร", null));
+                        .body(ApiResponse.error("ไม่พบข้อมูลหมวดหมู่อาหาร"));
             }
 
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "ดึงข้อมูลหมวดหมู่อาหารสำเร็จ", category));
+            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลหมวดหมู่อาหารสำเร็จ", category));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในระบบ: " + e.getMessage(), null));
+                    .body(ApiResponse.error("เกิดข้อผิดพลาดในระบบ: " + e.getMessage()));
         }
     }
-    // public ResponseEntity<FoodCategoryDto> getCategoryById(@PathVariable Integer
-    // id) {
-    // FoodCategoryDto category = foodCategoryService.getCategoryById(id);
-    // return ResponseEntity.ok(category);
-    // }
+
 }

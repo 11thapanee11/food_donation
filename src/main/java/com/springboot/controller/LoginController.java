@@ -49,44 +49,33 @@ public class LoginController {
 
             if (result) {
                 User user = userService.getUserByEmail(loginDto.getEmail());
-                // Donor donor = donorService.getDonorByUserId(user.getUserId());
-
-                // if (donor != null && "deactivate".equalsIgnoreCase(donor.getDonorStatus())) {
-                //     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                //             .body(new ApiResponse<>(false,
-                //                     "บัญชีของคุณถูกระงับการใช้งาน ไม่สามารถเข้าสู่ระบบได้", null));
-
-                // }
-
                 boolean isAdmin = adminService.isAdmin(user.getUserId());
 
                 String accessToken = jwtUtil.generateToken(
                         String.valueOf(user.getUserId()),
-                        isAdmin, // เพิ่มตัวแปรนี้เข้าไปฝังใน Token
+                        isAdmin,
                         24 * 60 * 60 * 1000 // อายุ 24 ชั่วโมง
                 );
 
-                // บรรจุ Token ลงใน Map เพื่อส่งไปกับ ApiResponse
                 Map<String, Object> responseData = new HashMap<>();
                 responseData.put("accessToken", accessToken);
                 responseData.put("userId", user.getUserId());
                 responseData.put("isAdmin", isAdmin);
 
-                return ResponseEntity.ok(
-                        new ApiResponse<>(true, "เข้าสู่ระบบสำเร็จ", responseData));
+                return ResponseEntity.ok(ApiResponse.success("เข้าสู่ระบบสำเร็จ", responseData));
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(false, "อีเมลหรือรหัสผ่านไม่ถูกต้อง", null));
+                        .body(ApiResponse.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง"));
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "เกิดข้อผิดพลาดในระบบ: " + e.getMessage(), null));
+                    .body(ApiResponse.error("เกิดข้อผิดพลาดในระบบ: " + e.getMessage()));
         }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, "ออกจากระบบสำเร็จ", null));
+        return ResponseEntity.ok(ApiResponse.success("ออกจากระบบสำเร็จ"));
     }
+
 }

@@ -14,32 +14,6 @@ export default function FoodReceive() {
 
     const BASE_URL = "http://localhost:8082";
 
-    // useEffect(() => {
-    //     const token = localStorage.getItem("accessToken");
-
-    //     // ยิงไปหา Controller ฝั่ง Booking เพื่อดึงประวัติการจองทั้งหมด
-    //     fetch("http://localhost:8082/bookings", {
-    //         headers: {
-    //             "Authorization": `Bearer ${token}`
-    //         }
-    //     })
-    //         .then((res) => {
-    //             if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลการจองได้");
-    //             return res.json();
-    //         })
-    //         .then((resData) => {
-    //             if (resData.success && Array.isArray(resData.data)) {
-    //                 setBookings(resData.data); // บันทึกอาเรย์การจองลง state
-    //             } else {
-    //                 setBookings([]); // หากหลังบ้านไม่มีข้อมูลหรือผิดพลาด ให้เคลียร์เป็นอาเรย์ว่างป้องกันการพังของ .map() ใน JSX
-    //             }
-    //         })
-    //         .catch((err) => {
-    //             console.error("Error fetching bookings:", err);
-    //             setBookings([]); // ป้องกันหน้าเว็บค้างหากเกิดข้อผิดพลาด
-    //         })
-    //         .finally(() => setLoading(false));
-    // }, []);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         setLoading(true);
@@ -81,7 +55,6 @@ export default function FoodReceive() {
             .finally(() => setLoading(false));
     }, []);
 
-    // ฟังก์ชันฟอร์แมตวันหมดอายุ และ วันที่ทำรายการจอง
     const formatExpiryDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -122,7 +95,6 @@ export default function FoodReceive() {
         return timeString.substring(0, 5);
     };
 
-    // 2. กำหนดป้ายสถานะสำหรับ "ฝั่งการจอง (Booking)" ให้ตรงกับรูปภาพ Layout ของคุณ
     const STATUS_CONFIG = {
         pending: {
             text: "รอการเข้ารับ",
@@ -141,8 +113,8 @@ export default function FoodReceive() {
         },
         deactivate: {
             text: "ถูกระงับ",
-            color: "#ef6c00", 
-            bgColor: "#fff3e0" 
+            color: "#ef6c00",
+            bgColor: "#fff3e0"
         },
         // expired: {
         //     text: "หมดอายุ",
@@ -264,7 +236,6 @@ export default function FoodReceive() {
                     <h1 style={styles.title}>รายการรับอาหารบริจาคของฉัน</h1>
                 </div>
 
-                {/* ส่วนหัวแท็บ (Tabs Navigation) ขยับลงมาอยู่ด้านล่างอย่างอิสระสวยงาม */}
                 <div style={{
                     display: 'flex',
                     gap: '32px',
@@ -283,13 +254,12 @@ export default function FoodReceive() {
                             cursor: 'pointer',
                             color: activeTab === 'current' ? '#ff9800' : '#6b7280',
                             borderBottom: activeTab === 'current' ? '3px solid #ff9800' : '3px solid transparent',
-                            outline: 'none' // ล้างเส้นขอบสีดำตอนกดโฟกัส
+                            outline: 'none'
                         }}
                     >
                         รายการจอง
                     </button>
 
-                    {/* แท็บ ประวัติรายการจอง */}
                     <button
                         type="button"
                         onClick={() => setActiveTab('history')}

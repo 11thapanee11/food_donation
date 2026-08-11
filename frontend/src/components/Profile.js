@@ -13,8 +13,6 @@ export default function Profile() {
         phoneNumber: ""
     });
 
-    // const [message, setMessage] = useState("");
-
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true); // state สำหรับโหลด
 
@@ -29,14 +27,14 @@ export default function Profile() {
             return null;
         };
 
-        // 1. ชื่อ & นามสกุล
+        // ชื่อ & นามสกุล
         const fNameErr = validateName(formData.firstName, "ชื่อ");
         if (fNameErr) newErrors.firstName = fNameErr;
 
         const lNameErr = validateName(formData.lastName, "นามสกุล");
         if (lNameErr) newErrors.lastName = lNameErr;
 
-        // 3. เบอร์โทรศัพท์
+        // เบอร์โทรศัพท์
         if (!formData.phoneNumber.trim()) {
             newErrors.phoneNumber = "กรุณากรอกเบอร์โทรศัพท์";
         } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
@@ -49,64 +47,7 @@ export default function Profile() {
         return Object.keys(newErrors).length === 0;
     };
 
-
-    // useEffect(() => {
-    //     //ถ้าไม่มี token ไม่ต้อง fetch
-    //     if (!token) {
-    //         setLoading(false);
-    //         return;
-    //     }
-    //     setLoading(true); // เริ่มโหลด
-
-    //     //เปิด SweetAlert2 popup ตอนเริ่มโหลด
-    //     Swal.fire({
-    //         title: "กำลังโหลดข้อมูลสมาชิก...",
-    //         html: `
-    //                 <div style="
-    //                 border: 6px solid #f3f3f3;
-    //                 border-top: 6px solid #ff8c00;
-    //                 border-radius: 50%;
-    //                 width: 50px;
-    //                 height: 50px;
-    //                 margin: 20px auto;
-    //                 animation: spin 1s linear infinite;
-    //                 "></div>
-    //             `,
-    //         allowOutsideClick: false,
-    //         showConfirmButton: false
-    //     });
-
-
-    //     fetch("http://localhost:8082/profile", {
-    //         headers: {
-    //             "Authorization": `Bearer ${token}`,
-    //             "Content-Type": "application/json"
-    //         }
-    //     })
-    //         .then(res => {
-    //             if (!res.ok) {
-    //                 throw new Error("ไม่สามารถโหลดข้อมูลสมาชิกได้");
-    //             }
-    //             return res.json();
-    //         })
-    //         .then(data => {
-    //             setProfile(data);
-    //             //ตั้งค่า default ให้ formData จาก DB
-    //             setFormData({
-    //                 firstName: data.firstName || "",
-    //                 lastName: data.lastName || "",
-    //                 phoneNumber: data.phoneNumber || ""
-    //             });
-    //             // setTimeout(() => {
-    //             //     Swal.close();
-    //             // }, 1500);
-    //             Swal.close(); //ปิด popup เมื่อโหลดเสร็จ
-    //         })
-    //         .catch(err => console.error(err))
-    //         .finally(() => setLoading(false)); //จบโหลด
-    // }, [token]);
     useEffect(() => {
-        // 1. ตรวจสอบ Token หากไม่มีให้หยุดทำงานทันที
         if (!token) {
             setLoading(false);
             return;
@@ -137,7 +78,6 @@ export default function Profile() {
                 }
 
                 if (result.success) {
-                    // อัปเดตข้อมูลเมื่อสำเร็จ
                     setProfile(result.data);
                     setFormData({
                         firstName: result.data.firstName || "",
@@ -146,7 +86,6 @@ export default function Profile() {
                     });
                     Swal.close();
                 } else {
-                    // กรณี success = false แต่ response.ok = true
                     throw new Error(result.message || "เกิดข้อผิดพลาดในการดึงข้อมูล");
                 }
             } catch (err) {
@@ -171,48 +110,6 @@ export default function Profile() {
         });
     };
 
-    // const handleSave = () => {
-
-    //     if (!validateForm()) return;
-
-    //     fetch("http://localhost:8082/profile", {
-    //         method: "PUT",
-    //         headers: {
-    //             "Authorization": `Bearer ${token}`,
-    //             "Content-Type": "application/json"
-    //         },
-    //         body: JSON.stringify(formData)
-    //     })
-    //         .then(res => {
-    //             if (!res.ok) throw new Error("ไม่สามารถแก้ไขข้อมูลได้");
-    //             return res.json();
-    //         })
-    //         .then(data => {
-    //             // setMessage(data.message || "แก้ไขข้อมูลสำเร็จ");
-    //             setProfile({
-    //                 ...profile,
-    //                 ...formData
-    //             });
-    //             setIsEditing(false);
-
-    //             Swal.fire({
-    //                 icon: "success",
-    //                 title: "บันทึกข้อมูลสำเร็จ",
-    //                 text: data.message || "แก้ไขข้อมูลสำเร็จ",
-    //                 confirmButtonColor: "#2ecc71"
-    //             });
-    //         })
-    //         .catch(err => {
-    //             // setMessage(err.message);
-
-    //             Swal.fire({
-    //                 icon: "error",
-    //                 title: "เกิดข้อผิดพลาด",
-    //                 text: err.message,
-    //                 confirmButtonColor: "#e74c3c"
-    //             });
-    //         });
-    // };
     const handleSave = () => {
         if (!validateForm()) return;
 
@@ -230,9 +127,7 @@ export default function Profile() {
                 return res.json();
             })
             .then(response => {
-                // เช็คโครงสร้าง ApiResponse ที่ส่งมาจาก Backend
                 if (response.success) {
-                    // อัปเดต Profile ในหน้าจอเมื่อ Backend ตอบกลับว่าสำเร็จ
                     setProfile({
                         ...profile,
                         ...formData
@@ -246,12 +141,10 @@ export default function Profile() {
                         confirmButtonColor: "#2ecc71"
                     });
                 } else {
-                    // กรณี Backend ส่ง success: false กลับมา
                     throw new Error(response.message || "ไม่สามารถแก้ไขข้อมูลได้");
                 }
             })
             .catch(err => {
-                // จัดการ Error ไม่ว่าจะจาก network หรือ logic ใน backend
                 Swal.fire({
                     icon: "error",
                     title: "เกิดข้อผิดพลาด",
@@ -397,9 +290,6 @@ export default function Profile() {
                             </button>
 
                         </div>
-
-                        {/* <button onClick={handleSave}>บันทึก</button>
-                        <button onClick={() => setIsEditing(false)}>ยกเลิก</button> */}
                     </>
                 )}
 
@@ -409,7 +299,6 @@ export default function Profile() {
     );
 };
 
-// --- การประกาศ Styles (Const Styles) ---
 const styles = {
     container: {
         // minHeight: '100vh',

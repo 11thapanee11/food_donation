@@ -71,34 +71,7 @@ export default function ListFood() {
     return (
         <div style={styles.container}>
             <p style={styles.mainTitle}>รายการอาหารทั้งหมด</p>
-            {/* {foods.map((food) => (
-                
-                <div key={food.foodId} style={styles.card}>
-                    <img src={`${BASE_URL}${food.foodImage}`} alt={food.foodName} style={styles.image} />
-                    <div style={styles.info}>
-                        <span style={{ color: '#333', fontWeight: 'bold', fontSize: '18px' }} >{food.foodName}</span>
-                        
-                        <div style={{ marginLeft: '8px' }}>
-                            <span style={{ color: '#333', marginRight: '5px' }}>จำนวนที่บริจาค และจำนวนที่เหลือ :</span>
-                            <span style={{ color: '#328d7d' }}> {food.totalUnit} / {food.remainingUnit}</span>
-                        </div>
-                        <div style={{ marginLeft: '8px' }}>
-                            <span style={{ color: '#333', marginRight: '5px' }}>วันหมดอายุ :</span>
-                            <span style={{ color: '#328d7d' }}> วันหมดอายุ : {new Date(food.expiryDate).toLocaleDateString('th-TH', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric'
-                            })} </span>
-                        </div>
-                    </div>
-                    <div style={styles.status}>
-                        <span style={{ color: food.foodStatus === 'available' ? 'green' : 'gray' }}>
-                            {food.status}
-                        </span>
-                    </div>
-                    <button style={styles.detailBtn}>ดูรายละเอียด</button>
-                </div>
-            ))} */}
+            
             {foods.slice().reverse().map((food) => {
                 // ดึงค่า config ตามสถานะ (ถ้าไม่ตรงกับ key เลย ให้ใช้ค่า default หรือแสดงข้อความว่าง)
                 const statusInfo = STATUS_CONFIG[food.foodStatus] || { text: food.status, color: "gray" };

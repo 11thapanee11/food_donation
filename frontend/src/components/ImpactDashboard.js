@@ -44,7 +44,6 @@ export default function ImpactDashboard() {
         fetchDashboardData();
     }, []);
 
-    // ⏳ แสดงสถานะระหว่างโหลดข้อมูล หรือกรณีเกิด Error
     if (loading) return <div style={styles.loading}>กำลังโหลดข้อมูลแดชบอร์ด...</div>;
     if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
 
@@ -172,7 +171,7 @@ const styles = {
     headerTitle: {
         fontSize: "24px",
         fontWeight: "bold",
-        color: "#328d7d", // สีเขียวเข้มหรูหราอิงธรรมชาติ
+        color: "#328d7d",
         margin: 0,
     },
     statsGrid: {
@@ -180,12 +179,12 @@ const styles = {
         flexDirection: "row",
         gap: "25px",
         width: "100%",
-        flexWrap: "wrap", // รองรับการตกหน้าจอในแท็บเล็ต/มือถือ
+        flexWrap: "wrap",
     },
     mainGreenCard: {
         flex: 1,
         minWidth: "400px",
-        backgroundColor: "#328d7d", // สีเขียวหัวเป็ดผ่อนคลายแบบในแอปหลักของคุณ
+        backgroundColor: "#328d7d",
         borderRadius: "20px",
         padding: "30px",
         display: "flex",
@@ -259,7 +258,7 @@ const styles = {
     tableContainer: {
         width: "100%",
         marginTop: "10px",
-        overflowX: "auto" // เผื่อกรณีจอมือถือเล็ก จะสามารถปัดซ้ายขวาดูตารางได้หน้าไม่พัง
+        overflowX: "auto"
     },
     table: {
         width: "100%",

@@ -47,7 +47,7 @@ export default function MyFoods() {
             .finally(() => setLoading(false));
     }, []);
 
-    // ฟังก์ชันฟอร์แมตวันหมดอายุ (เช่น: 25 มีนาคม 2569 เวลา 13:00 น.)
+    // ฟังก์ชันฟอร์แมตวันหมดอายุ เช่น: 25 มีนาคม 2569 เวลา 13:00 น.
     const formatExpiryDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -67,7 +67,7 @@ export default function MyFoods() {
         return `${formattedDate} เวลา ${formattedTime}`;
     };
 
-    // ฟังก์ชันแปลงวันที่เริ่ม-จบ ให้เป็นแบบไทยย่อ (เช่น 20 มี.ค. 2569)
+    // ฟังก์ชันแปลงวันที่เริ่ม-จบ ให้เป็นแบบไทยย่อ เช่น 20 มี.ค. 2569
     const formatPickupDate = (dateString) => {
         if (!dateString) return "-";
 
@@ -84,7 +84,7 @@ export default function MyFoods() {
         });
     };
 
-    // ฟังก์ชันตัดเลขวินาทีของเวลา (เช่น 13:00:00 -> 13:00)
+    // ฟังก์ชันตัดเลขวินาทีของเวลา เช่น 13:00
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
         // เอาเฉพาะตำแหน่งชั่วโมงและนาที (5 ตัวแรก)
@@ -311,7 +311,6 @@ const styles = {
         flexDirection: "column",
         gap: "20px",
     },
-    /* แก้ไข: เปลี่ยนสีพื้นหลังเป็นโทนส้มครีมพาสเทล เพิ่มความโค้งมน ขอบสี และ Padding */
     card: {
         display: "flex",
         backgroundColor: "#ffe8cc",
@@ -326,7 +325,6 @@ const styles = {
         height: "220px",
         flexShrink: 0,
     },
-    /* แก้ไข: ปรับรูปภาพให้ขอบโค้งมนนุ่มนวลตัดเหลี่ยมเข้ากับการ์ด */
     image: {
         width: "100%",
         height: "100%",
@@ -352,7 +350,6 @@ const styles = {
         marginTop: "10px",
         marginBottom: "0px",
     },
-    /* แก้ไข: ปรับสีของ Badge สถานะตามแบบ (เขียวละมุน ขอบมนโค้ง) */
     statusBadge: {
         backgroundColor: "#d4e2a6",
         color: "#6b9222",
@@ -385,12 +382,10 @@ const styles = {
         fontWeight: "500",
         flexShrink: 0
     },
-    /* แก้ไข: สีตัวเลข/ตัวอักษรข้อมูลผลลัพธ์เป็นสีเขียวหัวเป็ดเข้มแบบในภาพเดโม */
     value: {
         color: "#328d7d",
         // fontWeight: "bold"
     },
-    /* เพิ่มปุ่ม: สไตล์ปุ่มกดดูรายละเอียดสีส้มสดตาม Layout */
     detailBtn: {
         backgroundColor: "#ff8c00",
         color: "#fff",
@@ -401,15 +396,8 @@ const styles = {
         // fontWeight: "bold",
         cursor: "pointer",
         width: "fit-content",
-        marginTop: "5px" // ดันปุ่มล็อกติดอยู่ใต้ขอบล่างของการ์ดเสมอ
+        marginTop: "5px"
     },
-    // emptyContainer: {
-    //     textAlign: "center",
-    //     padding: "100px 20px",
-    //     backgroundColor: "#fff",
-    //     borderRadius: "20px",
-    //     border: "2px dashed #ddd",
-    // },
     emptyText: {
         textAlign: "center",
         marginTop: "50px",
