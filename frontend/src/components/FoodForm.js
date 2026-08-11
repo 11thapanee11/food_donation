@@ -221,7 +221,7 @@ export default function FoodForm() {
         // console.log("Check: คลิก Submit แล้ว!");
         console.log("ปุ่ม Submit ถูกกดแล้ว! ข้อมูลปัจจุบัน:", formData);
 
-        // 1. ประกาศดึง token มาสแตนด์บายไว้ใช้กับ header ตอนส่ง fetch ด้านล่างครับ
+        // ประกาศดึง token มาสแตนด์บายไว้ใช้กับ header ตอนส่ง fetch ด้านล่างครับ
         const token = localStorage.getItem("accessToken");
 
         const skipFields = new Set([

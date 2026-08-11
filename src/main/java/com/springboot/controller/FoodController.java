@@ -163,7 +163,7 @@ public class FoodController {
     }
 
     @GetMapping("/my-donations")
-    public ResponseEntity<ApiResponse<List<Food>>> getFoodsByDonorId(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<ApiResponse<List<Food>>> getListFoodByDonorId(@RequestHeader("Authorization") String authHeader) {
 
         User user = userService.authenticate(authHeader);
 

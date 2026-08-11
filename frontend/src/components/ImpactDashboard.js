@@ -17,9 +17,6 @@ export default function ImpactDashboard() {
                 const token = localStorage.getItem('accessToken');
                 const headers = { 'Authorization': `Bearer ${token}` };
 
-                // ยิง API ตาม Path ที่คุณกำหนดใน Controller
-                // 1. ดึงสถิติจาก /impact-summary
-                // 2. ดึงประวัติจาก / (ถ้า Controller ของคุณไม่มีพาธย่อยใน @RequestMapping)
                 const [summaryRes, historyRes] = await Promise.all([
                     fetch('http://localhost:8082/donor/impact-summary', { headers }),
                     fetch('http://localhost:8082/impact-logs', { headers })

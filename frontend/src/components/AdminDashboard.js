@@ -7,12 +7,13 @@ export default function AdminDashboard() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // เรียก API จาก Backend
                 const response = await fetch('http://localhost:8082/dashboard/stats');
                 if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                setStats(data);
+
+                const result = await response.json();
+                console.log("Data from API:", result);
+
+                setStats(result.data);
             } catch (err) {
                 console.error("Error fetching dashboard stats:", err);
             } finally {
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
             <h2 style={styles.header}>สถานะรายการอาหารในระบบ</h2>
 
             <div style={styles.statusGrid}>
-                {/* 4 ช่องสถานะเล็ก */}
+                {/* ช่องสถานะเล็ก */}
                 <div style={styles.grid2x2}>
                     <div style={{ ...styles.smallBox, borderColor: '#6b9222', backgroundColor: '#f9ffed' }}>
                         <span style={{ fontWeight: '500', color: '#6b9222' }}>บริจาคเสร็จสิ้น</span> <br /><strong style={{ fontSize: '28px', color: '#6b9222' }}>{stats.completed}</strong>
@@ -90,8 +91,8 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* ช่องรายงานปัญหาใหญ่ทางขวา */}
-                <div style={{...styles.reportBox, backgroundColor: 'white'}}>
+                {/* ช่องรายงานปัญหา */}
+                <div style={{ ...styles.reportBox, backgroundColor: 'white' }}>
                     <div>
                         <span className="material-symbols-outlined" style={{ fontSize: '50px', color: '#f44336' }}>
                             report
@@ -145,7 +146,7 @@ const styles = {
     // card: { padding: '25px', borderRadius: '15px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' },
     statusGrid: {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr', // แบ่งเป็นกลุ่ม 4 ช่อง กับ ช่องรายงาน (ปรับสัดส่วนได้)
+        gridTemplateColumns: '1fr 1fr', // แบ่งเป็นกลุ่ม 4 ช่อง กับ ช่องรายงาน
         gap: '20px'
     },
     grid2x2: {

@@ -172,7 +172,7 @@ public class BookingService {
             System.err.println("ไม่สามารถบันทึกการแจ้งเตือนได้: " + e.getMessage());
         }
 
-        // คืนจำนวนอาหารกลับเข้าคลัง
+        // คืนจำนวนอาหาร
         Food food = booking.getFood();
         food.setRemainingUnit(food.getRemainingUnit() + booking.getBookingUnit());
         foodRepository.save(food);

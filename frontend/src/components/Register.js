@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-// import '../css/register.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
 import registerImg from '../assets/images/register_image.png'
@@ -18,23 +17,16 @@ function Register() {
 
     const [errors, setErrors] = useState({});
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+    // ---------------- Helper Functions ----------------
+    const validateName = (value, fieldName) => {
+        if (!value.trim()) return `กรุณากรอก${fieldName}`;
+        if (value.length < 2 || value.length > 155) return `${fieldName}ต้องมี 2-155 ตัวอักษร`;
+        if (!/^[ก-๙a-zA-Z]+$/.test(value)) return `${fieldName}ต้องเป็นภาษาไทยหรืออังกฤษเท่านั้น`;
+        return null;
     };
 
     const validateForm = () => {
         const newErrors = {};
-
-        // Helper function สำหรับเช็คชื่อ-นามสกุล
-        const validateName = (value, fieldName) => {
-            if (!value.trim()) return `กรุณากรอก${fieldName}`;
-            if (value.length < 2 || value.length > 155) return `${fieldName}ต้องมี 2-155 ตัวอักษร`;
-            if (!/^[ก-๙a-zA-Z]+$/.test(value)) return `${fieldName}ต้องเป็นภาษาไทยหรืออังกฤษเท่านั้น`;
-            return null;
-        };
 
         // ชื่อ & นามสกุล
         const fNameErr = validateName(formData.firstName, "ชื่อ");
@@ -81,9 +73,13 @@ function Register() {
         return Object.keys(newErrors).length === 0;
     };
 
+    // ---------------- Event Handlers ----------------
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validateForm()) return;
 
         try {
@@ -95,125 +91,91 @@ function Register() {
 
             const result = await response.json();
 
-            // เปลี่ยนมาเช็คจากตัวแปร success ที่ส่งมาจากหลังบ้านตรงๆ ได้เลยครับ
             if (result.success) {
                 Swal.fire({
-                    icon: 'success',
-                    title: 'สำเร็จ!',
-                    text: result.message || 'สมัครสมาชิกสำเร็จเรียบร้อยแล้ว',
-                    confirmButtonColor: '#2ecc71'
-                }).then(() => {
-                    navigate("/login");
-                });
+                    icon: "success",
+                    title: "สำเร็จ!",
+                    text: result.message || "สมัครสมาชิกสำเร็จเรียบร้อยแล้ว",
+                    confirmButtonColor: "#2ecc71"
+                }).then(() => navigate("/login"));
             } else {
-                // หาก success เป็น false
                 Swal.fire({
-                    icon: 'error',
-                    title: 'สมัครสมาชิกไม่สำเร็จ',
-                    text: result.message || 'เกิดข้อผิดพลาดภายในระบบ',
-                    confirmButtonColor: '#d63031'
+                    icon: "error",
+                    title: "สมัครสมาชิกไม่สำเร็จ",
+                    text: result.message || "เกิดข้อผิดพลาดภายในระบบ",
+                    confirmButtonColor: "#d63031"
                 });
             }
-
         } catch (error) {
             console.error("Error:", error);
             Swal.fire({
-                icon: 'error',
-                title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหมู่อีกครั้ง',
-                confirmButtonColor: '#d63031'
+                icon: "error",
+                title: "เกิดข้อผิดพลาด",
+                text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง",
+                confirmButtonColor: "#d63031"
             });
         }
     };
 
+    // ---------------- Render ----------------
     return (
         <div style={styles.container}>
             <div style={styles.formSection}>
                 <h2 style={styles.title}>สร้างบัญชีใหม่</h2>
                 <form onSubmit={handleSubmit} noValidate>
                     <div style={styles.row}>
-                        <div style={styles.inputBox}>
-                            <p style={styles.label}>ชื่อ</p>
-                            <input
-                                type="text"
-                                name="firstName"
-                                placeholder="กรุณากรอกชื่อ"
-                                value={formData.firstName}
-                                onChange={handleChange}
-                                style={styles.input}
-                            />
-                            {errors.firstName && <span style={styles.errorText}>{errors.firstName}</span>}
-                        </div>
-                        <div style={styles.inputBox}>
-                            <p style={styles.label}>นามสกุล</p>
-                            <input
-                                type="text"
-                                name="lastName"
-                                placeholder="กรุณากรอกนามสกุล"
-                                value={formData.lastName}
-                                onChange={handleChange}
-                                style={styles.input}
-                            />
-                            {errors.lastName && <span style={styles.errorText}>{errors.lastName}</span>}
-                        </div>
-                    </div>
-
-                    <div style={{ ...styles.inputBox, flex: "none" }}>
-                        <p style={styles.label}>อีเมล</p>
-                        <input
-                            type="email"
-                            name="email"
-                            placeholder="example@gmail.com"
-                            value={formData.email}
+                        <InputField
+                            label="ชื่อ"
+                            name="firstName"
+                            value={formData.firstName}
                             onChange={handleChange}
-                            style={styles.input}
+                            error={errors.firstName}
                         />
-                        {errors.email && <span style={styles.errorText}>{errors.email}</span>}
-                    </div>
-
-                    <div style={{ ...styles.inputBox, flex: "none" }}>
-                        <p style={styles.label}>เบอร์โทรศัพท์</p>
-                        <input
-                            type="text"
-                            name="phoneNumber"
-                            placeholder="09XXXXXXXX"
-                            value={formData.phoneNumber}
+                        <InputField
+                            label="นามสกุล"
+                            name="lastName"
+                            value={formData.lastName}
                             onChange={handleChange}
-                            style={styles.input}
+                            error={errors.lastName}
                         />
-                        {errors.phoneNumber && <span style={styles.errorText}>{errors.phoneNumber}</span>}
                     </div>
 
-                    <div style={{ ...styles.inputBox, flex: "none" }}>
-                        <p style={styles.label}>รหัสผ่าน</p>
-                        <input
-                            type="password"
-                            name="password"
-                            placeholder="กรอกรหัสผ่านอย่างน้อย 8 ตัว"
-                            value={formData.password}
-                            onChange={handleChange}
-                            style={styles.input}
-                        />
-                        {errors.password && <span style={styles.errorText}>{errors.password}</span>}
-                    </div>
+                    <InputField
+                        label="อีเมล"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        error={errors.email}
+                    />
 
-                    <div style={{ ...styles.inputBox, flex: "none" }}>
-                        <p style={styles.label}>ยืนยันรหัสผ่าน</p>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            placeholder="กรอกรหัสผ่านอีกครั้ง"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            style={styles.input}
-                        />
-                        {errors.confirmPassword && <span style={styles.errorText}>{errors.confirmPassword}</span>}
-                    </div>
+                    <InputField
+                        label="เบอร์โทรศัพท์"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleChange}
+                        error={errors.phoneNumber}
+                    />
 
-                    <button
-                        type="submit"
-                        style={styles.button}
-                    >
+                    <InputField
+                        label="รหัสผ่าน"
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        error={errors.password}
+                    />
+
+                    <InputField
+                        label="ยืนยันรหัสผ่าน"
+                        name="confirmPassword"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        error={errors.confirmPassword}
+                    />
+
+                    <button type="submit" style={styles.button}>
                         สมัครสมาชิก
                     </button>
                 </form>
@@ -226,9 +188,25 @@ function Register() {
     );
 }
 
+// ---------------- Reusable Input Component ----------------
+const InputField = ({ label, name, type = "text", value, onChange, error }) => (
+    <div style={{ ...styles.inputBox, flex: "none" }}>
+        <p style={styles.label}>{label}</p>
+        <input
+            type={type}
+            name={name}
+            placeholder={`กรุณากรอก${label}`}
+            value={value}
+            onChange={onChange}
+            style={styles.input}
+        />
+        {error && <span style={styles.errorText}>{error}</span>}
+    </div>
+);
+
 export default Register;
 
-// ประกาศตัวแปร Styles
+
 const styles = {
     container: {
         display: "flex",

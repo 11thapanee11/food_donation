@@ -68,20 +68,16 @@ public class NotificationService {
     public Notification createBookingNotification(Booking booking) {
         Notification notification = new Notification();
 
-        // ดึงชื่ออาหารและจำนวนที่จองมาสร้างข้อความพาสเทลน่ารักๆ แจ้งเตือนผู้ให้
         String message = "มีคนสนใจอาหารของคุณ! รายการ: " + booking.getFood().getFoodName()
                 + " จำนวน " + booking.getBookingUnit();
 
         notification.setNotificationMessage(message);
         notification.setNotificationDate(LocalDateTime.now());
-        notification.setNotificationType("booking"); // กำหนดประเภทแยกชัดเจนว่าเป็นฝั่ง booking
+        notification.setNotificationType("booking");
 
-        // เชื่อมความสัมพันธ์ของ Object ตามโครงสร้างตาราง
         notification.setFood(booking.getFood());
-        notification.setBooking(booking); // (ถ้าใน Entity ตาราง Notification
-        // ของคุณมีฟิลด์ผูกกับ Booking ให้เอาคอมเมนต์ออกได้ครับ)
+        notification.setBooking(booking);
 
-        // บันทึกลงฐานข้อมูลและส่งวัตถุที่เซฟแล้วกลับออกไป
         return notificationRepository.save(notification);
     }
 

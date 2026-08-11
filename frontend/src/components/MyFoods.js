@@ -47,7 +47,7 @@ export default function MyFoods() {
             .finally(() => setLoading(false));
     }, []);
 
-    // 1. ฟังก์ชันฟอร์แมตวันหมดอายุ (เช่น: 25 มีนาคม 2569 เวลา 13:00 น.)
+    // ฟังก์ชันฟอร์แมตวันหมดอายุ (เช่น: 25 มีนาคม 2569 เวลา 13:00 น.)
     const formatExpiryDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);

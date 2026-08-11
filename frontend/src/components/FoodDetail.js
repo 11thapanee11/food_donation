@@ -5,12 +5,8 @@ import Swal from "sweetalert2";
 import { jwtDecode } from 'jwt-decode';
 
 export default function FoodDetail() {
-    // const { id } = useParams();
     const location = useLocation();
-    // const foodId = location.state?.id;
-
     // ดึงค่าหน้าต้นทางมาตรวจสอบบริบทการแสดงผล
-    // const fromPage = location.state?.fromPage;
     const { fromPage, bookingStatus } = location.state || {};
     const incomingId = location.state?.id; // อาจจะเป็น foodId หรือ bookingId ขึ้นอยู่กับหน้าต้นทาง
     const navigate = useNavigate();
@@ -18,14 +14,8 @@ export default function FoodDetail() {
     const [userId, setUserId] = useState(null);
     const [food, setFood] = useState(null);
     const [booking, setBooking] = useState(null);
-    // const [bookingHistory, setBookingHistory] = useState([]); // สร้าง State เก็บประวัติผู้จองอาหาร
     const [loading, setLoading] = useState(true);
 
-    // const currentUserId = localStorage.getItem("userId");
-
-    // เปรียบเทียบกับ donorId
-    // หมายเหตุ: เช็คให้แน่ใจว่า donorId ใน formData เป็นอะไร (บางทีอาจจะเป็น object หรือ id)
-    // const isOwner = currentUserId && String(food?.donor?.userId) === String(currentUserId);
     const isOwner = food && food.donorId && String(food.donorId) === String(userId);
 
     const BASE_URL = "http://localhost:8082";
@@ -520,12 +510,6 @@ export default function FoodDetail() {
 
                 return { reason, detail, file };
             }
-            // }).then((result) => {
-            //     if (result.isConfirmed) {
-            //         console.log("ข้อมูลที่ส่ง:", result.value);
-            //         // ตรงนี้คือจุดที่คุณนำข้อมูลไปยิง API ต่อ
-            //     }
-            // });
         }).then(async (result) => {
 
             // console.log("Check Booking ID:", booking);
@@ -533,7 +517,7 @@ export default function FoodDetail() {
             if (result.isConfirmed) {
                 const { reason, detail, file } = result.value;
 
-                // 2. สร้าง FormData เพื่อส่งไฟล์และข้อมูลไปพร้อมกัน
+                // สร้าง FormData เพื่อส่งไฟล์และข้อมูลไปพร้อมกัน
                 const formData = new FormData();
                 formData.append("reason", result.value.reason);
                 formData.append("description", result.value.detail);
@@ -547,7 +531,6 @@ export default function FoodDetail() {
                 }
 
                 try {
-                    // 3. ยิง API ไปยังหลังบ้าน
                     const response = await fetch("http://localhost:8082/report", {
                         method: "POST",
                         headers: {
@@ -593,7 +576,7 @@ export default function FoodDetail() {
     };
 
     const handleReviewSubmit = async () => {
-        // 1. ตรวจสอบข้อมูลก่อนส่ง
+        // ตรวจสอบข้อมูลก่อนส่ง
         // if (rating === 0) {
         //     alert("กรุณาเลือกคะแนนดาว");
         //     return;
@@ -718,9 +701,6 @@ export default function FoodDetail() {
 
     return (
         <div style={styles.page}>
-            {/* <div>
-                <div>User ID: {currentUserId}</div>
-            </div> */}
             <div style={styles.headerRow}>
                 {/* พื้นที่ว่างด้านซ้ายปล่อยไว้ หรือปล่อยให้ปุ่มดีดไปทางขวาสุดด้วย justifyContent */}
                 <div></div>
@@ -831,7 +811,7 @@ export default function FoodDetail() {
                                                     ))}
                                                 </div>
 
-                                                {/* 4. ข้อความรีวิว */}
+                                                {/* ข้อความรีวิว */}
                                                 <p style={{ margin: "0", color: "#737373", lineHeight: "1.5" }}>
                                                     {existingReview.reviewComment}
                                                 </p>
@@ -1013,7 +993,7 @@ export default function FoodDetail() {
                             zoom={17}
                             options={{
                                 gestureHandling: "cooperative", // ช่วยให้เลื่อนหน้าจอระบบสัมผัสบนมือถือได้ง่าย ไม่ติดหน้าต่างแมพ
-                                fullscreenControl: true,       // ปิดปุ่มขยายหน้าจอใหญ่ (เลือกเปิด/ปิดตามดีไซน์มินิมอล)
+                                fullscreenControl: true,       // ปิดปุ่มขยายหน้าจอใหญ่ เลือกเปิด/ปิดตามดีไซน์มินิมอล
                                 mapTypeControl: false           // ปิดปุ่มสลับโหมดดาวเทียม เพื่อความคลีน
                             }}
                         >
@@ -1100,17 +1080,10 @@ const styles = {
         margin: "0 auto",
         padding: "40px 20px",
         boxSizing: "border-box"
-        // fontFamily: "'Kanit', sans-serif"
     },
     container: {
-        // maxWidth: "1150px",
-        // margin: "0 auto",
-        // backgroundColor: "#FFFFFF",
-        // borderRadius: "24px",
-        // padding: "40px",
         display: "flex",
         gap: "60px",
-        // boxShadow: "0 8px 24px rgba(0,0,0,0.03)"
     },
     centerPage: {
         display: "flex",

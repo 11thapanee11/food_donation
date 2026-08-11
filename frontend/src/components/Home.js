@@ -12,7 +12,6 @@ export default function Home() {
 
     const BASE_URL = "http://localhost:8082";
 
-    // 1. โหลดหมวดหมู่จาก Database (ทำงานครั้งเดียวตอนเปิดหน้าเว็บ)
     useEffect(() => {
         fetch(`${BASE_URL}/food-categories`)
             .then(res => {
