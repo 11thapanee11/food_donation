@@ -76,9 +76,9 @@ public class FoodController {
         String uploadDir = "D:/Project/food_donation/uploads/food/";
         File directory = new File(uploadDir);
 
-        // if (!directory.exists()) {
-        // directory.mkdirs();
-        // }
+        if (!directory.exists()) {
+        directory.mkdirs();
+        }
 
         String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
         File dest = new File(directory, fileName);

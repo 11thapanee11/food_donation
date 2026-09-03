@@ -17,8 +17,8 @@ import com.springboot.dto.*;
 @RequestMapping("/notifications")
 public class NotificationController {
 
-    private NotificationService notificationService;
-    private UserService userService;
+    private final NotificationService notificationService;
+    private final UserService userService;
 
     public NotificationController(NotificationService notificationService, UserService userService) {
         this.notificationService = notificationService;

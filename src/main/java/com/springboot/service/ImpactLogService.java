@@ -56,34 +56,26 @@ public class ImpactLogService {
     }
 
     public List<ImpactLogDto> getListImpactLog(Integer donorId) {
-        List<ImpactLogDto> impactLog = new ArrayList<>();
-
-        // ดึงรายการล็อกทั้งหมดที่เกิดขึ้นจริงของผู้บริจาคคนนี้มาตั้งต้น
         List<ImpactLog> logs = impactLogRepository.findByBooking_Food_Donor_UserId(donorId);
+        List<ImpactLogDto> impactLogDtos = new ArrayList<>();
 
-        if (logs != null) {
-            for (ImpactLog log : logs) {
-                Booking booking = log.getBooking(); // ดึงก้อน Booking จากก้อน Log (เพราะ Log เก็บ Booking)
+        logs.forEach(impactLog -> {
+            Booking booking = impactLog.getBooking();
+            if (booking != null) {
+                Food food = booking.getFood();
+                String foodName = (food != null) ? food.getFoodName() : "ไม่ระบุชื่ออาหาร";
 
-                if (booking != null) {
-                    Food food = booking.getFood();
-                    String foodName = (food != null) ? food.getFoodName() : "ไม่ระบุชื่ออาหาร";
-
-                    // แปลงข้อมูลจับยัดใส่ DTO รายชิ้น
-                    ImpactLogDto tableItem = new ImpactLogDto(
-                            log.getImpactLogId(),
-                            log.getCreateAt(),
-                            foodName,
-                            booking.getBookingWeightKg(),
-                            log.getCarbonReductionAmount());
-                    impactLog.add(tableItem);
-                }
+                impactLogDtos.add(new ImpactLogDto(
+                        impactLog.getImpactLogId(),
+                        impactLog.getCreateAt(),
+                        foodName,
+                        booking.getBookingWeightKg(),
+                        impactLog.getCarbonReductionAmount()));
             }
-        }
+        });
 
-        // เรียงลำดับประวัติตารางจากวันที่ล่าสุด (DESC)
-        impactLog.sort((a, b) -> b.getDate().compareTo(a.getDate()));
-
-        return impactLog;
+        // เรียงลำดับจากวันที่ล่าสุด
+        impactLogDtos.sort((a, b) -> b.getDate().compareTo(a.getDate()));
+        return impactLogDtos;
     }
 }

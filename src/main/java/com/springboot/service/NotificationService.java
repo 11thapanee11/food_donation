@@ -103,12 +103,6 @@ public class NotificationService {
         return notificationRepository.findAll();
     }
 
-    // ดึงเฉพาะแจ้งเตือนอาหารใหม่ (สำหรับผู้รับอาหาร)
-    // public List<Notification> getFoodNotifications() {
-    // return
-    // notificationRepository.findByNotificationTypeOrderByNotificationDateDesc("food");
-    // }
-
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; // รัศมีโลกหน่วยเป็นกิโลเมตร
         double latDistance = Math.toRadians(lat2 - lat1);
@@ -120,24 +114,6 @@ public class NotificationService {
         return R * c;
     }
 
-    // public List<Notification> getNearbyFoodNotifications(double userLat, double
-    // userLng, double radius,
-    // Integer userId) {
-    // // ดึง Notification ประเภท 'food' ทั้งหมดมาก่อน
-    // List<Notification> allFoodNotifications =
-    // notificationRepository.findByNotificationType("food");
-
-    // // กรองเฉพาะรายการที่ระยะทางอยู่ในรัศมี (ใช้ Haversine Formula)
-    // return allFoodNotifications.stream()
-    // .filter(n -> {
-    // Food food = n.getFood();
-    // boolean isNotOwner = !food.getDonor().getUserId().equals(userId);
-    // double dist = calculateDistance(userLat, userLng, food.getLatitude(),
-    // food.getLongitude());
-    // return isNotOwner && dist <= radius;
-    // })
-    // .toList();
-    // }
     public List<NotificationDto> getNearbyFoodNotifications(double userLat, double userLng, double radius,
             Integer userId) {
         List<Notification> allFoodNotifications = notificationRepository.findByNotificationType("food");
@@ -147,21 +123,19 @@ public class NotificationService {
                     Food food = n.getFood();
                     boolean isNotOwner = !food.getDonor().getUserId().equals(userId);
                     double dist = calculateDistance(userLat, userLng, food.getLatitude(), food.getLongitude());
-                    return isNotOwner && dist <= radius;
+                    boolean isAvailable = "available".equals(food.getFoodStatus());
+                    return isNotOwner && dist <= radius && isAvailable;
+                    
                 })
-                .map(this::convertToDto) // <--- แปลงที่ตรงนี้
+                .map(this::convertToDto) // แปลงเป็น DTO
                 .toList();
     }
 
-    // public List<Notification> getBookingNotifications(Integer userId) {
-    // List<String> types = List.of("booking", "booking_cancel");
-    // return notificationRepository.findBookingsByDonorIdAndTypes(userId, types);
-    // }
     public List<NotificationDto> getBookingNotifications(Integer userId) {
         List<String> types = List.of("booking", "booking_cancel");
         return notificationRepository.findBookingsByDonorIdAndTypes(userId, types)
                 .stream()
-                .map(this::convertToDto) // <--- แปลงที่ตรงนี้
+                .map(this::convertToDto) // แปลง
                 .toList();
     }
 
@@ -169,7 +143,7 @@ public class NotificationService {
         List<String> types = List.of("warning", "info");
         return notificationRepository.findBookingsByDonorIdAndTypes(userId, types)
                 .stream()
-                .map(this::convertToDto) // <--- แปลงที่ตรงนี้
+                .map(this::convertToDto) // แปลง
                 .toList();
     }
 
@@ -183,7 +157,7 @@ public class NotificationService {
         }
     }
 
-    // ดึงเฉพาะลิสต์ไอดีที่ "ยูสเซอร์คนนี้" เคยกดอ่านแล้ว ส่งกลับไปให้หน้าบ้าน
+    // ดึงเฉพาะลิสต์ไอดีที่ ยูสเซอร์คนนี้ เคยกดอ่านแล้ว ส่งกลับไปให้หน้าบ้าน
     public List<Integer> getReadIdsForUser(String userId) {
         return readNotifications.getOrDefault(userId, new ArrayList<>());
     }
