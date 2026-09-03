@@ -25,55 +25,38 @@ public class MemberController {
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<MemberDto>> getProfile(@RequestHeader("Authorization") String authHeader) {
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.error("กรุณาแนบ Token สำหรับการเข้าถึงโปรไฟล์"));
-            }
-
-            User user = userService.authenticate(authHeader);
-            MemberDto memberDto = userService.getMemberProfile(user.getUserId());
-
-            if (memberDto == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.error("ไม่พบข้อมูลรายละเอียดสมาชิก"));
-            }
-
-            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลโปรไฟล์สำเร็จ", memberDto));
-
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("เซสชันหมดอายุหรือเกิดข้อผิดพลาดในการตรวจสอบสิทธิ์: " + e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("ไม่สามารถแก้ไขข้อมูลได้ กรุณาลองใหม่อีกครั้ง"));
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new com.springboot.exception.UnauthorizedException("กรุณาแนบ Token สำหรับการเข้าถึงโปรไฟล์");
         }
+
+        User user = userService.authenticate(authHeader);
+        MemberDto memberDto = userService.getMemberProfile(user.getUserId());
+
+        if (memberDto == null) {
+            return ResponseEntity.status(404)
+                    .body(ApiResponse.error("ไม่พบข้อมูลรายละเอียดสมาชิก"));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลโปรไฟล์สำเร็จ", memberDto));
     }
 
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<Void>> editProfile(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody MemberDto updatedProfile) {
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.error("กรุณาแนบ Token สำหรับการแก้ไขโปรไฟล์"));
-            }
-
-            User user = userService.authenticate(authHeader);
-            boolean result = userService.updateMemberProfile(user.getEmail(), updatedProfile);
-
-            if (!result) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("ไม่สามารถแก้ไขข้อมูลโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง"));
-            }
-
-            return ResponseEntity.ok(ApiResponse.success("แก้ไขข้อมูลโปรไฟล์สำเร็จ"));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("เกิดข้อผิดพลาดในระบบ: " + e.getMessage()));
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new com.springboot.exception.UnauthorizedException("กรุณาแนบ Token สำหรับการแก้ไขโปรไฟล์");
         }
+
+        User user = userService.authenticate(authHeader);
+        boolean result = userService.updateMemberProfile(user.getEmail(), updatedProfile);
+
+        if (!result) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("ไม่สามารถแก้ไขข้อมูลโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง"));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("แก้ไขข้อมูลโปรไฟล์สำเร็จ"));
     }
 
 }
