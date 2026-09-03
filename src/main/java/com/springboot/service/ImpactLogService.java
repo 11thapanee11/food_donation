@@ -4,12 +4,17 @@ import com.springboot.service.*;
 import com.springboot.dto.ImpactLogDto;
 import com.springboot.model.*;
 import com.springboot.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.*;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ImpactLogService {
+
+    private static final Logger log = LoggerFactory.getLogger(ImpactLogService.class);
 
     private final ImpactLogRepository impactLogRepository;
     private final DonorService donorService;
@@ -26,25 +31,28 @@ public class ImpactLogService {
         return bookedWeightKg * emissionFactor;
     }
 
+    @Transactional
     public void saveImpactLog(Booking booking, double carbonReduction) {
-        // บันทึกข้อมูลลงตาราง ImpactLog
         ImpactLog impactLog = new ImpactLog();
         impactLog.setCarbonReductionAmount(carbonReduction);
         impactLog.setCreateAt(LocalDate.now());
         impactLog.setBooking(booking);
         impactLogRepository.save(impactLog);
 
+        updateDonorImpact(booking, carbonReduction);
+    }
+
+    private void updateDonorImpact(Booking booking, double carbonReduction) {
         Donor donor = booking.getFood().getDonor();
-
-        if (donor != null) {
-            
-            Integer donorUserId = donor.getUser().getUserId();
-
-            System.out.println("====== DEBUG DONOR USER ID IS: " + donorUserId + " ======");
-
-            donorService.updateTotalImpactAmount(donorUserId, carbonReduction);
+        if (donor == null) {
+            log.warn("Donor not found for booking ID: {}", booking.getBookingId());
+            return;
         }
 
+        Integer donorUserId = donor.getUser().getUserId();
+        log.debug("Updating total impact for donor user ID: {}", donorUserId);
+
+        donorService.updateTotalImpactAmount(donorUserId, carbonReduction);
     }
 
     public List<ImpactLogDto> getListImpactLog(Integer donorId) {

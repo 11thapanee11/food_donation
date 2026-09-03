@@ -296,12 +296,6 @@ public class FoodService {
     }
 
     // อัพเดทอาหาร
-    // public Food updateFood(Food food) {
-    // if (!foodRepository.existsById(food.getFoodId())) {
-    // throw new RuntimeException("ไม่พบรายการอาหาร id=" + food.getFoodId());
-    // }
-    // return foodRepository.save(food);
-    // }
     public Food updateFood(Integer id, FoodDto foodDto, String imagePath) {
 
         // ดึงข้อมูลอาหารจานเดิมขึ้นมาจากฐานข้อมูล
@@ -327,30 +321,30 @@ public class FoodService {
         // การจัดการจำนวน
         // food.setTotalUnit(foodDto.getTotalUnit());
         // food.setRemainingUnit(food.getRemainingUnit()); // ล็อกค่าเดิม
-        // 1. จำค่าจำนวนเต็มเดิม (Old Total) และคำนวณหาจำนวนที่ถูกจองไปแล้ว (Reserved)
+        // จำค่าจำนวนเต็มเดิม (Old Total) และคำนวณหาจำนวนที่ถูกจองไปแล้ว (Reserved)
         int oldTotal = food.getTotalUnit() != null ? food.getTotalUnit() : 0;
         int currentRemaining = food.getRemainingUnit() != null ? food.getRemainingUnit() : 0;
         int reservedUnit = oldTotal - currentRemaining; // ยอดรวมที่มีคนจองไปแล้วทั้งหมด
 
-        // 2. รับยอดจำนวนเต็มใหม่จาก DTO
+        // รับยอดจำนวนเต็มใหม่จาก DTO
         int newTotal = foodDto.getTotalUnit() != null ? foodDto.getTotalUnit() : 0;
 
-        // 3. ตรวจสอบ Edge Case: ถ้าคนบริจาคปรับจำนวนรวมใหม่ น้อยกว่า
+        // ตรวจสอบ Edge Case: ถ้าคนบริจาคปรับจำนวนรวมใหม่ น้อยกว่า
         // จำนวนที่มีคนจองไปแล้ว
         if (newTotal < reservedUnit) {
             throw new IllegalArgumentException("ไม่สามารถปรับลดจำนวนทั้งหมดเป็น " + newTotal + " ได้ " +
                     "เนื่องจากมีผู้จองอาหารรายการนี้ไปแล้ว " + reservedUnit);
         }
 
-        // 4. คำนวณส่วนต่าง (Diff) ของจำนวนทั้งหมด
+        // คำนวณส่วนต่าง (Diff) ของจำนวนทั้งหมด
         int totalDifference = newTotal - oldTotal;
 
-        // 5. อัปเดตสต็อกคงเหลือ (Remaining) อัตโนมัติด้วยส่วนต่าง
+        // อัปเดตสต็อกคงเหลือ (Remaining) อัตโนมัติด้วยส่วนต่าง
         // - ปรับเพิ่ม Total (diff เป็นบวก) -> ยอดของเหลือจะเพิ่มขึ้น
         // - ปรับลด Total (diff เป็นลบ) -> ยอดของเหลือจะลดลง
         int newRemaining = currentRemaining + totalDifference;
 
-        // 6. บันทึกจำนวนลง Entity
+        // บันทึกจำนวนลง Entity
         food.setTotalUnit(newTotal);
         food.setRemainingUnit(newRemaining);
 
@@ -389,44 +383,6 @@ public class FoodService {
         foodRepository.deleteById(id);
     }
 
-    // list อาหารจากผู้ใช้
-    // public List<FoodDto> findFoodsByDonorEmail(String email) {
-    // // ดึงข้อมูลจาก DB
-    // List<Food> foods = foodRepository.findByDonorEmail(email);
-
-    // // แปลง Entity → DTO
-    // return foods.stream()
-    // .map(food -> {
-    // FoodDto dto = new FoodDto();
-    // dto.setFoodName(food.getFoodName());
-    // dto.setDescription(food.getDescription());
-    // dto.setExpiryDate(food.getExpiryDate());
-    // dto.setUnitWeightKg(food.getUnitWeightKg());
-    // dto.setTotalUnit(food.getTotalUnit());
-    // dto.setRemainingUnit(food.getRemainingUnit());
-    // dto.setPeopleCountPerMeal(food.getPeopleCountPerMeal());
-    // dto.setAddress(food.getAddress());
-    // dto.setPickupDateStart(food.getPickupDateStart());
-    // dto.setPickupDateEnd(food.getPickupDateEnd());
-    // dto.setPickupStartTime(food.getPickupStartTime());
-    // dto.setPickupEndTime(food.getPickupEndTime());
-    // dto.setLimitPerPerson(food.getLimitPerPerson());
-    // dto.setLatitude(food.getLatitude());
-    // dto.setLongitude(food.getLongitude());
-    // dto.setFoodStatus(food.getFoodStatus());
-    // dto.setFoodImagePath(food.getFoodImage());
-    // dto.setFoodCategory(food.getFoodCategory().getFoodCateId());
-    // dto.setDonor(food.getDonor().getUserId()); // FK ของ donor
-
-    // return dto;
-    // })
-    // .toList();
-    // }
-
-    // public List<Food> findFoodsByDonorEmail(String email) {
-    // // ดึงข้อมูลจาก DB
-    // return foodRepository.findByDonorEmail(email);
-    // }
     public List<Food> findFoodsByDonorId(Integer id) {
         // ดึงข้อมูลจาก DB
         return foodRepository.findByDonorUserId(id);
