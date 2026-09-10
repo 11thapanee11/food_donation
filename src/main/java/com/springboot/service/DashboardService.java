@@ -1,15 +1,11 @@
 package com.springboot.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.springboot.dto.DashboardStatsDto;
-import com.springboot.repository.BookingRepository;
-import com.springboot.repository.FoodCategoryRepository;
-import com.springboot.repository.FoodRepository;
-import com.springboot.repository.ImpactLogRepository;
-import com.springboot.repository.ReportRepository;
-import com.springboot.repository.UserRepository;
-import com.springboot.service.*;
+import com.springboot.exception.ApplicationException;
+import com.springboot.repository.*;
 
 @Service
 public class DashboardService {
@@ -44,6 +40,10 @@ public class DashboardService {
         dto.setTotalReports(reportRepository.count());
         dto.setPendingReport(reportRepository.countByReportStatus("pending"));
         dto.setCheckedReport(reportRepository.countByReportStatus("checked"));
+
+        if (dto.getTotalUsers() == 0 && dto.getTotalFoods() == 0 && dto.getTotalReports() == 0) {
+            throw new ApplicationException("ไม่พบข้อมูล", HttpStatus.NOT_FOUND);
+        }
 
         return dto;
     }
