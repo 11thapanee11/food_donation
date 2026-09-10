@@ -2,11 +2,13 @@ package com.springboot.service;
 
 import com.springboot.model.*;
 import com.springboot.dto.*;
+import com.springboot.exception.ApplicationException;
 import com.springboot.repository.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,8 +23,11 @@ public class DonorService {
     }
 
     public List<DonorDto> getAllDonors() {
-        // ดึง List ของ Donor ที่มีข้อมูล User อยู่ด้วย
         List<Donor> donors = donorRepository.findAllDonors();
+
+        if (donors == null || donors.isEmpty()) {
+            throw new ApplicationException("ไม่พบข้อมูลผู้บริจาค", HttpStatus.NOT_FOUND);
+        }
 
         return donors.stream().map(d -> {
             DonorDto dto = new DonorDto();
@@ -38,7 +43,7 @@ public class DonorService {
     public Donor getOrCreateDonor(User user) {
         return donorRepository.findById(user.getUserId()).orElseGet(() -> {
             Donor newDonor = new Donor();
-            newDonor.setUser(user); // ใช้ MapsId ให้ Hibernate จัดการ PK
+            newDonor.setUser(user);
             newDonor.setDonorStatus("active");
             newDonor.setTotalImpactAmount(0.0);
             return donorRepository.save(newDonor);
@@ -47,29 +52,29 @@ public class DonorService {
 
     public void updateTotalImpactAmount(Integer donorId, double carbonReduction) {
         Donor donor = donorRepository.findById(donorId)
-                .orElseThrow(() -> new RuntimeException(
-                        "ไม่พบข้อมูลผู้บริจาคไอดี: " + donorId + " (กรุณาตรวจสอบว่ามีแถวในตาราง donor หรือยัง)"));
+                .orElseThrow(() -> new ApplicationException(
+                        "ไม่พบข้อมูลผู้บริจาคไอดี: " + donorId, HttpStatus.NOT_FOUND));
 
         // ดึงยอดเก่ามาคำนวณสะสม (ป้องกันกรณี totalImpactAmount ในเบสเป็น NULL)
         double currentImpact = donor.getTotalImpactAmount() != null ? donor.getTotalImpactAmount() : 0.0;
-
         // เซ็ตค่าผลรวมใหม่เข้าไปที่ Object Properties
         donor.setTotalImpactAmount(currentImpact + carbonReduction);
 
         // บันทึกการเปลี่ยนแปลงกลับลงตาราง donor
         donorRepository.save(donor);
 
-        System.out.println("====== SUCCESS: UPDATE EXISTING DONOR IMPACT COMPLETED FOR ID: " + donorId + " -> TOTAL: "
-                + donor.getTotalImpactAmount() + " ======");
+        try {
+            donorRepository.save(donor);
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถอัปเดตข้อมูลผู้บริจาคได้: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Map<String, Object> getImpactSummary(Integer userId) {
-
-        System.out.println("DEBUG: กำลังค้นหา Donor ด้วย ID: " + userId);
-
         // ค้นหาผู้บริจาคเพื่อเอาค่าคาร์บอนรวมสะสม
         Donor donor = donorRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลผู้บริจาคไอดี: " + userId));
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลผู้บริจาคไอดี: " + userId, HttpStatus.NOT_FOUND));
 
         Map<String, Object> summaryMap = new HashMap<>();
 
@@ -90,8 +95,12 @@ public class DonorService {
     }
 
     public List<DonorDto> getListTotalImpact() {
-        return donorRepository.findTopDonorsByImpact()
-                .stream()
+        List<Donor> donors = donorRepository.findTopDonorsByImpact();
+        if (donors == null || donors.isEmpty()) {
+            throw new ApplicationException("ไม่พบข้อมูลผู้บริจาค", HttpStatus.NOT_FOUND);
+        }
+
+        return donors.stream()
                 .map(d -> new DonorDto(
                         d.getUser().getFirstName(),
                         d.getUser().getLastName(),
@@ -101,14 +110,23 @@ public class DonorService {
 
     public void updateDonorStatus(Integer userId, String newStatus) {
         Donor donor = donorRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลผู้บริจาค"));
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลผู้บริจาค", HttpStatus.NOT_FOUND));
 
-        donor.setDonorStatus(newStatus);
-        donorRepository.save(donor);
+        try {
+            donor.setDonorStatus(newStatus);
+            donorRepository.save(donor);
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถแก้ไขสถานะบัญชีผู้ใช้งานได้: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Donor getDonorByUserId(Integer userId) {
-        return donorRepository.findByUserUserId(userId);
+        Donor donor = donorRepository.findByUserUserId(userId);
+        if (donor == null) {
+            throw new ApplicationException("ไม่พบข้อมูลผู้บริจาค", HttpStatus.NOT_FOUND);
+        }
+        return donor;
     }
 
 }

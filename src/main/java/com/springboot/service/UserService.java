@@ -70,19 +70,6 @@ public class UserService {
         }
     }
 
-    // public User login(String email, String password) {
-    // return userRepository.findByEmail(email)
-    // .filter(user -> {
-    // try {
-    // String hashedPassword = passwordUtil.createPassword(password, email);
-    // return user.getPassword().equals(hashedPassword);
-    // } catch (Exception e) {
-    // return false;
-    // }
-    // })
-    // .orElse(null);
-    // }
-
     public boolean login(LoginDto loginDto) {
         try {
             String hashedPassword = PasswordUtil.getInstance()

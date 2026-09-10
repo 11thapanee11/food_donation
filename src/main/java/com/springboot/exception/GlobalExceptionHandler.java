@@ -10,6 +10,12 @@ import com.springboot.dto.ApiResponse;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(ApplicationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleApplication(ApplicationException ex) {
+        return ResponseEntity.status(ex.getStatus())
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     // จัดการ IllegalArgumentException → Bad Request
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
@@ -31,4 +37,3 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("เกิดข้อผิดพลาดในระบบ: " + ex.getMessage()));
     }
 }
-

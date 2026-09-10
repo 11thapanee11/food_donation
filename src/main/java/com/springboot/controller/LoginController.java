@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.springboot.dto.*;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.service.*;
 import java.util.*;
@@ -44,33 +45,27 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> login(@RequestBody LoginDto loginDto) {
-        try {
-            boolean result = userService.login(loginDto);
+        boolean result = userService.login(loginDto);
 
-            if (result) {
-                User user = userService.getUserByEmail(loginDto.getEmail());
-                boolean isAdmin = adminService.isAdmin(user.getUserId());
-
-                String accessToken = jwtUtil.generateToken(
-                        String.valueOf(user.getUserId()),
-                        isAdmin,
-                        24 * 60 * 60 * 1000 // อายุ 24 ชั่วโมง
-                );
-
-                Map<String, Object> responseData = new HashMap<>();
-                responseData.put("accessToken", accessToken);
-                responseData.put("userId", user.getUserId());
-                responseData.put("isAdmin", isAdmin);
-
-                return ResponseEntity.ok(ApiResponse.success("เข้าสู่ระบบสำเร็จ", responseData));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("เกิดข้อผิดพลาดในระบบ: " + e.getMessage()));
+        if (!result) {
+            throw new ApplicationException("อีเมลหรือรหัสผ่านไม่ถูกต้อง", HttpStatus.UNAUTHORIZED);
         }
+
+        User user = userService.getUserByEmail(loginDto.getEmail());
+        boolean isAdmin = adminService.isAdmin(user.getUserId());
+
+        String accessToken = jwtUtil.generateToken(
+                String.valueOf(user.getUserId()),
+                isAdmin,
+                24 * 60 * 60 * 1000 // อายุ 24 ชั่วโมง
+        );
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("accessToken", accessToken);
+        responseData.put("userId", user.getUserId());
+        responseData.put("isAdmin", isAdmin);
+
+        return ResponseEntity.ok(ApiResponse.success("เข้าสู่ระบบสำเร็จ", responseData));
     }
 
     @PostMapping("/logout")

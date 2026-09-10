@@ -291,7 +291,6 @@ public class FoodService {
             System.err.println("ไม่สามารถบันทึกการแจ้งเตือนได้: " + e.getMessage());
         }
 
-
         return savedFood;
     }
 
@@ -376,11 +375,12 @@ public class FoodService {
     }
 
     // ลบอาหาร
-    public void deleteFood(Integer id) {
+    public boolean deleteFood(Integer id) {
         if (!foodRepository.existsById(id)) {
-            throw new IllegalArgumentException("ไม่พบรายการอาหาร id=" + id);
+            return false; // ไม่พบข้อมูล
         }
         foodRepository.deleteById(id);
+        return true; // ลบสำเร็จ
     }
 
     public List<Food> findFoodsByDonorId(Integer id) {
