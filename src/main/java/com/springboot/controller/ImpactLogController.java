@@ -1,12 +1,9 @@
 package com.springboot.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.springboot.service.*;
-import com.springboot.repository.*;
-import com.springboot.util.JwtUtil;
 
 import java.util.*;
 import com.springboot.dto.*;
@@ -31,12 +28,7 @@ public class ImpactLogController {
         User user = userService.authenticate(authHeader);
         List<ImpactLogDto> listImpactLog = impactLogService.getListImpactLog(user.getUserId());
 
-        if (listImpactLog == null || listImpactLog.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("ไม่พบข้อมูลผลกระทบ"));
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("ดึงลิสต์ประวัติผลกระทบสำเร็จ", listImpactLog));
+        return ResponseEntity.ok(ApiResponse.success("ดึงรายการประวัติผลกระทบสำเร็จ", listImpactLog));
     }
 
 }
