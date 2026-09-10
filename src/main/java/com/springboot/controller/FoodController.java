@@ -1,27 +1,14 @@
 package com.springboot.controller;
 
-import com.springboot.model.Booking;
-import com.springboot.model.Donor;
-import com.springboot.model.Food;
-import com.springboot.model.FoodCategory;
-import com.springboot.model.User;
+import com.springboot.model.*;
 
-import org.springframework.boot.actuate.autoconfigure.wavefront.WavefrontProperties.Application;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.MediaType;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 import com.springboot.dto.*;
 import com.springboot.exception.ApplicationException;
 import com.springboot.service.*;
-import com.springboot.util.JwtUtil;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.*;
 
@@ -49,18 +36,12 @@ public class FoodController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<FoodDto>>> getAllFoods() {
         List<FoodDto> foods = foodService.getAllFoods();
-        if (foods == null || foods.isEmpty()) {
-            return ResponseEntity.status(404).body(ApiResponse.error("ไม่พบข้อมูลอาหาร"));
-        }
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารทั้งหมดสำเร็จ", foods));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FoodDto>> getFoodById(@PathVariable Integer id) {
         FoodDto foodDto = foodService.getFoodById(id);
-        if (foodDto == null) {
-            return ResponseEntity.status(404).body(ApiResponse.error("ไม่พบข้อมูลอาหาร"));
-        }
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารสำเร็จ", foodDto));
     }
 
@@ -95,9 +76,6 @@ public class FoodController {
         Donor donor = donorService.getOrCreateDonor(user);
 
         Food savedFood = foodService.addFood(donor, foodDto, imagePath);
-        if (savedFood == null) {
-            throw new ApplicationException("ไม่สามารถบันทึกข้อมูลได้", HttpStatus.BAD_REQUEST);
-        }
         return ResponseEntity.ok(ApiResponse.success("เพิ่มข้อมูลอาหารสำเร็จ", savedFood));
     }
 
@@ -108,21 +86,14 @@ public class FoodController {
             @RequestParam(value = "fileImage", required = false) MultipartFile image) throws IOException {
 
         String imagePath = (image != null && !image.isEmpty()) ? saveFoodImage(image) : null;
-        Food updatedFood = foodService.updateFood(id, foodDto, imagePath);
-        if (updatedFood == null) {
-            throw new ApplicationException("ไม่สามารถแก้ไขข้อมูลอาหารได้", HttpStatus.BAD_REQUEST);
-        }
+        foodService.updateFood(id, foodDto, imagePath);
         return ResponseEntity.ok(ApiResponse.success("แก้ไขข้อมูลอาหารสำเร็จ"));
 
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable Integer id) {
-        boolean deleted = foodService.deleteFood(id);
-
-        if (!deleted) {
-            throw new ApplicationException("ไม่สามารถลบข้อมูลอาหารได้", HttpStatus.NOT_FOUND);
-        }
+        foodService.deleteFood(id);
         return ResponseEntity.ok(ApiResponse.success("ลบข้อมูลอาหารสำเร็จ"));
     }
 
@@ -131,10 +102,6 @@ public class FoodController {
             @RequestHeader("Authorization") String authHeader) {
         User user = userService.authenticate(authHeader);
         List<Food> foods = foodService.findFoodsByDonorId(user.getUserId());
-
-        if (foods == null || foods.isEmpty()) {
-            throw new ApplicationException("ไม่พบข้อมูลรายการอาหาร", HttpStatus.NOT_FOUND);
-        }
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลรายการอาหารบริจาคของฉันสำเร็จ", foods));
     }
 
@@ -148,10 +115,6 @@ public class FoodController {
         }
 
         Booking updatedBooking = bookingService.verifyConfirmCodeByFoodId(foodId, verificationCode);
-        if (updatedBooking == null) {
-            throw new ApplicationException("การส่งมอบอาหารล้มเหลว", HttpStatus.BAD_REQUEST);
-        }
-
         return ResponseEntity.ok(ApiResponse.success("ส่งมอบอาหารและตรวจสอบรหัสเรียบร้อยแล้ว", updatedBooking));
     }
 
