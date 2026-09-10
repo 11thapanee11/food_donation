@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
 import com.springboot.dto.*;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.service.*;
 import java.util.*;
@@ -34,8 +35,7 @@ public class ReportController {
             @RequestParam(value = "report_image", required = false) MultipartFile image) {
 
         if (dto.getBookingId() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("ไม่สามารถบันทึกข้อมูลได้"));
+            throw new ApplicationException("ไม่สามารถบันทึกข้อมูลได้", HttpStatus.BAD_REQUEST);
         }
 
         User user = userService.authenticate(authHeader);
@@ -70,13 +70,8 @@ public class ReportController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ReportDto>>> getListReport() {
-        try {
-            List<ReportDto> reports = reportService.getAllReports();
-            return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลรายงานสำเร็จ", reports));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("เกิดข้อผิดพลาดในการดึงข้อมูล: " + e.getMessage()));
-        }
+        List<ReportDto> reports = reportService.getAllReports();
+        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลรายงานสำเร็จ", reports));
     }
 
     @GetMapping("/{id}")

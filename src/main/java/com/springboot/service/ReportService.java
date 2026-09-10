@@ -1,12 +1,14 @@
 package com.springboot.service;
 
 import com.springboot.dto.ReportDto;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.repository.*;
 import java.util.*;
 
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,14 +28,11 @@ public class ReportService {
 
         boolean exists = reportRepository.existsByBooking_BookingId(dto.getBookingId());
         if (exists) {
-            throw new IllegalArgumentException("คุณได้ทำการรายงานปัญหานี้ไปแล้ว");
+            throw new ApplicationException("คุณได้ทำการรายงานปัญหานี้ไปแล้ว", HttpStatus.BAD_REQUEST);
         }
 
         Booking booking = bookingRepository.findById(dto.getBookingId())
-                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลการจอง"));
-
-        // Recipient recipient = recipientRepository.findById(dto.getRecipientId())
-        // .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลผู้รับบริจาค"));
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลการจอง", HttpStatus.NOT_FOUND));
 
         Report report = new Report();
 
@@ -43,16 +42,11 @@ public class ReportService {
         report.setRecipient(recipient);
         report.setReportImage(imagePath);
 
-        System.out.println("--- DEBUG START ---");
-        System.out.println("Reason: " + dto.getReason());
-        System.out.println("Description: " + dto.getDescription());
-        System.out.println("BookingID: " + dto.getBookingId());
-        System.out.println("RecipientID: " + recipient.getUserId());
-        System.out.println("ImagePath: " + imagePath);
-        System.out.println("--- DEBUG END ---");
-
-        // บันทึกลงตาราง report
-        reportRepository.save(report);
+        try {
+            reportRepository.save(report);
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถบันทึกการแจ้งปัญหาได้", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public boolean checkReport(Integer bookingId) {
@@ -77,9 +71,8 @@ public class ReportService {
     }
 
     public ReportDto getReportById(Integer id) {
-        // ค้นหา Report หากไม่เจอให้โยน Exception
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ไม่พบรายงานปัญหา ID: " + id));
+                .orElseThrow(() -> new ApplicationException("ไม่พบรายงานปัญหา ID: " + id, HttpStatus.NOT_FOUND));
 
         // แปลง Entity เป็น DTO
         ReportDto dto = new ReportDto();
@@ -103,7 +96,7 @@ public class ReportService {
 
     public void updateReportStatus(Integer id, String newStatus) {
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลรายงาน"));
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลรายงาน", HttpStatus.NOT_FOUND));
 
         report.setReportStatus(newStatus);
         reportRepository.save(report);
