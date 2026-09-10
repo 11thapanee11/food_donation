@@ -3,6 +3,7 @@ package com.springboot.service;
 import java.time.LocalDateTime;
 
 import com.springboot.dto.NotificationDto;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.repository.*;
 
@@ -10,6 +11,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,62 +43,79 @@ public class NotificationService {
     }
 
     public Notification createFoodNotification(Food food) {
-        Notification notification = new Notification();
-        notification.setNotificationMessage("มีอาหารใหม่ใกล้คุณ: " + food.getFoodName());
-        notification.setNotificationDate(LocalDateTime.now());
-        notification.setNotificationType("food");
-        notification.setFood(food);
+        try {
+            Notification notification = new Notification();
+            notification.setNotificationMessage("มีอาหารใหม่ใกล้คุณ: " + food.getFoodName());
+            notification.setNotificationDate(LocalDateTime.now());
+            notification.setNotificationType("food");
+            notification.setFood(food);
 
-        return notificationRepository.save(notification);
+            return notificationRepository.save(notification);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้ เนื่องจากข้อมูลไม่ถูกต้อง",
+                    HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public void createExpirationNotification(Food food, String message, String type) {
         boolean isAlreadyNotified = notificationRepository.existsByFoodAndNotificationType(food, type);
-
         if (isAlreadyNotified) {
             return;
         }
 
-        Notification notification = new Notification();
-        notification.setNotificationMessage(message);
-        notification.setNotificationDate(LocalDateTime.now());
-        notification.setNotificationType(type);
-        notification.setFood(food);
+        try {
+            Notification notification = new Notification();
+            notification.setNotificationMessage(message);
+            notification.setNotificationDate(LocalDateTime.now());
+            notification.setNotificationType(type);
+            notification.setFood(food);
 
-        notificationRepository.save(notification);
+            notificationRepository.save(notification);
+
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Notification createBookingNotification(Booking booking) {
-        Notification notification = new Notification();
+        try {
+            Notification notification = new Notification();
+            String message = "มีคนสนใจอาหารของคุณ! รายการ: " + booking.getFood().getFoodName()
+                    + " จำนวน " + booking.getBookingUnit();
 
-        String message = "มีคนสนใจอาหารของคุณ! รายการ: " + booking.getFood().getFoodName()
-                + " จำนวน " + booking.getBookingUnit();
+            notification.setNotificationMessage(message);
+            notification.setNotificationDate(LocalDateTime.now());
+            notification.setNotificationType("booking");
+            notification.setFood(booking.getFood());
+            notification.setBooking(booking);
 
-        notification.setNotificationMessage(message);
-        notification.setNotificationDate(LocalDateTime.now());
-        notification.setNotificationType("booking");
+            return notificationRepository.save(notification);
 
-        notification.setFood(booking.getFood());
-        notification.setBooking(booking);
-
-        return notificationRepository.save(notification);
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Notification createCancelBookingNotification(Booking booking) {
-        Notification notification = new Notification();
+        try {
+            Notification notification = new Notification();
+            String message = "รายการจองถูกยกเลิก! รายการ: " + booking.getFood().getFoodName()
+                    + " จำนวน " + booking.getBookingUnit();
 
-        String message = "รายการจองถูกยกเลิก! รายการ: " + booking.getFood().getFoodName()
-                + " จำนวน " + booking.getBookingUnit();
+            notification.setNotificationMessage(message);
+            notification.setNotificationDate(LocalDateTime.now());
+            notification.setNotificationType("booking_cancel");
+            notification.setFood(booking.getFood());
+            notification.setBooking(booking);
 
-        notification.setNotificationMessage(message);
-        notification.setNotificationDate(LocalDateTime.now());
-        notification.setNotificationType("booking_cancel");
+            return notificationRepository.save(notification);
 
-        notification.setFood(booking.getFood());
-        notification.setBooking(booking);
-
-        return notificationRepository.save(notification);
-
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // ดึงแจ้งเตือนทั้งหมด
@@ -125,7 +145,7 @@ public class NotificationService {
                     double dist = calculateDistance(userLat, userLng, food.getLatitude(), food.getLongitude());
                     boolean isAvailable = "available".equals(food.getFoodStatus());
                     return isNotOwner && dist <= radius && isAvailable;
-                    
+
                 })
                 .map(this::convertToDto) // แปลงเป็น DTO
                 .toList();

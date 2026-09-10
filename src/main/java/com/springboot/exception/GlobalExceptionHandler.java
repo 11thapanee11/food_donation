@@ -13,6 +13,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<ApiResponse<Void>> handleApplication(ApplicationException ex) {
         return ResponseEntity.status(ex.getStatus())
+                .header("Content-Type", "application/json; charset=UTF-8")
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
