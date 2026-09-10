@@ -1,6 +1,7 @@
 package com.springboot.service;
 
 import com.springboot.dto.ReviewDto;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.repository.*;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import java.util.*;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,7 +28,7 @@ public class ReviewService {
 
     public Review saveReview(ReviewDto dto, Recipient recipient) {
         Booking booking = bookingRepository.findById(dto.getBookingId())
-                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลการจอง"));
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลการจอง", HttpStatus.NOT_FOUND));
 
         Review review = new Review();
         review.setRatingScore(dto.getRatingScore());
@@ -35,7 +37,11 @@ public class ReviewService {
         review.setBooking(booking);
         review.setRecipient(recipient);
 
-        return reviewRepository.save(review);
+        try {
+            return reviewRepository.save(review);
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถบันทึกรีวิวได้", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Review getReviewByBookingId(Integer bookingId) {

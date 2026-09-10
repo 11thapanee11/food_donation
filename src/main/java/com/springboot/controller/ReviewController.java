@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.springboot.dto.*;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.service.*;
 import java.util.*;
@@ -27,17 +28,11 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<String>> addReview(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody ReviewDto dto) {
-        try {
-            User user = userService.authenticate(authHeader);
-            Recipient recipient = recipientService.getOrCreateRecipient(user);
+        User user = userService.authenticate(authHeader);
+        Recipient recipient = recipientService.getOrCreateRecipient(user);
 
-            reviewService.saveReview(dto, recipient);
-            return ResponseEntity.ok(ApiResponse.success("บันทึกรีวิวเรียบร้อยแล้ว"));
-
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("ไม่สามารถบันทึกข้อมูลได้: " + e.getMessage()));
-        }
+        reviewService.saveReview(dto, recipient);
+        return ResponseEntity.ok(ApiResponse.success("บันทึกรีวิวเรียบร้อยแล้ว"));
     }
 
     @GetMapping("/check/{bookingId}")
@@ -55,8 +50,7 @@ public class ReviewController {
         List<ReviewDto> reviews = reviewService.getReviewsByFoodId(foodId);
 
         if (reviews == null || reviews.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("ไม่พบข้อมูล"));
+            throw new ApplicationException("ไม่พบข้อมูลรีวิว", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลรีวิวสำเร็จ", reviews));
     }
