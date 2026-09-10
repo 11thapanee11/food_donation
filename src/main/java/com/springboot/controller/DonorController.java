@@ -8,8 +8,6 @@ import com.springboot.dto.*;
 import com.springboot.exception.ApplicationException;
 import com.springboot.service.*;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.springboot.model.*;
 import java.util.*;
 

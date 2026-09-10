@@ -3,20 +3,18 @@ package com.springboot.service;
 import com.springboot.dto.LoginDto;
 import com.springboot.dto.MemberDto;
 import com.springboot.dto.RegisterDto;
+import com.springboot.exception.ApplicationException;
 import com.springboot.model.User;
 import com.springboot.repository.UserRepository;
 import com.springboot.util.JwtUtil;
 import com.springboot.util.PasswordUtil;
-import java.util.*;
 
-import java.security.NoSuchAlgorithmException;
-
-// import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
-    // @Autowired
+
     private final UserRepository userRepository;
 
     private final JwtUtil jwtUtil;
@@ -31,7 +29,7 @@ public class UserService {
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ไม่พบผู้ใช้งานด้วยอีเมลนี้: " + email));
+                .orElseThrow(() -> new ApplicationException("ไม่พบผู้ใช้งานด้วยอีเมลนี้: " + email, HttpStatus.NOT_FOUND));
     }
 
     public User authenticate(String authHeader) {
@@ -39,17 +37,17 @@ public class UserService {
         String idStr = jwtUtil.extractUserId(token);
 
         if (!jwtUtil.validateToken(token, idStr)) {
-            throw new IllegalArgumentException("Token ไม่ถูกต้องหรือหมดอายุ");
+            throw new ApplicationException("Token ไม่ถูกต้องหรือหมดอายุ", HttpStatus.UNAUTHORIZED);
         }
 
         Integer userId = Integer.parseInt(idStr);
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("ไม่พบสิทธิ์และข้อมูลบัญชีผู้ใช้ในระบบ"));
+                .orElseThrow(() -> new ApplicationException("ไม่พบสิทธิ์และข้อมูลบัญชีผู้ใช้ในระบบ", HttpStatus.NOT_FOUND));
     }
 
-    public boolean registerUser(RegisterDto request) {
+    public void registerUser(RegisterDto request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("ข้อมูลผู้ใช้ซ้ำกรุณา ลองใหม่อีกครั้ง"); // มี email ซ้ำ
+            throw new ApplicationException("ข้อมูลผู้ใช้ซ้ำ กรุณาลองใหม่อีกครั้ง", HttpStatus.CONFLICT);
         }
 
         try {
@@ -63,28 +61,25 @@ public class UserService {
             user.setPassword(hashedPassword);
 
             userRepository.save(user);
-            return true;
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new ApplicationException("เกิดข้อผิดพลาดภายในระบบ ไม่สามารถสมัครสมาชิกได้: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     public boolean login(LoginDto loginDto) {
         try {
-            String hashedPassword = PasswordUtil.getInstance()
-                    .createPassword(loginDto.getPassword(), loginDto.getEmail());
-            return userRepository.findByEmailAndPassword(
-                    loginDto.getEmail(), hashedPassword).isPresent();
+            String hashedPassword = passwordUtil.createPassword(loginDto.getPassword(), loginDto.getEmail());
+            return userRepository.findByEmailAndPassword(loginDto.getEmail(), hashedPassword).isPresent();
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new ApplicationException("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     public MemberDto getMemberProfile(Integer id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("ไม่พบข้อมูลรายละเอียดสมาชิก"));
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลรายละเอียดสมาชิก", HttpStatus.NOT_FOUND));
 
         return new MemberDto(
                 user.getFirstName(),
@@ -93,17 +88,19 @@ public class UserService {
                 user.getPhoneNumber());
     }
 
-    public boolean updateMemberProfile(String email, MemberDto updatedProfile) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
+    public void updateMemberProfile(String email, MemberDto updatedProfile) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูล", HttpStatus.NOT_FOUND));
+
+        try {
             user.setFirstName(updatedProfile.getFirstName());
             user.setLastName(updatedProfile.getLastName());
             user.setPhoneNumber(updatedProfile.getPhoneNumber());
             userRepository.save(user);
-            return true;
+        } catch (Exception e) {
+            throw new ApplicationException("ไม่สามารถแก้ไขข้อมูลได้ กรุณาลองใหม่อีกครั้ง" + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return false;
     }
 
 }

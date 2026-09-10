@@ -116,7 +116,7 @@ public class DonorService {
             donor.setDonorStatus(newStatus);
             donorRepository.save(donor);
         } catch (Exception e) {
-            throw new ApplicationException("ไม่สามารถแก้ไขสถานะบัญชีผู้ใช้งานได้: " + e.getMessage(),
+            throw new ApplicationException("ไม่สามารถแก้ไขสถานะบัญชีผู้ใช้งานได้ กรุณาลองใหม่อีกครั้ง" + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
