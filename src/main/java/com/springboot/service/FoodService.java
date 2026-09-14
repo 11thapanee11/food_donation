@@ -79,9 +79,6 @@ public class FoodService {
 
     public List<FoodDto> getFoodsByCategory(Integer foodCateId) {
         List<Food> foods = foodRepository.findByFoodCategory_FoodCateId(foodCateId);
-        if (foods == null || foods.isEmpty()) {
-            throw new ApplicationException("ไม่พบข้อมูลอาหารในหมวดหมู่", HttpStatus.NOT_FOUND);
-        }
         return foods.stream().map(this::mapToDto).toList();
     }
 

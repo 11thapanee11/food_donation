@@ -22,6 +22,7 @@ export default function Home() {
                 if (resData.success) {
                     const allOption = { id: 0, name: "ทั้งหมด" };
                     setCategories([allOption, ...resData.data]);
+                    
                 } else {
                     throw new Error(resData.message || "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
                 }
@@ -34,7 +35,8 @@ export default function Home() {
     useEffect(() => {
         // ดักจับ: ถ้า categories ยังโหลดไม่เสร็จ (มีความยาวแค่ 0) ให้แตกแถวออกไปก่อน ไม่ต้องยิง API
         if (categories.length === 0) return;
-
+        // console.log("Categories:", categories);
+        
         const token = localStorage.getItem("accessToken");
         let url = `${BASE_URL}/foods`;
 
@@ -82,21 +84,21 @@ export default function Home() {
         if (!dateString) return "-";
         const date = new Date(dateString);
 
-        // 1. แยกส่วนวันที่ (เช่น 25 มีนาคม 2569)
+        // แยกส่วนวันที่ (เช่น 25 มีนาคม 2569)
         const formattedDate = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', {
             day: 'numeric',      // ใช้ 'numeric' จะตัดเลข 0 นำหน้าออก เช่น "25" หรือ "5" (ดูเป็นธรรมชาติกว่า)
             month: 'long',
             year: 'numeric'
         }).format(date);
 
-        // 2. แยกส่วนเวลา (เช่น 16:43)
+        // แยกส่วนเวลา (เช่น 16:43)
         const formattedTime = new Intl.DateTimeFormat('th-TH', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false        // ใช้รูปแบบ 24 ชั่วโมง (00:00 - 23:59)
         }).format(date);
 
-        // 3. นำมาร้อยเรียงเข้าด้วยกันพร้อมใส่คำว่า "เวลา" และ "น."
+        // นำมาร้อยเรียงเข้าด้วยกันพร้อมใส่คำว่า "เวลา" และ "น."
         return `${formattedDate} ${formattedTime} น.`;
     };
 
@@ -123,6 +125,7 @@ export default function Home() {
                         <button
                             key={c.id}
                             onClick={() => setSelectedCategory(c.name)}
+                            aria-pressed={selectedCategory === c.name}
                             style={{
                                 ...styles.categoryBtn,
                                 ...(selectedCategory === c.name ? styles.categoryBtnActive : {})
@@ -186,7 +189,7 @@ export default function Home() {
                             </div>
                         ))
                     ) : (
-                        <p style={styles.noData}>ไม่พบรายการอาหาร</p>
+                        <p style={styles.noData}>ไม่พบผลลัพธ์ที่ตรงกับเงื่อนไขการค้นหา</p>
                     )}
                 </div>
             </div>

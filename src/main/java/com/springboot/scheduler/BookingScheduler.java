@@ -6,6 +6,8 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.springboot.model.*;
 import com.springboot.repository.BookingRepository;
@@ -14,6 +16,8 @@ import java.util.List;
 
 @Component
 public class BookingScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(BookingScheduler.class);
 
     private FoodRepository foodRepository;
     private BookingRepository bookingRepository;
@@ -25,7 +29,7 @@ public class BookingScheduler {
 
     @EventListener(ApplicationReadyEvent.class)
     public void checkExpiredFoodBookingOnStartup() {
-        System.out.println("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะการจองอาหารย้อนหลัง...");
+        log.info("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะการจองอาหารย้อนหลัง...");
         clearExpiredFoodBookings(); // สั่งให้ไปทำงานที่ฟังก์ชันหลักเช่นกัน
     }
 
@@ -46,7 +50,7 @@ public class BookingScheduler {
                     foodRepository.save(food);
                 }
             }
-            System.out.println("เคลียร์รายการจองที่อาหารหมดอายุไปแล้วจำนวน: " + stuckBookings.size() + " รายการ");
+            log.info("เคลียร์รายการจองที่อาหารหมดอายุไปแล้วจำนวน: {} รายการ", stuckBookings.size());
         }
     }
 }

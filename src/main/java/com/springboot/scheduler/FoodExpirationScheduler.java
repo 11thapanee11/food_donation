@@ -7,11 +7,14 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
 public class FoodExpirationScheduler {
+    private static final Logger log = LoggerFactory.getLogger(FoodExpirationScheduler.class);
 
     private FoodService foodService;
     private NotificationService notificationService;
@@ -24,14 +27,14 @@ public class FoodExpirationScheduler {
     // @Scheduled(cron = "0 0 * * * *")
     @Scheduled(cron = "0 */30 * * * *")
     public void checkExpiration() {
-        System.out.println("รอบการทำงาน Scheduler อัตโนมัติ (รายชั่วโมง): " + LocalDateTime.now());
+        log.info("รอบการทำงาน Scheduler อัตโนมัติ (ทุก 30 นาที): {}", LocalDateTime.now());
         runExpiryCheck();
     }
 
     // รันทันทีที่สตาร์ทแอปพลิเคชันเสร็จ เผื่อกรณีข้ามรอบเที่ยงคืนมาตอนปิดเครื่อง
     @EventListener(ApplicationReadyEvent.class)
     public void checkExpiredFoodOnStartup() {
-        System.out.println("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะอาหารย้อนหลัง...");
+        log.info("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะอาหารย้อนหลัง...");
         runExpiryCheck(); // สั่งให้ไปทำงานที่ฟังก์ชันหลักเช่นกัน
     }
 
@@ -43,7 +46,7 @@ public class FoodExpirationScheduler {
 
         // จัดการอาหารที่หมดอายุแล้ว
         List<Food> expiredFoods = foodService.getExpiredFoods(cutoffTime);
-        System.out.println("ตรวจพบอาหารหมดอายุจำนวน: " + expiredFoods.size() + " รายการ");
+        log.info("ตรวจพบอาหารหมดอายุจำนวน: {} รายการ", expiredFoods.size());
 
         for (Food food : expiredFoods) {
             foodService.updateFoodStatus(food.getFoodId(), "expired");
@@ -56,7 +59,7 @@ public class FoodExpirationScheduler {
 
         // จัดการอาหารที่ใกล้หมดอายุ ภายใน 24 ชม.
         List<Food> nearExpiryFoods = foodService.getNearExpiryFoods(cutoffTime, tomorrow);
-        System.out.println("ตรวจพบอาหารใกล้หมดอายุจำนวน: " + nearExpiryFoods.size() + " รายการ");
+        log.info("ตรวจพบอาหารใกล้หมดอายุจำนวน: {} รายการ", nearExpiryFoods.size());
 
         for (Food food : nearExpiryFoods) {
             notificationService.createExpirationNotification(
@@ -65,7 +68,7 @@ public class FoodExpirationScheduler {
                     "info");
         }
 
-        System.out.println("เสร็จสิ้นกระบวนการตรวจสอบอาหาร: " + LocalDateTime.now());
+        log.info("เสร็จสิ้นกระบวนการตรวจสอบอาหาร: {}", LocalDateTime.now());
     }
 
 }
