@@ -40,7 +40,7 @@ function Register() {
             newErrors.email = "กรุณากรอกอีเมล";
         } else if (formData.email.length > 155) {
             newErrors.email = "อีเมลยาวเกินกำหนด";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        } else if (!/^[A-Za-z0-9]+([._-][A-Za-z0-9]+)*@[A-Za-z0-9-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
             newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง";
         }
 
@@ -130,6 +130,7 @@ function Register() {
                             value={formData.firstName}
                             onChange={handleChange}
                             error={errors.firstName}
+                            style={styles.inputField}
                         />
                         <InputField
                             label="นามสกุล"
@@ -137,6 +138,7 @@ function Register() {
                             value={formData.lastName}
                             onChange={handleChange}
                             error={errors.lastName}
+                            style={styles.inputField}
                         />
                     </div>
 
@@ -189,8 +191,8 @@ function Register() {
 }
 
 // ---------------- Reusable Input Component ----------------
-const InputField = ({ label, name, type = "text", value, onChange, error }) => (
-    <div style={{ ...styles.inputBox, flex: "none" }}>
+const InputField = ({ label, name, type = "text", value, onChange, error, style }) => (
+    <div style={{ ...styles.inputBox, ...style }}>
         <p style={styles.label}>{label}</p>
         <input
             type={type}
@@ -231,6 +233,11 @@ const styles = {
     row: {
         display: "flex",
         gap: "20px",
+        alignItems: "stretch",
+    },
+    inputField: {
+        flex: 1,
+        minWidth: 0
     },
     inputBox: {
         flex: 1,

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// import '../css/login.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
 import { decodeToken } from '../utils/jwt.js';
@@ -17,7 +16,6 @@ export default function Login() {
             const userData = decodeToken(token);
 
             if (userData) {
-                // ดักเช็คจากคีย์ "isAdmin" ที่หลังบ้านส่งมาได้ตรงๆ เลยครับ!
                 if (userData.isAdmin === true) {
                     navigate('/admin-dashboard', { replace: true });
                 } else {
@@ -65,11 +63,9 @@ export default function Login() {
                 body: JSON.stringify({ email, password }),
             });
 
-            const resData = await response.json(); // เปลี่ยนชื่อเป็น resData เพื่อให้เห็นภาพโครงสร้างชัดเจน
+            const resData = await response.json();
 
             if (resData.success) {
-
-                // accessToken ออกมาจากชั้น resData.data
                 localStorage.setItem("accessToken", resData.data.accessToken);
 
                 Swal.fire({
@@ -154,7 +150,6 @@ export default function Login() {
     );
 }
 
-//ประกาศตัวแปร Styles
 const styles = {
     container: {
         width: "350px",

@@ -6,7 +6,6 @@ import com.springboot.model.*;
 import com.springboot.repository.*;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 import java.util.*;
 
 import org.springframework.http.HttpStatus;
@@ -17,13 +16,10 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final BookingRepository bookingRepository;
-    private final RecipientRepository recipientRepository;
 
-    public ReviewService(ReviewRepository reviewRepository, BookingRepository bookingRepository,
-            RecipientRepository recipientRepository) {
+    public ReviewService(ReviewRepository reviewRepository, BookingRepository bookingRepository) {
         this.reviewRepository = reviewRepository;
         this.bookingRepository = bookingRepository;
-        this.recipientRepository = recipientRepository;
     }
 
     public Review saveReview(ReviewDto dto, Recipient recipient) {

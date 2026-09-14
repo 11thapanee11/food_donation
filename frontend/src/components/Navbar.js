@@ -105,6 +105,7 @@ export default function Navbar() {
 
                     if (resData.success && Array.isArray(resData.data)) {
                         setNotifications(resData.data);
+                        localStorage.setItem("notifications", JSON.stringify(resData.data));
                     } else {
                         console.warn("ข้อมูลว่างเปล่าหรือเกิดข้อผิดพลาด:", resData.message);
                         setNotifications([]);
@@ -208,8 +209,12 @@ export default function Navbar() {
     };
 
     const handleBellClick = () => {
+        // setOpenNotifications(!openNotifications);
+        // setOpenDropdown(false);
         setOpenNotifications(!openNotifications);
-        setOpenDropdown(false);
+        if (!openNotifications) {
+            fetchNotifications();
+        }
     };
 
     // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร
@@ -223,7 +228,6 @@ export default function Navbar() {
     const isReceiveActive = currentPath === "/receive" || (currentPath === "/food-detail" && originPath === "/receive");
     const isMyFoodsActive = currentPath === "/my-foods" || currentPath === "/food-form";
     const isDashboardActive = currentPath === "/impact-dashboard";
-    // const isAuthActive = currentPath === "/login" || currentPath === "/register";
     const isAdminDashboardActive = currentPath === "/admin-dashboard";
     const isManageFoodsActive = currentPath === "/manage-foods" || (currentPath === "/food-detail" && originPath === "/manage-foods");
     const isManageUsersActive = currentPath === "/manage-users";
@@ -370,7 +374,7 @@ export default function Navbar() {
                             <img
                                 src={isAdmin ? profileAdmin : profileMember}
                                 alt="user avatar"
-                                style={styles.profileImg(openDropdown || isProfileActive) }
+                                style={styles.profileImg(openDropdown || isProfileActive)}
                             />
                         ) : (
                             <i className="material-icons" style={{
