@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 
 export default function ReportDetail() {
-    const { state } = useLocation();
     const location = useLocation();
     const { id } = location.state || {};
 
@@ -11,7 +10,17 @@ export default function ReportDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    const [isMobile, setIsMobile] = useState(
+        typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+    );
+
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (!id) return;
@@ -19,7 +28,7 @@ export default function ReportDetail() {
         const loadDataAndUpdateStatus = async () => {
             setLoading(true);
             try {
-                //ดึงข้อมูลรายงานก่อน
+                // ดึงข้อมูลรายงานก่อน
                 const reportRes = await fetch(`http://localhost:8082/report/${id}`);
                 const reportResponse = await reportRes.json();
                 let reportData = reportResponse.data;
@@ -76,7 +85,6 @@ export default function ReportDetail() {
 
         const result = await Swal.fire({
             title: `ยืนยันการ${actionLabel}?`,
-            // text: `รายการ: ${targetName || 'ไม่ระบุชื่อ'}`,
             icon: 'warning',
             iconColor: '#d33',
             showCancelButton: true,
@@ -150,8 +158,6 @@ export default function ReportDetail() {
 
     const formatPickupDate = (dateString) => {
         if (!dateString) return "-";
-
-        // แยกเอาเฉพาะปี-เดือน-วัน (ป้องกันกรณีหลังบ้านส่งมาพร้อมตัว T หรือเวลา)
         const cleanDate = dateString.split("T")[0];
         const date = new Date(cleanDate);
 
@@ -159,15 +165,13 @@ export default function ReportDetail() {
 
         return date.toLocaleDateString("th-TH", {
             day: "numeric",
-            month: "short", // ใช้ "short" จะได้ "มี.ค." ประหยัดพื้นที่ และดูมินิมอลขึ้นครับ
+            month: "short",
             year: "numeric"
         });
     };
 
-    // ฟังก์ชันตัดเลขวินาทีของเวลา 13:00
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
-        // เอาเฉพาะตำแหน่งชั่วโมงและนาที (5 ตัวแรก)
         return timeString.substring(0, 5);
     };
 
@@ -182,10 +186,10 @@ export default function ReportDetail() {
     if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
 
     return (
-        <div style={styles.container}>
-            <h2 style={styles.mainTitle}>รายละเอียดรายงานปัญหา</h2>
+        <div style={{ ...styles.container, padding: isMobile ? "15px 15px" : "20px 20px" }}>
+            <h2 style={{ ...styles.mainTitle, fontSize: isMobile ? "22px" : "30px" }}>รายละเอียดรายงานปัญหา</h2>
 
-            <div style={styles.contentWrapper}>
+            <div style={{ ...styles.contentWrapper, flexDirection: isMobile ? "column" : "row", gap: isMobile ? "20px" : "40px", padding: isMobile ? "0" : "0 20px" }}>
                 {/* ส่วนรูปภาพ */}
                 <div style={styles.imageSection}>
                     <img
@@ -198,7 +202,7 @@ export default function ReportDetail() {
                             <span style={{ color: "#ff8c00", fontWeight: "bold" }}>บริจาคโดย</span>
                             <span> {report.foodDetail?.donorName}</span>
                         </p>
-                        <span style={{ fontSize: "22px", fontWeight: "bold", color: "#333", margin: "0" }}>
+                        <span style={{ fontSize: isMobile ? "20px" : "22px", fontWeight: "bold", color: "#333", margin: "0" }}>
                             {report.foodDetail?.foodName}
                         </span>
                         <span style={{ fontSize: "17px", color: "#7c7c7c", margin: "0" }}>
@@ -286,30 +290,29 @@ export default function ReportDetail() {
 
                 {/* ส่วนรายละเอียดและการจัดการ */}
                 <div style={styles.actionSection}>
-                    <div style={styles.bookingDetailCard}>
+                    <div style={{ ...styles.bookingDetailCard, padding: isMobile ? "20px" : "30px" }}>
                         <h3 style={styles.bookingCardTitle}>รายละเอียดการจอง</h3>
                         <div style={styles.bookingBody}>
                             <p style={styles.bookingRow}>
-                                <span style={styles.bookingLabel}>จำนวนที่รับบริจาค :</span>
+                                <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>จำนวนที่รับบริจาค :</span>
                                 <span style={styles.bookingValue}> {report.bookingDetail?.bookingUnit}</span>
                             </p>
                             <p style={styles.bookingRow}>
-                                <span style={styles.bookingLabel}>น้ำหนักที่รับบริจาค :</span>
+                                <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>น้ำหนักที่รับบริจาค :</span>
                                 <span style={styles.bookingValue}>
                                     {report.bookingDetail?.bookingWeightKg} Kg
                                 </span>
                             </p>
                             <p style={styles.bookingRow}>
-                                <span style={styles.bookingLabel}>วันที่ทำการจอง :</span>
+                                <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>วันที่ทำการจอง :</span>
                                 <span style={styles.bookingValue}> {formatExpiryDate(report.bookingDetail?.bookingDate)} น.</span>
                             </p>
-
                         </div>
                     </div>
 
-                    <div style={styles.reportSection}>
+                    <div style={{ ...styles.reportSection, padding: isMobile ? "20px" : "30px" }}>
                         <div style={styles.reportContent}>
-                            <p style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '0' }}>รายงานปัญหาเกี่ยวกับบริจาคนี้</p>
+                            <p style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 'bold', marginTop: '0' }}>รายงานปัญหาเกี่ยวกับบริจาคนี้</p>
                             <p><strong>เหตุผลในการรายงาน</strong></p>
                             <p style={{ marginLeft: '10px' }}>{REASON_MAP[report.reason]}</p>
                             <p><strong>รายละเอียดเพิ่มเติม</strong></p>
@@ -325,19 +328,19 @@ export default function ReportDetail() {
                         {/* ปุ่มจัดการ */}
                         <div style={styles.buttonGroup}>
                             <button
-                                style={styles.btnDeactivate}
+                                style={{ ...styles.btnDeactivate, width: isMobile ? "100%" : "60%" }}
                                 onClick={() => handleAction('food')}
                             >
                                 ปิดการแสดงอาหารบริจาค
                             </button>
                             <button
-                                style={styles.btnSuspend}
+                                style={{ ...styles.btnSuspend, width: isMobile ? "100%" : "60%" }}
                                 onClick={() => handleAction('user')}
                             >
                                 ระงับบัญชีผู้ใช้งาน
                             </button>
                             <button
-                                style={styles.btnCancel}
+                                style={{ ...styles.btnCancel, width: isMobile ? "100%" : "60%" }}
                                 onClick={() => navigate(-1)}
                             >
                                 ยกเลิก
@@ -354,18 +357,14 @@ const styles = {
     container: {
         maxWidth: "1100px",
         margin: "0 auto",
-        padding: "20px 20px"
     },
     mainTitle: {
         color: "#333",
-        fontSize: "30px",
         fontWeight: "bold",
         marginBottom: "20px"
     },
     contentWrapper: {
         display: 'flex',
-        gap: '40px',
-        padding: '0 20px',
     },
     imageSection: { flex: 1 },
     actionSection: {
@@ -374,10 +373,9 @@ const styles = {
     reportSection: {
         border: "3px solid #ddd",
         borderRadius: "15px",
-        padding: "30px",
     },
     mainImage: { width: '100%', borderRadius: '15px' },
-    reportImage: { width: '100%', borderRadius: '15px', },
+    reportImage: { width: '100%', borderRadius: '15px' },
     buttonGroup: {
         marginTop: '20px',
         display: 'flex',
@@ -385,10 +383,8 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-
     },
     btnDeactivate: {
-        width: '60%',
         padding: '12px',
         backgroundColor: '#000',
         color: '#fff',
@@ -399,7 +395,6 @@ const styles = {
         fontSize: '16px'
     },
     btnSuspend: {
-        width: '60%',
         padding: '12px',
         backgroundColor: '#ff4d4f',
         color: '#fff',
@@ -410,7 +405,6 @@ const styles = {
         fontSize: '16px'
     },
     btnCancel: {
-        width: '60%',
         padding: '12px',
         backgroundColor: '#d9d9d9',
         border: 'none',
@@ -433,11 +427,11 @@ const styles = {
     icon: {
         fontSize: "30px",
         marginTop: "2px",
-        color: "#ff8c00"
+        color: "#ff8c00",
+        flexShrink: 0
     },
     infoLabel: {
         fontSize: "15px",
-        // fontWeight: "bold",
         color: "#000",
         marginBottom: "2px"
     },
@@ -449,7 +443,6 @@ const styles = {
     bookingDetailCard: {
         backgroundColor: "#ffe8cc",
         borderRadius: "15px",
-        padding: "30px",
         marginBottom: "20px",
         display: "flex",
         flexDirection: "column",
@@ -473,9 +466,8 @@ const styles = {
         alignItems: "center"
     },
     bookingLabel: {
-        // fontWeight: "bold",
         color: "#333333",
-        width: "160px"
+        flexShrink: 0
     },
     bookingValue: {
         color: "#328d7d",
