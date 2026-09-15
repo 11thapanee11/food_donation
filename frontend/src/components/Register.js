@@ -130,7 +130,7 @@ function Register() {
                             value={formData.firstName}
                             onChange={handleChange}
                             error={errors.firstName}
-                            style={styles.inputField}
+                            // style={styles.inputField}
                         />
                         <InputField
                             label="นามสกุล"
@@ -138,7 +138,7 @@ function Register() {
                             value={formData.lastName}
                             onChange={handleChange}
                             error={errors.lastName}
-                            style={styles.inputField}
+                            // style={styles.inputField}
                         />
                     </div>
 
@@ -221,7 +221,8 @@ const styles = {
         // minHeight: "100vh"
     },
     formSection: {
-        width: "500px"
+        width: "500px",
+        maxWidth: "450px"
     },
     title: {
         color: "#328d7d",
@@ -232,8 +233,9 @@ const styles = {
     },
     row: {
         display: "flex",
-        gap: "20px",
-        alignItems: "stretch",
+        gap: "15px", // ระยะห่างระหว่างช่องชื่อกับนามสกุล
+        width: "100%",
+        marginBottom: 0 // ปิด margin ตรงนี้ เพื่อไม่ให้ซ้ำซ้อน
     },
     inputField: {
         flex: 1,
@@ -241,12 +243,15 @@ const styles = {
     },
     inputBox: {
         flex: 1,
-        marginBottom: "0px"
+        marginBottom: "25px", // เว้นระยะด้านล่างเผื่อข้อความ Error
+        position: "relative"  // กำหนดเป็น Reference Container
     },
     label: {
         fontSize: "16px",
         display: "block",
+        marginTop: 0,
         marginBottom: "5px",
+        lineHeight: "1.2",
         color: "#333"
     },
     input: {
@@ -262,8 +267,9 @@ const styles = {
     errorText: {
         color: "red",
         fontSize: "13px",
-        marginTop: "4px",
-        display: "block"
+        position: "absolute",
+        bottom: "-22px",
+        left: "0"
     },
     button: {
         width: "250px",
@@ -283,6 +289,7 @@ const styles = {
     },
     image: {
         width: "390px",
+        maxWidth: "380px",
         borderRadius: "15px",
         // boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
         marginTop: "30px"

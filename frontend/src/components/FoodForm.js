@@ -497,7 +497,6 @@ export default function FoodForm() {
                 const response = await fetch(`http://localhost:8082/foods/${foodId}`, {
                     method: "DELETE",
                     headers: {
-                        // แก้ไขจุดที่ 1: เปลี่ยนชื่อคีย์จาก "token" เป็น "accessToken" ให้ตรงกับหน้า Login
                         "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
                         "Content-Type": "application/json"
                     }
@@ -507,13 +506,12 @@ export default function FoodForm() {
                     throw new Error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อลบข้อมูลได้");
                 }
 
-                const resData = await response.json(); // แกะโครงสร้าง ApiResponse ออกมา
+                const resData = await response.json();
 
-                // แก้ไขจุดที่ 2: ตรวจสอบความสำเร็จผ่านตัวแปร .success จากหลังบ้าน
                 if (resData.success) {
                     Swal.fire({
-                        title: "ลบสำเร็จ!",
-                        text: resData.message || "รายการอาหารถูกลบเรียบร้อยแล้ว",
+                        title: "รายการอาหารถูกลบเรียบร้อยแล้ว",
+                        // text: resData.message || "รายการอาหารถูกลบเรียบร้อยแล้ว",
                         icon: "success",
                         confirmButtonColor: "#2ecc71"
                     }).then(() => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { jwtDecode } from 'jwt-decode';
-import profileMember from '../assets/images/member_profile.jpg'
-import profileAdmin from '../assets/images/admin_profile.jpg'
+import profileMember from '../assets/images/member_profile.jpg';
+import profileAdmin from '../assets/images/admin_profile.jpg';
 import foodIcon from '../assets/images/new.png';
 import bookingIcon from '../assets/images/received.png';
 import cancelIcon from '../assets/images/cancel.png';
@@ -14,6 +14,7 @@ export default function Navbar() {
     const navigate = useNavigate();
     const [openDropdown, setOpenDropdown] = useState(false);
     const [openNotifications, setOpenNotifications] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
@@ -29,11 +30,16 @@ export default function Navbar() {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setOpenDropdown(false);
                 setOpenNotifications(false);
+                setIsMobileMenuOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [location.pathname]);
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -46,25 +52,20 @@ export default function Navbar() {
 
         if (token && token !== "undefined" && token !== "null") {
             try {
-                // ถอดรหัสสดๆ ข้างในนี้เลย ป้องกันการจำค่า null ข้ามเลเยอร์เรนเดอร์
                 const decoded = jwtDecode(token);
-
                 setUserId(decoded?.sub);
                 setIsAdmin(decoded?.isAdmin === true);
                 setIsLoggedIn(true);
 
-                // เรียกฟังก์ชันดึงการแจ้งเตือนหลังจากยืนยันแล้วว่าล็อกอินจริง
                 fetchNotifications();
-                fetchMyReadList(); // ดึงลิสต์ว่า "ฉัน" อ่านอันไหนไปแล้วบ้าง
+                fetchMyReadList();
             } catch (error) {
                 console.error("Token Decode Error:", error);
-                // หาก Token ผิดพลาด ล้างสถานะทิ้งเพื่อความปลอดภัย
                 setUserId(null);
                 setIsAdmin(false);
                 setIsLoggedIn(false);
             }
         } else {
-            // กรณีไม่มี Token
             setUserId(null);
             setIsAdmin(false);
             setIsLoggedIn(false);
@@ -133,7 +134,7 @@ export default function Navbar() {
             });
             const resData = await response.json();
             if (resData.success) {
-                setMyReadIds(resData.data); // เซ็ตค่า เช่น [1, 2] เข้าไปใน State
+                setMyReadIds(resData.data);
             }
         } catch (error) {
             console.error("ดึงสถานะการอ่านล้มเหลว:", error);
@@ -147,7 +148,6 @@ export default function Navbar() {
         const token = localStorage.getItem("accessToken");
 
         try {
-            // ยิงบอกหลังบ้านตรงๆ ว่า "ฉัน (ตามตั๋ว JWT) ได้อ่านแจ้งเตือนไอดีนี้แล้วนะ"
             const response = await fetch(`http://localhost:8082/notifications/read/${n.id}`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` }
@@ -155,7 +155,6 @@ export default function Navbar() {
 
             const resData = await response.json();
             if (resData.success) {
-                // เพิ่มไอดีที่เพิ่งอ่านเข้าไปใน State ทันที จุดแดงจะได้ดับเลยไม่ต้องรอรีโหลด
                 setMyReadIds(prev => [...prev, n.id]);
             }
         } catch (error) {
@@ -164,7 +163,6 @@ export default function Navbar() {
 
         setOpenNotifications(false);
 
-        // navigate('/food-detail', { state: { id: targetId, fromPage: '/' } });
         if (n.type === "food") {
             navigate('/food-detail', { state: { id: targetId, fromPage: '/' } });
         } else {
@@ -190,6 +188,7 @@ export default function Navbar() {
         localStorage.removeItem("isAdmin");
         localStorage.removeItem("userId");
         setOpenDropdown(false);
+        setIsMobileMenuOpen(false);
         navigate("/login");
     };
 
@@ -200,6 +199,7 @@ export default function Navbar() {
         warning: expiredIcon,
         info: timeIcon
     };
+
     const headerMap = {
         food: 'มีอาหารใหม่ใกล้คุณ!',
         booking: 'มีผู้จองอาหาร!',
@@ -209,15 +209,13 @@ export default function Navbar() {
     };
 
     const handleBellClick = () => {
-        // setOpenNotifications(!openNotifications);
-        // setOpenDropdown(false);
         setOpenNotifications(!openNotifications);
+        setOpenDropdown(false);
         if (!openNotifications) {
             fetchNotifications();
         }
     };
 
-    // ดึงข้อมูลต้นทางจากสถานะหน้าก่อนหน้า เพื่อใช้จัดการตอนเปิดดูหน้ารายละเอียดอาหาร
     const currentPath = location.pathname;
     const originPath = location.state?.fromPage || '';
 
@@ -234,218 +232,270 @@ export default function Navbar() {
     const isReportActive = currentPath === "/manage-report" || (currentPath === "/report-detail" && originPath === "/manage-report");
 
     return (
-        <nav style={styles.loginHeader}>
-            {/* ฝั่งซ้าย: Logo */}
-            <div style={styles.logoSection}>
-                <i className="material-icons-outlined" style={{ fontSize: "28px" }}>volunteer_activism</i>
-                <span style={{ fontSize: "18px" }}>แพลตฟอร์มบริหารจัดการการบริจาคอาหาร</span>
-            </div>
+        <>
+            <style>
+                {`
+                    .nav-menu-container {
+                        display: flex;
+                        gap: 24px;
+                        align-items: center;
+                    }
 
-            {/* ตรงกลาง: Menu Links */}
-            <div style={styles.menuSection}>
-                {!isAdmin && (
-                    <>
-                        <Link to="/" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
-                        <Link to="/ranking" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
-                        <Link to="/map" style={isMapActive ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
-                    </>
-                )}
-                {isLoggedIn && (
-                    <>
-                        {isAdmin ? (
-                            // --- กรณีเป็นแอดมิน: แสดงเมนู Admin เท่านั้น ---
-                            <>
-                                <Link to="/admin-dashboard" style={isAdminDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Dashboard</Link>
-                                <Link to="/manage-foods" style={isManageFoodsActive ? styles.activeMenu : styles.inactiveMenu}>รายการอาหาร</Link>
-                                <Link to="/manage-users" style={isManageUsersActive ? styles.activeMenu : styles.inactiveMenu}>จัดการผู้ใช้</Link>
-                                <Link to="/manage-report" style={isReportActive ? styles.activeMenu : styles.inactiveMenu}>รายงานปัญหา</Link>
-                            </>
-                        ) : (
-                            // --- กรณีเป็น User ปกติ: แสดงเมนู User ---
-                            <>
-                                <Link to="/receive" style={isReceiveActive ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
-                                <Link to="/my-foods" style={isMyFoodsActive ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
-                                <Link to="/impact-dashboard" style={isDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
-                            </>
-                        )}
+                    .mobile-toggle-btn {
+                        display: none;
+                        background: none;
+                        border: none;
+                        color: #ff8c00;
+                        cursor: pointer;
+                        padding: 0;
+                    }
 
-                    </>
+                    /* สไตล์สำหรับปุ่มเมนู เพื่อไม่ให้ขึ้นบรรทัดใหม่ */
+                    .nav-link-item {
+                        white-space: nowrap;
+                        display: inline-flex;
+                        align-items: center;
+                        height: 100%;
+                        font-weight: normal;
+                    }
 
-                )}
-            </div>
+                    @media (max-width: 1000px) {
+                        .mobile-toggle-btn {
+                            display: flex;
+                            align-items: center;
+                        }
 
-            {/* ฝั่งขวา: Icons & Dropdowns */}
-            <div ref={dropdownRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "20px" }}>
+                        /* ขยายขนาดและยกเลิกการตัดคำสำหรับ Mobile */
+                        .nav-logo-text {
+                            font-size: 16px !important;
+                            max-width: none !important;
+                            white-space: normal !important;
+                        }
 
-                {isLoggedIn && !isAdmin && (
+                        .nav-menu-container {
+                            display: ${isMobileMenuOpen ? "flex" : "none"};
+                            flex-direction: column;
+                            position: absolute;
+                            top: 100%;
+                            left: 0;
+                            right: 0;
+                            background-color: #fffcf8;
+                            padding: 20px;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                            gap: 15px !important;
+                            align-items: flex-start !important;
+                            z-index: 999;
+                        }
+
+                        .notification-dropdown {
+                            width: 290px !important;
+                            right: -60px !important;
+                        }
+                    }
+                `}
+            </style>
+
+            <nav ref={dropdownRef} style={styles.loginHeader}>
+                {/* ฝั่งซ้าย: Logo & Title */}
+                <div style={styles.logoSection}>
+                    <i className="material-icons-outlined" style={{ fontSize: "28px" }}>volunteer_activism</i>
+                    <span className="nav-logo-text" style={styles.logoText}>
+                        แพลตฟอร์มบริหารจัดการการบริจาคอาหาร
+                    </span>
+                </div>
+
+                {/* ตรงกลาง: Menu Links */}
+                <div className="nav-menu-container">
+                    {!isAdmin && (
+                        <>
+                            <Link to="/" className="nav-link-item" style={isHomeActive ? styles.activeMenu : styles.inactiveMenu}>หน้าหลัก</Link>
+                            <Link to="/ranking" className="nav-link-item" style={isRankingActive ? styles.activeMenu : styles.inactiveMenu}>อันดับ</Link>
+                            <Link to="/map" className="nav-link-item" style={isMapActive ? styles.activeMenu : styles.inactiveMenu}>แผนที่</Link>
+                        </>
+                    )}
+                    {isLoggedIn && (
+                        <>
+                            {isAdmin ? (
+                                <>
+                                    <Link to="/admin-dashboard" className="nav-link-item" style={isAdminDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Dashboard</Link>
+                                    <Link to="/manage-foods" className="nav-link-item" style={isManageFoodsActive ? styles.activeMenu : styles.inactiveMenu}>รายการอาหาร</Link>
+                                    <Link to="/manage-users" className="nav-link-item" style={isManageUsersActive ? styles.activeMenu : styles.inactiveMenu}>จัดการผู้ใช้</Link>
+                                    <Link to="/manage-report" className="nav-link-item" style={isReportActive ? styles.activeMenu : styles.inactiveMenu}>รายงานปัญหา</Link>
+                                </>
+                            ) : (
+                                <>
+                                    <Link to="/receive" className="nav-link-item" style={isReceiveActive ? styles.activeMenu : styles.inactiveMenu}>รับบริจาค</Link>
+                                    <Link to="/my-foods" className="nav-link-item" style={isMyFoodsActive ? styles.activeMenu : styles.inactiveMenu}>บริจาคของฉัน</Link>
+                                    <Link to="/impact-dashboard" className="nav-link-item" style={isDashboardActive ? styles.activeMenu : styles.inactiveMenu}>Impact Dashboard</Link>
+                                </>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* ฝั่งขวา: Notification, Profile, Hamburger Menu */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+
+                    {isLoggedIn && !isAdmin && (
+                        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                            <button style={styles.iconBase} onClick={handleBellClick}>
+                                <span className="material-icons" style={{
+                                    fontSize: "26px",
+                                    color: openNotifications ? "#ff8c00" : "#737373"
+                                }}>
+                                    notifications
+                                </span>
+                                {notifications.filter(n => !isRead(n.id)).length > 0 && (
+                                    <span style={styles.redDot}></span>
+                                )}
+                            </button>
+
+                            {openNotifications && (
+                                <div className="notification-dropdown" style={styles.notificationBadge}>
+                                    <p style={styles.notificationTitle}>การแจ้งเตือน</p>
+                                    {loading && (
+                                        <div style={{ padding: '15px', textAlign: 'center', color: '#ff8c00' }}>
+                                            <p style={{ fontSize: '14px' }}>กำลังโหลดข้อมูล...</p>
+                                        </div>
+                                    )}
+
+                                    {!loading && (
+                                        notifications.length > 0 ? (
+                                            notifications.map((n) => {
+                                                const readStatus = isRead(n.id);
+                                                return (
+                                                    <button
+                                                        key={n.id}
+                                                        type="button"
+                                                        onClick={() => handleNotificationClick(n)}
+                                                        style={styles.notificationItem}
+                                                    >
+                                                        <div style={{ marginRight: '10px', marginTop: '2px' }}>
+                                                            <img src={iconMap[n.type]} alt={n.type} style={{ width: '30px', height: '30px' }} />
+                                                        </div>
+                                                        <div style={{ flex: 1 }}>
+                                                            <p style={{ margin: 0, fontSize: '15px', fontWeight: readStatus ? '500' : 'bold', color: '#ff8c00' }}>
+                                                                {headerMap[n.type]}
+                                                            </p>
+                                                            <p style={{ margin: '4px 0', fontSize: '13px', color: '#555', fontWeight: readStatus ? '500' : 'bold' }}>
+                                                                {n.message}
+                                                            </p>
+                                                            <p style={{ margin: 0, color: '#aaa', fontSize: '11px', fontWeight: readStatus ? '500' : 'bold' }}>
+                                                                {new Date(n.date).toLocaleString('th-TH', {
+                                                                    year: 'numeric', month: 'long', day: 'numeric',
+                                                                    hour: '2-digit', minute: '2-digit'
+                                                                })} น.
+                                                            </p>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#888", textAlign: "center", padding: '20px' }}>
+                                                ยังไม่มีการแจ้งเตือน
+                                            </p>
+                                        )
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Profile Button */}
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                        <button style={styles.iconBase}
-                            onClick={handleBellClick}
-                        // onClick={toggleNotifications}
-                        >
-                            <span className="material-icons" style={{
-                                fontSize: "26px",
-                                color: openNotifications ? "#ff8c00" : "#737373"
-                            }}>
-                                notifications
-                            </span>
-                            {notifications.filter(n => !isRead(n.id)).length > 0 && (
-                                <span style={{
-                                    position: "absolute",
-                                    top: "0px",
-                                    right: "2px",
-                                    width: "10px",
-                                    height: "10px",
-                                    backgroundColor: "red",
-                                    borderRadius: "50%",
-                                    border: "2px solid white" // ช่วยให้จุดดูเด่นขึ้นเมื่อวางบน background
-                                }}></span>
+                        <button onClick={handleIconClick} style={styles.iconBase}>
+                            {isLoggedIn ? (
+                                <img
+                                    src={isAdmin ? profileAdmin : profileMember}
+                                    alt="user avatar"
+                                    style={styles.profileImg(openDropdown || isProfileActive)}
+                                />
+                            ) : (
+                                <i className="material-icons" style={{
+                                    fontSize: "28px",
+                                    color: (location.pathname === "/login" || location.pathname === "/register") ? "#ff8c00" : "#737373"
+                                }}>
+                                    account_circle
+                                </i>
                             )}
                         </button>
 
-
-                        {openNotifications && (
-                            <div style={styles.notificationBadge}>
-                                <p style={styles.notificationTitle}>การแจ้งเตือน</p>
-                                {loading && (
-                                    <div style={{ padding: '15px', textAlign: 'center', color: '#ff8c00' }}>
-                                        <p style={{ fontSize: '14px' }}>กำลังโหลดข้อมูล...</p>
-                                    </div>
+                        {isLoggedIn && openDropdown && (
+                            <div style={styles.profileDropdown}>
+                                {!isAdmin && (
+                                    <Link
+                                        to="/profile"
+                                        style={styles.dropdownItem}
+                                        onClick={() => setOpenDropdown(false)}
+                                    >
+                                        ดูโปรไฟล์
+                                    </Link>
                                 )}
-
-                                {!loading && (
-                                    notifications.length > 0 ? (
-                                        notifications.map((n) => {
-                                            // เรียกใช้ฟังก์ชันตรวจสอบสถานะอ่าน
-                                            const readStatus = isRead(n.id);
-
-                                            return (
-                                                <button
-                                                    key={n.id}
-                                                    type="button"
-                                                    onClick={() => handleNotificationClick(n)}
-                                                    style={{
-                                                        ...styles.notificationItem,
-                                                        display: 'flex',
-                                                        alignItems: 'flex-start',
-                                                        padding: '0 22px 12px',
-                                                        cursor: 'pointer',
-                                                        width: '100%',
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        textAlign: 'left'
-                                                    }}
-                                                >
-                                                    <div style={{ marginRight: '10px', marginTop: '2px' }}>
-                                                        <img src={iconMap[n.type]} alt={n.type} style={{ width: '30px', height: '30px' }} />
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        {/* เปลี่ยนจาก n.isRead เป็น readStatus */}
-                                                        <p style={{ margin: 0, fontSize: '16px', fontWeight: readStatus ? '500' : 'bold', color: '#ff8c00' }}>
-                                                            {headerMap[n.type]}
-                                                        </p>
-                                                        <p style={{ margin: '4px 0', fontSize: '14px', color: '#555', fontWeight: readStatus ? '500' : 'bold' }}>
-                                                            {n.message}
-                                                        </p>
-                                                        <p style={{ margin: 0, color: '#aaa', fontSize: '11px', fontWeight: readStatus ? '500' : 'bold' }}>
-                                                            {new Date(n.date).toLocaleString('th-TH', {
-                                                                year: 'numeric', month: 'long', day: 'numeric',
-                                                                hour: '2-digit', minute: '2-digit'
-                                                            })} น.
-                                                        </p>
-                                                    </div>
-                                                </button>
-                                            );
-                                        })
-                                    ) : (
-                                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#888", textAlign: "center", padding: '20px' }}>
-                                            ยังไม่มีการแจ้งเตือน
-                                        </p>
-                                    )
-                                )}
+                                <button
+                                    onClick={handleLogout}
+                                    style={{ ...styles.dropdownItem, ...styles.logoutItem }}
+                                >
+                                    ล็อกเอ้าท์
+                                </button>
                             </div>
                         )}
                     </div>
-                )}
 
-                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <button onClick={handleIconClick} style={styles.iconBase}>
-                        {isLoggedIn ? (
-                            <img
-                                src={isAdmin ? profileAdmin : profileMember}
-                                alt="user avatar"
-                                style={styles.profileImg(openDropdown || isProfileActive)}
-                            />
-                        ) : (
-                            <i className="material-icons" style={{
-                                fontSize: "28px",
-                                color: (location.pathname === "/login" || location.pathname === "/register") ? "#ff8c00" : "#737373"
-                            }}>
-                                account_circle
-                            </i>
-                        )}
+                    {/* Hamburger Button */}
+                    <button
+                        className="mobile-toggle-btn"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        aria-label="Toggle navigation"
+                    >
+                        <i className="material-icons" style={{ fontSize: "30px" }}>
+                            {isMobileMenuOpen ? "close" : "menu"}
+                        </i>
                     </button>
-
-                    {isLoggedIn && openDropdown && (
-                        <div style={styles.profileDropdown}>
-                            {!isAdmin && (
-                                <Link
-                                    to="/profile"
-                                    style={styles.dropdownItem}
-                                    onClick={() => setOpenDropdown(false)}
-                                >
-                                    ดูโปรไฟล์
-                                </Link>
-                            )}
-                            <button
-                                onClick={handleLogout}
-                                style={{ ...styles.dropdownItem, ...styles.logoutItem }}
-                            >
-                                ล็อกเอ้าท์
-                            </button>
-                        </div>
-                    )}
                 </div>
-            </div>
-        </nav>
+            </nav>
+        </>
     );
 }
 
 const styles = {
     loginHeader: {
         backgroundColor: "#fffcf8",
-        padding: "15px 30px",
+        padding: "12px 20px",
         fontWeight: "bold",
         color: "#ff8c00",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: "20px",
         boxShadow: "0 3px 10px #0000001a",
-        position: "relative"
+        position: "relative",
+        zIndex: 1000,
+
     },
     logoSection: {
         display: "flex",
         alignItems: "center",
-        gap: "20px",
-        color: "#ff8c00"
+        gap: "10px",
+        color: "#ff8c00",
+        flexShrink: 0
     },
-    menuSection: {
-        display: "flex",
-        gap: "40px",
-        cursor: "pointer",
-        fontWeight: "500"
+    logoText: {
+        fontSize: "18px",
+        whiteSpace: "nowrap"
     },
     activeMenu: {
         color: "#ff8c00",
         textDecoration: "none",
-        paddingBottom: "1px",
-        boxShadow: "0 3px 0 #ff8c00"
+        paddingBottom: "2px",
+        borderBottom: "3px solid #ff8c00",
+        fontWeight: "normal"
     },
     inactiveMenu: {
         color: "#737373",
         textDecoration: "none",
-        paddingBottom: "1px"
+        paddingBottom: "2px",
+        fontWeight: "500",
+        borderBottom: "3px solid transparent", // เพิ่มเส้นใต้ล่องหนกันข้อความขยับ
+        fontWeight: "normal"
     },
     iconBase: {
         fontSize: "28px",
@@ -456,30 +506,45 @@ const styles = {
         display: "flex",
         alignItems: "center"
     },
+    redDot: {
+        position: "absolute",
+        top: "0px",
+        right: "2px",
+        width: "10px",
+        height: "10px",
+        backgroundColor: "red",
+        borderRadius: "50%",
+        border: "2px solid white"
+    },
     notificationBadge: {
         position: "absolute",
         top: "40px",
         right: "0px",
-        width: "380px",
-        maxHeight: "500px",
+        width: "350px",
+        maxHeight: "450px",
         overflowY: "auto",
         backgroundColor: "#fff",
         borderRadius: "8px",
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         padding: "10px",
-        zIndex: 1000
+        zIndex: 1001
     },
     notificationTitle: {
-        padding: "10px 20px 5px 20px",
+        padding: "5px 15px",
         color: "#328d7d",
-        fontSize: "22px",
+        fontSize: "18px",
         fontWeight: "700",
-        margin: "10px 0px"
+        margin: "5px 0"
     },
     notificationItem: {
-        padding: "0px 20px 10px 20px",
-        // borderBottom: "1px solid #f0f0f0",
-        cursor: "pointer"
+        display: 'flex',
+        alignItems: 'flex-start',
+        padding: '8px 15px',
+        cursor: 'pointer',
+        width: '100%',
+        background: 'none',
+        border: 'none',
+        textAlign: 'left'
     },
     profileDropdown: {
         position: "absolute",
@@ -488,23 +553,24 @@ const styles = {
         backgroundColor: "#fff",
         boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
         borderRadius: "5px",
-        width: "150px",
-        zIndex: 1000,
-        overflow: "hidden"
+        width: "140px",
+        zIndex: 9999,
+        overflow: "hidden",
+        boxSizing: "border-box"
     },
     dropdownItem: {
         display: "block",
         padding: "10px",
         width: "100%",
         textAlign: "left",
-        fontSize: "16px",
+        fontSize: "15px",
         fontWeight: "normal",
         color: "#333",
         textDecoration: "none",
         background: "none",
         border: "none",
         cursor: "pointer",
-        transition: "0.2s"
+        transition: "0.2s",
     },
     logoutItem: {
         color: "#e74c3c",
@@ -515,7 +581,7 @@ const styles = {
         height: "32px",
         borderRadius: "50%",
         objectFit: "cover",
-        border: isActive ? "2px solid #ff8c00" : "2px solid transparent",
+        boxShadow: isActive ? "0 0 0 2px #ff8c00" : "none",
         transition: "0.2s"
     })
 };
