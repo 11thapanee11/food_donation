@@ -10,7 +10,17 @@ export default function MyFoods() {
     const [myFoods, setMyFoods] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [isMobile, setIsMobile] = useState(
+        typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+    );
+
     const BASE_URL = "http://localhost:8082";
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
@@ -47,7 +57,6 @@ export default function MyFoods() {
             .finally(() => setLoading(false));
     }, []);
 
-    // ฟังก์ชันฟอร์แมตวันหมดอายุ เช่น: 25 มีนาคม 2569 เวลา 13:00 น.
     const formatExpiryDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -67,58 +76,29 @@ export default function MyFoods() {
         return `${formattedDate} เวลา ${formattedTime}`;
     };
 
-    // ฟังก์ชันแปลงวันที่เริ่ม-จบ ให้เป็นแบบไทยย่อ เช่น 20 มี.ค. 2569
     const formatPickupDate = (dateString) => {
         if (!dateString) return "-";
-
-        // แยกเอาเฉพาะปี-เดือน-วัน (ป้องกันกรณีหลังบ้านส่งมาพร้อมตัว T หรือเวลา)
         const cleanDate = dateString.split("T")[0];
         const date = new Date(cleanDate);
-
         if (isNaN(date.getTime())) return dateString;
 
         return date.toLocaleDateString("th-TH", {
             day: "numeric",
-            month: "short", // ใช้ "short" จะได้ "มี.ค." ประหยัดพื้นที่ และดูมินิมอลขึ้นครับ
+            month: "short",
             year: "numeric"
         });
     };
 
-    // ฟังก์ชันตัดเลขวินาทีของเวลา เช่น 13:00
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
-        // เอาเฉพาะตำแหน่งชั่วโมงและนาที (5 ตัวแรก)
         return timeString.substring(0, 5);
     };
 
-    // สร้างตารางจับคู่
-    const STATUS_TEXTS = {
-        available: "เปิดให้รับบริจาค",
-        closed: "ปิดให้รับบริจาค",
-        suspended: "ถูกระงับ",
-        expired: "หมดอายุ"
-    };
     const STATUS_CONFIG = {
-        available: {
-            text: "เปิดให้รับบริจาค",
-            color: "#2e7d32",
-            bgColor: "#e8f5e9"
-        },
-        closed: {
-            text: "ปิดให้รับบริจาค",
-            color: "#707070",
-            bgColor: "#f0f0f0"
-        },
-        disable: {
-            text: "ถูกระงับ",
-            color: "#c41414",
-            bgColor: "#ffc8c8"
-        },
-        expired: {
-            text: "หมดอายุ",
-            color: "#37474f",
-            bgColor: "#eceff1"
-        }
+        available: { text: "เปิดให้รับบริจาค", color: "#2e7d32", bgColor: "#e8f5e9" },
+        closed: { text: "ปิดให้รับบริจาค", color: "#707070", bgColor: "#f0f0f0" },
+        disable: { text: "ถูกระงับ", color: "#c41414", bgColor: "#ffc8c8" },
+        expired: { text: "หมดอายุ", color: "#37474f", bgColor: "#eceff1" }
     };
 
     const handleCreateClick = async () => {
@@ -152,26 +132,29 @@ export default function MyFoods() {
         }
     };
 
-
     const renderContent = () => {
-        if (loading) {
-            return <p style={styles.emptyText}>กำลังโหลดข้อมูล...</p>;
-        }
-
-        if (!myFoods || myFoods.length === 0) {
-            return <p style={styles.emptyText}>ไม่พบข้อมูลอาหารบริจาค</p>;
-        }
+        if (loading) return <p style={styles.emptyText}>กำลังโหลดข้อมูล...</p>;
+        if (!myFoods || myFoods.length === 0) return <p style={styles.emptyText}>ไม่พบข้อมูลอาหารบริจาค</p>;
 
         return (
             <div style={styles.list}>
                 {[...myFoods].reverse().map((food) => {
-
-                    const foodStatusText = STATUS_TEXTS[food.foodStatus] || food.foodStatus || "ไม่ระบุ";
-
                     return (
-                        <div key={food.foodId} style={styles.card}>
-                            {/* ฝั่งซ้าย: รูปภาพอาหาร */}
-                            <div style={styles.imageWrapper}>
+                        <div 
+                            key={food.foodId} 
+                            style={{
+                                ...styles.card,
+                                flexDirection: isMobile ? "column" : "row",
+                                alignItems: isMobile ? "stretch" : "stretch"
+                            }}
+                        >
+                            <div 
+                                style={{
+                                    ...styles.imageWrapper,
+                                    width: isMobile ? "100%" : "220px",
+                                    height: isMobile ? "200px" : "220px"
+                                }}
+                            >
                                 <img
                                     src={`${BASE_URL}${food.foodImage}`}
                                     alt={food.foodName}
@@ -179,23 +162,27 @@ export default function MyFoods() {
                                 />
                             </div>
 
-                            {/* ฝั่งขวา: รายละเอียดข้อความ */}
-                            <div style={styles.details}>
+                            <div 
+                                style={{
+                                    ...styles.details,
+                                    paddingLeft: isMobile ? "0px" : "25px",
+                                    marginTop: isMobile ? "15px" : "0px"
+                                }}
+                            >
                                 <div style={styles.rowBetween}>
-                                    <h3 style={styles.foodName}>{food.foodName}</h3>
-                                    {/* <span style={styles.statusBadge}>
-                                        {foodStatusText}
-                                    </span> */}
+                                    <h3 style={{ ...styles.foodName, fontSize: isMobile ? "20px" : "24px" }}>
+                                        {food.foodName}
+                                    </h3>
                                     <span
                                         style={{
                                             ...styles.statusBadge,
                                             backgroundColor: food.foodStatus && STATUS_CONFIG[food.foodStatus]
                                                 ? STATUS_CONFIG[food.foodStatus].bgColor
-                                                : "#eceff1", // สีเทาอ่อนเผื่อไว้กันพัง
-
+                                                : "#eceff1",
                                             color: food.foodStatus && STATUS_CONFIG[food.foodStatus]
                                                 ? STATUS_CONFIG[food.foodStatus].color
                                                 : "#37474f",
+                                            whiteSpace: "nowrap"
                                         }}
                                     >
                                         {STATUS_CONFIG[food.foodStatus]?.text || "ไม่ระบุสถานะ"}
@@ -203,41 +190,49 @@ export default function MyFoods() {
                                 </div>
 
                                 <div style={styles.infoContainer}>
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            calendar_clock
-                                        </span>
-                                        <span style={styles.label}>วันหมดอายุ</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>
+                                                calendar_clock
+                                            </span>
+                                            <span style={styles.label}>วันหมดอายุ</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "32px" : "0", whiteSpace: "nowrap" }}>
                                             {formatExpiryDate(food.expiryDate)} น.
                                         </span>
                                     </div>
 
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            package_2
-                                        </span>
-                                        <span style={styles.label}>จำนวนที่บริจาค และ คงเหลือ</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>
+                                                package_2
+                                            </span>
+                                            <span style={styles.label}>จำนวนที่บริจาค และ คงเหลือ</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "32px" : "0", whiteSpace: "nowrap" }}>
                                             {food.totalUnit} : {food.remainingUnit}
                                         </span>
                                     </div>
 
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            schedule
-                                        </span>
-                                        <span style={styles.label}>วันและเวลาที่สามารถรับได้</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>
+                                                schedule
+                                            </span>
+                                            <span style={styles.label}>วันและเวลาที่สามารถรับได้</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "32px" : "0", whiteSpace: "normal" }}>
                                             {formatPickupDate(food.pickupDateStart)} - {formatPickupDate(food.pickupDateEnd)} &nbsp; {formatPickupTime(food.pickupStartTime)} น. - {formatPickupTime(food.pickupEndTime)} น.
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* ปุ่มกดดูรายละเอียด */}
                                 <button
-                                    style={styles.detailBtn}
-                                    // onClick={() => navigate(`/food-detail/${food.foodId}`)}
+                                    style={{
+                                        ...styles.detailBtn,
+                                        width: isMobile ? "100%" : "fit-content",
+                                        textAlign: "center"
+                                    }}
                                     onClick={() => navigate('/food-form', { state: { id: food.foodId } })}
                                 >
                                     ดูรายละเอียด
@@ -252,24 +247,33 @@ export default function MyFoods() {
 
     return (
         <div style={styles.page}>
-            <div style={styles.container}>
-                {/* Header Section */}
-                <div style={styles.header}>
-                    <h1 style={styles.title}>รายการอาหารบริจาคของฉัน</h1>
+            <div style={{ ...styles.container, padding: isMobile ? "15px" : "20px" }}>
+                <div 
+                    style={{
+                        ...styles.header,
+                        flexDirection: isMobile ? "column" : "row",
+                        alignItems: isMobile ? "flex-start" : "center",
+                        gap: isMobile ? "15px" : "0"
+                    }}
+                >
+                    <h1 style={{ ...styles.title, fontSize: isMobile ? "22px" : "30px", marginBottom: "0px" }}>
+                        รายการอาหารบริจาคของฉัน
+                    </h1>
                     <button
-                        style={styles.createBtn}
-                        // onClick={() => navigate("/food-form")}
+                        style={{
+                            ...styles.createBtn,
+                            width: isMobile ? "100%" : "auto",
+                            justifyContent: "center",
+                            padding: isMobile ? "10px 20px" : "8px 40px"
+                        }}
                         onClick={handleCreateClick}
                     >
-                        <span style={{ fontSize: "20px", marginRight: "8px" }}  >+</span>{" "}
+                        <span style={{ fontSize: "20px", marginRight: "8px" }}>+</span>
                         สร้างบริจาค
                     </button>
                 </div>
 
-                {/* Content Section */}
-                {/* Content Section เรียกใช้งานฟังก์ชันอิสระด้านบน */}
                 {renderContent()}
-
             </div>
         </div>
     );
@@ -279,26 +283,21 @@ const styles = {
     container: {
         maxWidth: "1100px",
         margin: "0 auto",
-        padding: "20px 20px"
     },
     header: {
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
         marginBottom: "30px",
     },
     title: {
         color: "#328d7d",
-        fontSize: "30px",
         fontWeight: "bold",
-        marginBottom: "15px",
     },
     createBtn: {
         backgroundColor: "#ff8c00",
         color: "#fff",
         border: "none",
         borderRadius: "12px",
-        padding: "8px 40px",
         fontSize: "17px",
         cursor: "pointer",
         display: "flex",
@@ -317,12 +316,8 @@ const styles = {
         borderRadius: "20px",
         padding: "20px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
-        alignItems: "stretch",
-        // marginTop: "0px"
     },
     imageWrapper: {
-        width: "220px",
-        height: "220px",
         flexShrink: 0,
     },
     image: {
@@ -333,7 +328,6 @@ const styles = {
     },
     details: {
         flex: 1,
-        paddingLeft: "25px",
         display: "flex",
         flexDirection: "column",
     },
@@ -344,19 +338,15 @@ const styles = {
         marginBottom: "12px",
     },
     foodName: {
-        fontSize: "24px",
         fontWeight: "bold",
         color: "#000",
-        marginTop: "10px",
+        marginTop: "0px",
         marginBottom: "0px",
     },
     statusBadge: {
-        backgroundColor: "#d4e2a6",
-        color: "#6b9222",
         padding: "6px 14px",
         borderRadius: "10px",
         fontSize: "15px",
-        // fontWeight: "bold"
     },
     infoContainer: {
         display: "flex",
@@ -366,15 +356,15 @@ const styles = {
     },
     infoRow: {
         display: "flex",
-        alignItems: "center",
         fontSize: "15px",
+        flexWrap: "wrap"
     },
     icon: {
         fontSize: "24px",
-        marginRight: "10px",
+        marginRight: "8px",
         display: "inline-block",
-        width: "20px",
-        color: "#ff8c00"
+        color: "#ff8c00",
+        flexShrink: 0
     },
     label: {
         color: "#111",
@@ -384,7 +374,6 @@ const styles = {
     },
     value: {
         color: "#328d7d",
-        // fontWeight: "bold"
     },
     detailBtn: {
         backgroundColor: "#ff8c00",
@@ -393,9 +382,7 @@ const styles = {
         borderRadius: "10px",
         padding: "8px 25px",
         fontSize: "15px",
-        // fontWeight: "bold",
         cursor: "pointer",
-        width: "fit-content",
         marginTop: "5px"
     },
     emptyText: {
