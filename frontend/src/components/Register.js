@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
-import registerImg from '../assets/images/register_image.png'
+import registerImg from '../assets/images/register_image.png';
 
 function Register() {
     const navigate = useNavigate();
@@ -75,7 +75,21 @@ function Register() {
 
     // ---------------- Event Handlers ----------------
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        // อัปเดตค่าใน formData ตามปกติ
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
+
+        // ถ้ามีการพิมพ์ข้อมูลแล้วให้ลบ Error
+        if (value.trim() !== "") {
+            setErrors((prevErrors) => ({
+                ...prevErrors,
+                [name]: null
+            }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -94,8 +108,8 @@ function Register() {
             if (result.success) {
                 Swal.fire({
                     icon: "success",
-                    title: "สำเร็จ!",
-                    text: result.message || "สมัครสมาชิกสำเร็จเรียบร้อยแล้ว",
+                    title: result.message || "สมัครสมาชิกเรียบร้อยแล้ว",
+                    // text: result.message || "สมัครสมาชิกสำเร็จเรียบร้อยแล้ว",
                     confirmButtonColor: "#2ecc71"
                 }).then(() => navigate("/login"));
             } else {
@@ -119,18 +133,49 @@ function Register() {
 
     // ---------------- Render ----------------
     return (
-        <div style={styles.container}>
-            <div style={styles.formSection}>
-                <h2 style={styles.title}>สร้างบัญชีใหม่</h2>
-                <form onSubmit={handleSubmit} noValidate>
-                    <div style={styles.row}>
+        <div style={styles.container} className="register-container">
+            {/* CSS สำหรับ Responsive Media Queries */}
+            <style>{`
+                @media (max-width: 868px) {
+                    .register-container {
+                        flex-direction: column !important;
+                        gap: 10px !important;
+                        padding: 30px !important;
+                    }
+                    .register-form-section {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                    }
+                    .register-image-section {
+                        display: none !important; /* ซ่อนรูปเมื่อหน้าจอเล็ก */
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .register-row {
+                        flex-direction: column !important;
+                        gap: 0px !important;
+                    }
+                    .register-title {
+                        font-size: 24px !important;
+                        text-align: center;
+                    }
+                    .register-button {
+                        width: 100% !important;
+                    }
+                }
+            `}</style>
+
+            <div style={styles.formSection} className="register-form-section">
+                <h2 style={styles.title} className="register-title">สร้างบัญชีใหม่</h2>
+                <form onSubmit={handleSubmit} noValidate autoComplete="off">
+                    <div style={styles.row} className="register-row">
                         <InputField
                             label="ชื่อ"
                             name="firstName"
                             value={formData.firstName}
                             onChange={handleChange}
                             error={errors.firstName}
-                            // style={styles.inputField}
                         />
                         <InputField
                             label="นามสกุล"
@@ -138,7 +183,6 @@ function Register() {
                             value={formData.lastName}
                             onChange={handleChange}
                             error={errors.lastName}
-                            // style={styles.inputField}
                         />
                     </div>
 
@@ -177,13 +221,13 @@ function Register() {
                         error={errors.confirmPassword}
                     />
 
-                    <button type="submit" style={styles.button}>
+                    <button type="submit" style={styles.button} className="register-button">
                         สมัครสมาชิก
                     </button>
                 </form>
             </div>
 
-            <div style={styles.imageSection}>
+            <div style={styles.imageSection} className="register-image-section">
                 <img src={registerImg} alt="food" style={styles.image} />
             </div>
         </div>
@@ -191,7 +235,7 @@ function Register() {
 }
 
 // ---------------- Reusable Input Component ----------------
-const InputField = ({ label, name, type = "text", value, onChange, error, style }) => (
+const InputField = ({ label, name, type = "text", value, onChange, error, style, autoComplete = "off" }) => (
     <div style={{ ...styles.inputBox, ...style }}>
         <p style={styles.label}>{label}</p>
         <input
@@ -200,6 +244,7 @@ const InputField = ({ label, name, type = "text", value, onChange, error, style 
             placeholder={`กรุณากรอก${label}`}
             value={value}
             onChange={onChange}
+            autoComplete={type === "password" ? "new-password" : autoComplete}
             style={styles.input}
         />
         {error && <span style={styles.errorText}>{error}</span>}
@@ -208,43 +253,38 @@ const InputField = ({ label, name, type = "text", value, onChange, error, style 
 
 export default Register;
 
-
 const styles = {
     container: {
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
-        padding: "20px",
-        gap: "100px",
+        padding: "30px",
+        gap: "30px",
         fontFamily: "'Noto Sans Thai', sans-serif",
         backgroundColor: "#fffcf8",
-        // minHeight: "100vh"
+        minHeight: "auto",
+        boxSizing: "border-box"
     },
     formSection: {
-        width: "500px",
+        alignItems: "flex-start",
+        width: "100%",
         maxWidth: "450px"
     },
     title: {
         color: "#328d7d",
-        marginBottom: "5px",
         fontWeight: "bold",
-        marginTop: "20px",
+        marginTop: "0px",
         fontSize: "30px"
     },
     row: {
         display: "flex",
-        gap: "15px", // ระยะห่างระหว่างช่องชื่อกับนามสกุล
+        gap: "15px",
         width: "100%",
-        marginBottom: 0 // ปิด margin ตรงนี้ เพื่อไม่ให้ซ้ำซ้อน
-    },
-    inputField: {
-        flex: 1,
-        minWidth: 0
+        marginBottom: 0
     },
     inputBox: {
         flex: 1,
-        marginBottom: "25px", // เว้นระยะด้านล่างเผื่อข้อความ Error
-        position: "relative"  // กำหนดเป็น Reference Container
+        marginBottom: "25px",
+        position: "relative"
     },
     label: {
         fontSize: "16px",
@@ -274,7 +314,7 @@ const styles = {
     button: {
         width: "250px",
         display: "block",
-        margin: "25px auto 0 auto",
+        margin: "30px auto 0 auto",
         padding: "12px",
         backgroundColor: "#ff8c00",
         color: "white",
@@ -285,14 +325,14 @@ const styles = {
         transition: "0.3s"
     },
     imageSection: {
-        display: "block"
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
     },
     image: {
-        width: "390px",
+        width: "100%",
         maxWidth: "380px",
         borderRadius: "15px",
-        // boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-        marginTop: "30px"
+        objectFit: "cover"
     }
 };
-

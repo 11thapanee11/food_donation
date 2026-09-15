@@ -1137,14 +1137,6 @@ export default function FoodForm() {
                         >
                             <Marker
                                 position={currentPos}
-                                // draggable={true}
-                                // onDragEnd={(e) =>
-                                //     setFormData((prev) => ({
-                                //         ...prev,
-                                //         latitude: e.latLng.lat(),
-                                //         longitude: e.latLng.lng(),
-                                //     }))
-                                // }
                                 // ห้ามลากหมุดถ้าไม่ได้อยู่ในโหมดแก้ไข
                                 draggable={isEditable}
                                 // ห้ามอัปเดตพิกัดจากการลากหมุด

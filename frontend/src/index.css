@@ -184,3 +184,10 @@ select option {
   /* font-size: 16px !important; */
 }
 
+.material-icons,
+.material-icons-outlined,
+.material-symbols-outlined,
+.material-symbols {
+    font-display: block;
+    overflow: hidden;
+}
