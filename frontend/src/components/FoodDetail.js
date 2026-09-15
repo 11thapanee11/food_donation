@@ -6,9 +6,8 @@ import { jwtDecode } from 'jwt-decode';
 
 export default function FoodDetail() {
     const location = useLocation();
-    // ดึงค่าหน้าต้นทางมาตรวจสอบบริบทการแสดงผล
     const { fromPage, bookingStatus } = location.state || {};
-    const incomingId = location.state?.id; // อาจจะเป็น foodId หรือ bookingId ขึ้นอยู่กับหน้าต้นทาง
+    const incomingId = location.state?.id;
     const navigate = useNavigate();
 
     const [userId, setUserId] = useState(null);
@@ -16,25 +15,28 @@ export default function FoodDetail() {
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const isOwner = food && food.donorId && String(food.donorId) === String(userId);
+    const [isMobile, setIsMobile] = useState(
+        typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+    );
 
+    const isOwner = food && food.donorId && String(food.donorId) === String(userId);
     const BASE_URL = "http://localhost:8082";
 
-    // เช็กเงื่อนไขว่ามาจากหน้าจัดการรับบริจาคหรือไม่
     const isFromReceive = fromPage === "/receive";
     const isFromManage = fromPage === "/manage-foods";
-    // console.log("เช็คค่าที่รับมา:", { fromPage, isFromManage, incomingId });
-
-    // เช็กสถานะการจองว่าเสร็จสมบูรณ์แล้วหรือไม่
     const isBookingCompleted = bookingStatus === "completed";
-
-    // รวมเงื่อนไข จะโชว์รีวิวและปุ่มรายงาน ก็ต่อเมื่อมาจากหน้า receive และส่งมอบสำเร็จแล้วเท่านั้น
     const shouldShowReviewAndReport = isFromReceive && isBookingCompleted;
 
     const [rating, setRating] = useState(1);
     const [reviewText, setReviewText] = useState("");
     const [existingReview, setExistingReview] = useState(null);
     const [reviews, setReviews] = useState([]);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
@@ -61,22 +63,17 @@ export default function FoodDetail() {
         }
 
         window.scrollTo(0, 0);
-        if (!incomingId) return;
-
         const token = localStorage.getItem("accessToken");
         const isValidToken = token && token !== "null" && token !== "undefined";
 
-        // สร้างฟังก์ชันกลางสำหรับดึงสถานะการจองซ้ำจากหลังบ้าน
         const fetchBookingStatus = async (foodId) => {
-            if (!isValidToken) return false; // ถ้าไม่ได้ล็อกอิน ให้เป็น false เสมอ
+            if (!isValidToken) return false;
             try {
                 const res = await fetch(`http://localhost:8082/bookings/foods/${foodId}/check-booking`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 });
                 const resData = await res.json();
-                // console.log("=== JSON FROM BACKEND ===", resData);
                 return resData?.data ?? false;
-
             } catch (err) {
                 console.error("Error checking booking status:", err);
                 return false;
@@ -97,28 +94,22 @@ export default function FoodDetail() {
                         const booking = resData.data;
                         setBooking(booking);
 
-                        // ใช้ Promise.all เพื่อดึงข้อมูลอาหาร (ถ้ามี foodId)
                         if (booking.foodId) {
                             try {
-                                // สร้างคำสั่ง fetch เพื่อดึงข้อมูลอาหาร
                                 const foodPromise = fetch(`http://localhost:8082/foods/${booking.foodId}`, {
                                     headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
                                 }).then(res => res.json());
 
                                 const [foodResult] = await Promise.all([foodPromise]);
-
-                                // เรียกใช้ฟังก์ชันเช็คการจองซ้ำ ไม่ว่าจะมาจากหน้าไหน
                                 const actualFoodData = foodResult.data || foodResult;
-                                console.log("Food Data:", actualFoodData);
 
                                 setFood(actualFoodData);
-
                             } catch (error) {
                                 console.error("Error fetching food details:", error);
                                 setFood(null);
                             }
                         } else {
-                            setFood(null); // กรณีไม่มี foodId
+                            setFood(null);
                         }
                     } else {
                         throw new Error(resData.message || "ไม่พบรายละเอียดข้อมูลการจองนี้");
@@ -130,8 +121,6 @@ export default function FoodDetail() {
                 })
                 .finally(() => setLoading(false));
         } else {
-
-            // เคสที่ 2: กดมาจากหน้า Home / Map ทั่วไป (ค่าส่งมาคือ foodId)
             fetch(`http://localhost:8082/foods/${incomingId}`)
                 .then((res) => {
                     if (!res.ok) throw new Error("ไม่พบข้อมูลอาหารรายการนี้");
@@ -140,13 +129,9 @@ export default function FoodDetail() {
                 .then(async (resData) => {
                     if (resData.success) {
                         const actualFoodData = resData.data;
-
-                        // เรียกใช้ฟังก์ชันเช็คการจองซ้ำ ไม่ว่าจะมาจากหน้าไหน
                         const isBooked = await fetchBookingStatus(incomingId);
                         actualFoodData.isCurrentByUserBooked = isBooked;
-                        // const actualFoodData = resData.data;
                         setFood(actualFoodData);
-                        console.log(actualFoodData.isCurrentByUserBooked);
                         setBooking(null);
                     } else {
                         throw new Error(resData.message || "ไม่พบข้อมูลอาหารรายการนี้");
@@ -158,7 +143,6 @@ export default function FoodDetail() {
     }, [incomingId, isFromReceive]);
 
     useEffect(() => {
-        // ต้องตรวจสอบว่า bookingId มาหรือยังก่อนเรียก API
         const bookingId = booking?.bookingId;
 
         if (bookingId) {
@@ -167,13 +151,12 @@ export default function FoodDetail() {
             })
                 .then(res => res.json())
                 .then(data => {
-                    // ถ้า data.success เป็น true หมายความว่ารีวิวแล้ว
                     if (data.success && data.data) {
                         setExistingReview(data.data);
                     }
                 });
         }
-    }, [booking]); // ให้ทำงานใหม่เมื่อข้อมูลการจองโหลดเสร็จ
+    }, [booking]);
 
     useEffect(() => {
         if (incomingId) {
@@ -188,7 +171,6 @@ export default function FoodDetail() {
         }
     }, [incomingId]);
 
-    // ฟังก์ชันฟอร์แมตวันที่ไทย
     const formatExpiryDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -210,8 +192,6 @@ export default function FoodDetail() {
 
     const formatPickupDate = (dateString) => {
         if (!dateString) return "-";
-
-        // แยกเอาเฉพาะปี-เดือน-วัน (ป้องกันกรณีหลังบ้านส่งมาพร้อมตัว T หรือเวลา)
         const cleanDate = dateString.split("T")[0];
         const date = new Date(cleanDate);
 
@@ -219,15 +199,13 @@ export default function FoodDetail() {
 
         return date.toLocaleDateString("th-TH", {
             day: "numeric",
-            month: "short", // ใช้ "short" จะได้ "มี.ค." ประหยัดพื้นที่ และดูมินิมอลขึ้นครับ
+            month: "short",
             year: "numeric"
         });
     };
 
-    // ฟังก์ชันตัดเลขวินาทีของเวลา (เช่น 13:00:00 -> 13:00)
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
-        // เอาเฉพาะตำแหน่งชั่วโมงและนาที (5 ตัวแรก)
         return timeString.substring(0, 5);
     };
 
@@ -280,12 +258,10 @@ export default function FoodDetail() {
             cancelButtonColor: '#a0a0a0',
             buttonsStyling: true,
             reverseButtons: true,
-            // กดปุ่มลบ หรือ จุดทศนิยม จะพิมพ์ไม่ติด
             didOpen: () => {
                 const input = Swal.getInput();
                 if (input) {
                     input.onkeydown = (e) => {
-                        // บล็อกเครื่องหมายลบ (-), เครื่องหมายบวก (+), และจุดทศนิยม (.) และตัว e/E (Exponent)
                         if (e.key === '-' || e.key === '+' || e.key === '.' || e.key === 'e' || e.key === 'E') {
                             e.preventDefault();
                         }
@@ -341,14 +317,12 @@ export default function FoodDetail() {
                         if (resData.success) {
                             Swal.fire({
                                 title: 'จองสำเร็จเรียบร้อย!',
-                                // text: resData.message || 'รายการอาหารของคุณถูกล็อกสิทธิ์เรียบร้อยแล้ว',
                                 icon: 'success',
                                 confirmButtonColor: '#2ecc71',
                             }).then(() => {
                                 navigate('/receive');
                             });
                         } else {
-                            // ถ้าหลังบ้านบอกว่าจองไม่ผ่าน (เช่น โควต้าเต็มพอดี) ให้โยนข้อความไปแสดงที่บล็อกแจ้งเตือนด้านล่าง
                             throw new Error(resData.message || "จองอาหารไม่สำเร็จเนื่องจากเงื่อนไขระบบ");
                         }
                     })
@@ -367,7 +341,6 @@ export default function FoodDetail() {
     const handleCancelBooking = () => {
         if (!booking) return;
 
-        // ดึงไอดีใบจองออกมา
         const bookingId = booking.bookingId || booking.id;
 
         Swal.fire({
@@ -403,7 +376,6 @@ export default function FoodDetail() {
                         if (resData.success) {
                             Swal.fire({
                                 title: 'ยกเลิกการจองสำเร็จ!',
-                                // text: resData.message || 'ระบบได้คืนสิทธิ์จำนวนอาหารเข้าสู่คลังเรียบร้อยแล้ว',
                                 icon: 'success',
                                 confirmButtonColor: '#2ecc71'
                             }).then(() => {
@@ -426,7 +398,6 @@ export default function FoodDetail() {
     };
 
     const handleReport = async () => {
-
         try {
             const res = await fetch(`http://localhost:8082/report/check/${booking.bookingId}`, {
                 headers: {
@@ -435,15 +406,13 @@ export default function FoodDetail() {
             });
             const result = await res.json();
 
-            // ถ้าผลตอบกลับเป็น true แปลว่าเคยรายงานไปแล้ว
             if (result.data === true) {
                 Swal.fire({
                     icon: "info",
                     title: "คุณได้รายงานปัญหานี้ไปแล้ว",
-                    // text: "คุณได้รายงานปัญหานี้ไปแล้ว",
                     confirmButtonColor: "#3498db"
                 });
-                return; // หยุดทำงานทันที ไม่ต้องเปิดหน้าต่างรายงาน
+                return;
             }
         } catch (error) {
             console.error("Error:", error);
@@ -451,7 +420,6 @@ export default function FoodDetail() {
 
         Swal.fire({
             didOpen: () => {
-                // ผูกฟังก์ชันเข้ากับ window เพื่อให้ HTML เรียกได้
                 window.previewFile = previewFile;
             },
             title: 'รายงานปัญหาเกี่ยวกับบริจาคนี้',
@@ -497,12 +465,10 @@ export default function FoodDetail() {
                 const detail = document.getElementById('detail').value;
                 const file = document.getElementById('image-upload').files[0];
 
-                // ตรวจสอบว่าเลือกเหตุผลหรือยัง
                 if (!reason) {
                     Swal.showValidationMessage('กรุณาเลือกเหตุผลในการรายงาน');
                     return false;
                 }
-                // ตรวจสอบว่ากรอกรายละเอียดหรือยัง
                 if (!detail.trim()) {
                     Swal.showValidationMessage('กรุณาระบุรายละเอียดของปัญหา');
                     return false;
@@ -511,13 +477,9 @@ export default function FoodDetail() {
                 return { reason, detail, file };
             }
         }).then(async (result) => {
-
-            // console.log("Check Booking ID:", booking);
-
             if (result.isConfirmed) {
                 const { reason, detail, file } = result.value;
 
-                // สร้าง FormData เพื่อส่งไฟล์และข้อมูลไปพร้อมกัน
                 const formData = new FormData();
                 formData.append("reason", result.value.reason);
                 formData.append("description", result.value.detail);
@@ -526,8 +488,6 @@ export default function FoodDetail() {
 
                 if (file) {
                     formData.append("report_image", file);
-                } else {
-                    console.warn("ไม่มีไฟล์ถูกเลือก!");
                 }
 
                 try {
@@ -546,8 +506,7 @@ export default function FoodDetail() {
                             icon: "success",
                             title: "ส่งรายงานปัญหาเรียบร้อยแล้ว",
                             confirmButtonColor: "#2ecc71"
-                        })
-                        // Swal.fire("สำเร็จ!", "ส่งรายงานปัญหาเรียบร้อยแล้ว", "success");
+                        });
                     } else {
                         Swal.fire("เกิดข้อผิดพลาด", data.message || "ไม่สามารถบันทึกรายงานได้", "error");
                     }
@@ -563,11 +522,11 @@ export default function FoodDetail() {
         const file = document.getElementById('image-upload').files[0];
         const reader = new FileReader();
         const preview = document.getElementById('preview-image');
-        const container = document.getElementById('preview-container'); // กล่องครอบรูป
+        const container = document.getElementById('preview-container');
 
         reader.onloadend = () => {
             preview.src = reader.result;
-            container.style.display = 'block'; // แสดงกล่องที่ครอบรูป
+            container.style.display = 'block';
         };
 
         if (file) {
@@ -576,17 +535,10 @@ export default function FoodDetail() {
     };
 
     const handleReviewSubmit = async () => {
-        // ตรวจสอบข้อมูลก่อนส่ง
-        // if (rating === 0) {
-        //     alert("กรุณาเลือกคะแนนดาว");
-        //     return;
-        // }
-
         const reviewData = {
             ratingScore: rating,
             reviewComment: reviewText,
-            bookingBookingId: booking.bookingId, // ต้องตรงกับที่ส่งให้ Java
-            // recipientUserId: booking.currentUserId         // ต้องตรงกับที่ส่งให้ Java
+            bookingBookingId: booking.bookingId,
         };
 
         try {
@@ -599,21 +551,18 @@ export default function FoodDetail() {
                 body: JSON.stringify(reviewData)
             });
 
-            const result = await response.json(); // รับค่า ApiResponse
+            const result = await response.json();
 
             if (response.ok && result.success) {
                 Swal.fire({
                     icon: "success",
                     title: "บันทึกรีวิวเรียบร้อยแล้ว",
-                    // text: "บันทึกรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับความคิดเห็น",
                     confirmButtonColor: "#2ecc71"
                 }).then((result) => {
-                    // เมื่อผู้ใช้กดปุ่มตกลง (OK) ให้ทำคำสั่งด้านล่างนี้
                     if (result.isConfirmed) {
-                        window.location.reload(); // โหลดหน้าเดิมใหม่
+                        window.location.reload();
                     }
                 });
-                // รีเซ็ตค่าหลังส่งสำเร็จ
                 setRating(1);
                 setReviewText("");
             } else {
@@ -631,16 +580,13 @@ export default function FoodDetail() {
     };
 
     const handleToggleStatus = async (food) => {
-        // กำหนดสถานะใหม่ที่จะส่งไป
         const newStatus = food.foodStatus === 'disable' ? 'available' : 'disable';
         const actionText = food.foodStatus === 'disable' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล';
 
-        // ถ้ากำลังจะเปิดการแสดงผล ให้เช็ควันหมดอายุก่อน
         if (newStatus === 'available' && food.expiryDate) {
             const expiryTime = new Date(food.expiryDate).getTime();
             const currentTime = new Date().getTime();
 
-            // ถ้าเวลาหมดอายุน้อยกว่าเวลาปัจจุบัน แปลว่าหมดอายุแล้ว
             if (expiryTime < currentTime) {
                 Swal.fire({
                     icon: 'error',
@@ -677,7 +623,6 @@ export default function FoodDetail() {
                     Swal.fire({
                         icon: "success",
                         title: `${actionText}เรียบร้อยแล้ว`,
-                        // text: "บันทึกรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับความคิดเห็น",
                         confirmButtonColor: "#2ecc71"
                     }).then(() => {
                         navigate('/manage-foods');
@@ -700,17 +645,13 @@ export default function FoodDetail() {
     }
 
     return (
-        <div style={styles.page}>
-            <div style={styles.headerRow}>
-                {/* พื้นที่ว่างด้านซ้ายปล่อยไว้ หรือปล่อยให้ปุ่มดีดไปทางขวาสุดด้วย justifyContent */}
+        <div style={{ ...styles.page, padding: isMobile ? "20px 15px" : "40px 20px" }}>
+            <div style={{ ...styles.headerRow, justifyContent: shouldShowReviewAndReport ? "space-between" : "flex-end" }}>
                 <div></div>
-
-                {/* ปุ่มรายงานตัวจริงผ่านเกณฑ์ SonarQube */}
                 {shouldShowReviewAndReport && (
                     <button
                         type="button"
-                        style={styles.reportBtn}
-                        // onClick={() => console.log("แจ้งรายงาน")}
+                        style={{ ...styles.reportBtn, fontSize: isMobile ? "14px" : "17px" }}
                         onClick={handleReport}
                     >
                         <span style={styles.reportIcon} className="material-symbols-outlined">
@@ -718,27 +659,24 @@ export default function FoodDetail() {
                         </span> รายงานเกี่ยวกับบริจาคนี้
                     </button>
                 )}
-
             </div>
-            <div style={styles.container}>
 
-                {/* ฝั่งซ้าย: รูปภาพอาหาร และ รีวิวผู้รับบริจาค */}
+            <div style={{ ...styles.container, flexDirection: isMobile ? "column" : "row", gap: isMobile ? "30px" : "60px" }}>
+                {/* ฝั่งซ้าย */}
                 <div style={styles.leftColumn}>
                     <img
                         src={`${BASE_URL}${food.foodImage}`}
                         alt={food.foodName}
-                        style={styles.foodImage}
+                        style={{ ...styles.foodImage, height: isMobile ? "250px" : "360px" }}
                     />
                     <p style={styles.donorText}>
-                        <span style={{ color: "#ff8c00", fontWeight: "bold", }}>บริจาคโดย</span>
+                        <span style={{ color: "#ff8c00", fontWeight: "bold" }}>บริจาคโดย</span>
                         <span> {food.donorName}</span>
                     </p>
 
-                    {/* CONDITIONAL RENDERING: สลับการแสดงผลตรงนี้ */}
                     {isFromReceive ? (
                         <>
-                            {/* กล่องที่ 1: รายละเอียดการจอง */}
-                            <div style={styles.bookingDetailCard}>
+                            <div style={{ ...styles.bookingDetailCard, padding: isMobile ? "20px" : "30px" }}>
                                 <h3 style={styles.bookingCardTitle}>รายละเอียดการจอง</h3>
 
                                 {!booking ? (
@@ -746,25 +684,24 @@ export default function FoodDetail() {
                                 ) : (
                                     <div style={styles.bookingBody}>
                                         <p style={styles.bookingRow}>
-                                            <span style={styles.bookingLabel}>จำนวนที่รับบริจาค :</span>
+                                            <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>จำนวนที่รับบริจาค :</span>
                                             <span style={styles.bookingValue}> {booking.bookingUnit}</span>
                                         </p>
                                         <p style={styles.bookingRow}>
-                                            <span style={styles.bookingLabel}>น้ำหนักที่รับบริจาค :</span>
+                                            <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>น้ำหนักที่รับบริจาค :</span>
                                             <span style={styles.bookingValue}>
                                                 {booking.bookingWeightKg} Kg
                                             </span>
                                         </p>
                                         <p style={styles.bookingRow}>
-                                            <span style={styles.bookingLabel}>วันที่ทำการจอง :</span>
+                                            <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>วันที่ทำการจอง :</span>
                                             <span style={styles.bookingValue}> {formatExpiryDate(booking.bookingDate || booking.createdAt)}</span>
                                         </p>
 
-                                        {/* ส่วนแสดงรหัสยืนยัน: แสดงเฉพาะตอนที่สถานะยังไม่สำเร็จ */}
                                         {booking.bookingStatus !== "completed" && (
-                                            <div style={styles.claimCodeContainer}>
-                                                <span style={styles.claimCodeLabel}>รหัสยืนยันการจอง</span>
-                                                <span style={styles.claimCodeValue}>
+                                            <div style={{ ...styles.claimCodeContainer, flexDirection: isMobile ? "column" : "row", gap: isMobile ? "8px" : "0" }}>
+                                                <span style={{ ...styles.claimCodeLabel, fontSize: isMobile ? "18px" : "24px" }}>รหัสยืนยันการจอง</span>
+                                                <span style={{ ...styles.claimCodeValue, fontSize: isMobile ? "28px" : "36px" }}>
                                                     {booking.confirmationCode || "000000"}
                                                 </span>
                                             </div>
@@ -773,23 +710,11 @@ export default function FoodDetail() {
                                 )}
                             </div>
 
-                            {/* กล่องที่ 2: กรอบรีวิว (แยกออกมาอยู่นอก bookingDetailCard เรียบร้อยแล้ว) */}
                             {shouldShowReviewAndReport && (
-                                <div style={{ ...styles.reviewCard, marginTop: "8px" }}>
+                                <div style={{ ...styles.reviewCard, marginTop: "8px", padding: isMobile ? "20px" : "30px" }}>
                                     {existingReview ? (
-                                        // กรณีรีวิวแล้ว: แสดงรีวิวเดิมของคุณ
                                         <div>
                                             <h3 style={{ ...styles.reviewTitle, fontSize: "18px", fontWeight: "bold" }}>รีวิวของคุณ</h3>
-                                            {/* <div style={styles.ratingStarsContainer}>
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <span key={star} style={{
-                                                        fontSize: '24px',
-                                                        color: star <= existingReview.ratingScore ? "#FFB800" : "#D3D3D3",
-                                                        marginRight: '2px'
-                                                    }}>★</span>
-                                                ))}
-                                            </div>
-                                            <p style={{ marginTop: "10px", color: "#555" }}>{existingReview.reviewComment}</p> */}
                                             <div style={{ display: "flex", justifyContent: "space-between" }}>
                                                 <span style={{ color: "#328d7d" }}>
                                                     {existingReview.recipient.user.firstName + " " + existingReview.recipient.user.lastName}
@@ -799,26 +724,22 @@ export default function FoodDetail() {
                                                 </span>
                                             </div>
 
-                                            {/* ดาว */}
-                                            <div style={{ marginLeft: "8px" }}>
+                                            <div style={{ marginLeft: isMobile ? "0" : "8px", marginTop: "6px" }}>
                                                 <div style={styles.ratingStarsContainer}>
                                                     {[1, 2, 3, 4, 5].map((star) => (
                                                         <span key={star} style={{
                                                             fontSize: '24px',
                                                             color: star <= existingReview.ratingScore ? "#FFB800" : "#D3D3D3",
-                                                            // marginRight: '2px'
                                                         }}>★</span>
                                                     ))}
                                                 </div>
 
-                                                {/* ข้อความรีวิว */}
                                                 <p style={{ margin: "0", color: "#737373", lineHeight: "1.5" }}>
                                                     {existingReview.reviewComment}
                                                 </p>
                                             </div>
                                         </div>
                                     ) : (
-                                        // กรณีที่ยังไม่รีวิว: แสดงฟอร์มให้กรอก
                                         <div>
                                             <h3 style={{ ...styles.reviewTitle, fontSize: "18px", fontWeight: "bold" }}>รีวิวรายการจอง</h3>
                                             <div style={styles.ratingStarsContainer}>
@@ -832,17 +753,15 @@ export default function FoodDetail() {
                                             <textarea placeholder="เขียนรีวิว..." value={reviewText} onChange={(e) => setReviewText(e.target.value)}
                                                 style={styles.reviewInput} rows={4} />
                                             <div style={{ display: "flex", justifyContent: "center" }}>
-                                                <button onClick={handleReviewSubmit} style={{ ...styles.reviewButton, marginTop: "10px" }}>ส่งรีวิว</button>
+                                                <button onClick={handleReviewSubmit} style={{ ...styles.reviewButton, marginTop: "10px", width: isMobile ? "100%" : "40%" }}>ส่งรีวิว</button>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             )}
-
                         </>
-
                     ) : (
-                        <div style={styles.reviewCard}>
+                        <div style={{ ...styles.reviewCard, padding: isMobile ? "20px" : "30px" }}>
                             <h4 style={styles.reviewTitle}>รีวิวจากผู้รับบริจาค</h4>
                             {reviews.length > 0 ? (
                                 reviews.map((item, index) => (
@@ -853,7 +772,7 @@ export default function FoodDetail() {
                                                 {new Date(item.reviewDate).toLocaleDateString('th-TH')}
                                             </span>
                                         </div>
-                                        <div style={{ marginLeft: "8px" }}>
+                                        <div style={{ marginLeft: isMobile ? "0" : "8px" }}>
                                             <div style={styles.ratingStarsContainer}>
                                                 {[1, 2, 3, 4, 5].map((star) => (
                                                     <span
@@ -862,7 +781,7 @@ export default function FoodDetail() {
                                                             fontSize: '24px',
                                                             color: star <= (item?.ratingScore) ? "#FFB800" : "#D3D3D3",
                                                             margin: '0px',
-                                                            cursor: 'default' // ป้องกันไม่ให้เมาส์ชี้แล้วเปลี่ยนรูป
+                                                            cursor: 'default'
                                                         }}
                                                     >
                                                         ★
@@ -878,15 +797,13 @@ export default function FoodDetail() {
                                     <p>ยังไม่มีรีวิว</p>
                                 </div>
                             )}
-
                         </div>
                     )}
 
-                    {/* ปุ่มยกเลิกการจอง (วางไว้นอกกล่องแต่อยู่ใต้กล่อง ตามองค์ประกอบในรูป) */}
                     {isFromReceive && booking && booking.bookingStatus === "pending" && (
                         <button
                             type="button"
-                            style={styles.cancelBookingBtn}
+                            style={{ ...styles.cancelBookingBtn, width: isMobile ? "100%" : "45%" }}
                             onClick={handleCancelBooking}
                         >
                             ยกเลิกการจอง
@@ -894,18 +811,15 @@ export default function FoodDetail() {
                     )}
                 </div>
 
-                {/* รายละเอียดข้อความ และ ข้อมูลเชิงพิกัดแผนที่ */}
+                {/* ฝั่งขวา */}
                 <div style={styles.rightColumn}>
-                    <h1 style={styles.foodName}>{food.foodName}</h1>
+                    <h1 style={{ ...styles.foodName, fontSize: isMobile ? "24px" : "30px" }}>{food.foodName}</h1>
                     <p style={styles.foodDescription}>{food.description}</p>
-                    {/* <p style={styles.foodDescription}>{food.foodDescription || "ส้มสายน้ำผึ้ง คัดพิเศษ จากสวน บริจาคเป็นถุง"}</p> */}
                     <p style={styles.categoryText}>
                         <span style={styles.labelBold}>หมวดหมู่ :</span>
                         <span style={styles.categoryBadge}> {food.foodCateName} </span>
-                        {/* <span style={styles.categoryBadge}> {food.category || "ของสด / วัตถุดิบ"}</span> */}
                     </p>
 
-                    {/* รายการข้อมูลรายละเอียดเชิงไอคอน */}
                     <div style={styles.infoList}>
                         <div style={styles.infoRow}>
                             <span className="material-symbols-outlined" style={styles.icon}>
@@ -982,22 +896,20 @@ export default function FoodDetail() {
                         </div>
                     </div>
 
-                    {/* แผนที่จำลอง (Google Maps Embed พิกัดร้าน) */}
                     <div style={styles.mapWrapper}>
                         <GoogleMap
-                            mapContainerStyle={{ width: "100%", height: "100%" }} // ให้ขยายเต็มกรอบสี่เหลี่ยมมล
+                            mapContainerStyle={{ width: "100%", height: "100%" }}
                             center={{
                                 lat: Number(food.latitude),
                                 lng: Number(food.longitude)
-                            }}                                 // เล็งจุดศูนย์กลางไปที่ตำแหน่งอาหาร
+                            }}
                             zoom={17}
                             options={{
-                                gestureHandling: "cooperative", // ช่วยให้เลื่อนหน้าจอระบบสัมผัสบนมือถือได้ง่าย ไม่ติดหน้าต่างแมพ
-                                fullscreenControl: true,       // ปิดปุ่มขยายหน้าจอใหญ่ เลือกเปิด/ปิดตามดีไซน์มินิมอล
-                                mapTypeControl: false           // ปิดปุ่มสลับโหมดดาวเทียม เพื่อความคลีน
+                                gestureHandling: "cooperative",
+                                fullscreenControl: true,
+                                mapTypeControl: false
                             }}
                         >
-                            {/* ปักหมุดสีแดงแสดงพิกัดอาหาร (ล็อกหมุดนิ่งๆ ห้ามลากเคลื่อนย้าย) */}
                             <Marker
                                 position={{
                                     lat: Number(food.latitude),
@@ -1008,13 +920,13 @@ export default function FoodDetail() {
                         </GoogleMap>
                     </div>
 
-                    {/* ปุ่มกดจอง */}
                     {(!isFromReceive && !isOwner && !isFromManage) && (
                         <button
                             onClick={handleReserveClick}
                             disabled={food?.isCurrentByUserBooked}
                             style={{
                                 ...styles.reserveBtn,
+                                width: isMobile ? "100%" : "50%",
                                 backgroundColor: food?.isCurrentByUserBooked ? '#e0e0e0' : '#ff8c00',
                                 color: food?.isCurrentByUserBooked ? '#9c9c9c' : '#ffffff',
                                 cursor: food?.isCurrentByUserBooked ? 'not-allowed' : 'pointer',
@@ -1027,8 +939,14 @@ export default function FoodDetail() {
             </div>
 
             {(isFromManage && food && ['available', 'disable'].includes(food.foodStatus)) && (
-                <div style={{ display: 'flex', gap: '15px', marginTop: '20px', justifyContent: 'center' }}>
-                    {/* ปุ่มย้อนกลับ: พื้นหลังสีเทาอ่อน ตัวหนังสือสีเข้ม */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: '15px',
+                    marginTop: '20px',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
                     <button
                         onClick={() => navigate(-1)}
                         style={{
@@ -1039,18 +957,17 @@ export default function FoodDetail() {
                             color: '#5c5c5c',
                             cursor: 'pointer',
                             fontSize: '18px',
-                            width: '200px'
+                            width: isMobile ? '100%' : '200px'
                         }}
                     >
                         ย้อนกลับ
                     </button>
 
                     <button
-                        onClick={() => handleToggleStatus(food)} // ส่ง object food ไปเพื่อเช็คสถานะในฟังก์ชัน
+                        onClick={() => handleToggleStatus(food)}
                         style={{
                             padding: '10px 25px',
                             borderRadius: '10px',
-                            // เปลี่ยนสีขอบและสีตัวหนังสือตามสถานะ
                             border: food.foodStatus === 'disable'
                                 ? '2px solid #219b54'
                                 : '2px solid #ff4d4d',
@@ -1060,7 +977,7 @@ export default function FoodDetail() {
                                 : '#ff4d4d',
                             cursor: 'pointer',
                             fontSize: '18px',
-                            width: '200px'
+                            width: isMobile ? '100%' : '200px'
                         }}
                     >
                         {food.foodStatus === 'disable' ? 'เปิดการแสดงผล' : 'ปิดการแสดงผล'}
@@ -1068,7 +985,6 @@ export default function FoodDetail() {
                 </div>
             )}
         </div>
-
     );
 }
 
@@ -1078,12 +994,10 @@ const styles = {
         width: "100%",
         maxWidth: "1150px",
         margin: "0 auto",
-        padding: "40px 20px",
         boxSizing: "border-box"
     },
     container: {
         display: "flex",
-        gap: "60px",
     },
     centerPage: {
         display: "flex",
@@ -1105,7 +1019,6 @@ const styles = {
     },
     foodImage: {
         width: "100%",
-        height: "360px",
         objectFit: "cover",
         borderRadius: "20px"
     },
@@ -1117,7 +1030,6 @@ const styles = {
     reviewCard: {
         backgroundColor: "#ffe8cc",
         borderRadius: "16px",
-        padding: "30px",
         marginTop: "2px"
     },
     reviewTitle: {
@@ -1128,25 +1040,9 @@ const styles = {
     },
     reviewHeader: {
         display: "flex",
-        // justifyContent: "between",
         justifyContent: "space-between",
         fontSize: "13px",
         color: "#888"
-    },
-    reviewerName: {
-        // fontWeight: "bold",
-        color: "#328d7d",
-        fontSize: "14px",
-    },
-    stars: {
-        margin: "6px 0",
-        fontSize: "14px"
-    },
-    reviewContent: {
-        margin: "6px 0 0 0",
-        fontSize: "14px",
-        color: "#555",
-        lineHeight: "1.5"
     },
     ratingStarsContainer: {
         display: 'flex',
@@ -1154,26 +1050,13 @@ const styles = {
         gap: '6px',
         marginBottom: '5px'
     },
-    starItem: {
-        fontSize: '28px',
-        cursor: 'pointer',
-        transition: 'color 0.2s ease-in-out',
-        userSelect: 'none'
-    },
     starButton: {
         background: 'none',
         border: 'none',
         padding: '0',
         fontSize: '28px',
         cursor: 'pointer',
-        // transition: 'color 0.2s ease-in-out',
         outline: 'none',
-    },
-    ratingText: {
-        fontSize: '14px',
-        color: '#d9d9d9',
-        marginLeft: '10px',
-        fontWeight: '500'
     },
     reviewInput: {
         width: '100%',
@@ -1189,7 +1072,6 @@ const styles = {
         fontFamily: 'inherit'
     },
     foodName: {
-        fontSize: "30px",
         color: "#333",
         margin: "0 0 8px 0",
         fontWeight: "bold"
@@ -1226,11 +1108,11 @@ const styles = {
     icon: {
         fontSize: "30px",
         marginTop: "2px",
-        color: "#ff8c00"
+        color: "#ff8c00",
+        flexShrink: 0
     },
     infoLabel: {
         fontSize: "15px",
-        // fontWeight: "bold",
         color: "#000",
         marginBottom: "2px"
     },
@@ -1247,11 +1129,6 @@ const styles = {
         marginBottom: "30px",
         boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
     },
-    mapIframe: {
-        width: "100%",
-        height: "100%",
-        border: "none"
-    },
     reserveBtn: {
         backgroundColor: "#ff8c00",
         color: "#FFFFFF",
@@ -1259,19 +1136,15 @@ const styles = {
         borderRadius: "12px",
         padding: "14px 0",
         fontSize: "18px",
-        // fontWeight: "bold",
         cursor: "pointer",
         textAlign: "center",
-        width: "50%",
         boxShadow: "0 6px 16px rgba(255, 138, 0, 0.25)",
         transition: "background-color 0.2s",
         alignSelf: "center"
     },
-
     bookingDetailCard: {
-        backgroundColor: "#ffe8cc", // สีครีมส้มพาสเทลละมุน
-        borderRadius: "24px",        // ขอบมนโค้งสวยงาม
-        padding: "30px",
+        backgroundColor: "#ffe8cc",
+        borderRadius: "24px",
         marginTop: "2px",
         display: "flex",
         flexDirection: "column",
@@ -1295,76 +1168,65 @@ const styles = {
         alignItems: "center"
     },
     bookingLabel: {
-        // fontWeight: "bold",
         color: "#333333",
-        width: "160px"              // ล็อกความกว้างเพื่อให้เครื่องหมาย : แนวตรงกันสวยงาม
+        flexShrink: 0
     },
     bookingValue: {
-        color: "#328d7d",           // สีเขียวพาสเทลเข้มตามภาพต้นฉบับ
+        color: "#328d7d",
         fontWeight: "500",
     },
     claimCodeContainer: {
         display: "flex",
-        justifyContent: "space-between",
         alignItems: "center",
         marginTop: "16px",
         paddingTop: "6px"
     },
     claimCodeLabel: {
-        fontSize: "24px",
         fontWeight: "bold",
-        color: "#328d7d"            // รหัสยืนยันการจองสีเขียวหัวเป็ดพาสเทล
+        color: "#328d7d"
     },
     claimCodeValue: {
-        fontSize: "36px",           // ขนาดตัวเลขรหัสใหญ่เด่นชัด
         fontWeight: "bold",
-        color: "#ff8c00",           // ตัวเลขสีส้ม
-        letterSpacing: "4px"        // เว้นช่องไฟตัวเลขให้ดูง่ายขึ้น
+        color: "#ff8c00",
+        letterSpacing: "4px"
     },
     cancelBookingBtn: {
         backgroundColor: "#FFFFFF",
-        color: "#ff3131",           // ตัวหนังสือสีแดง
-        border: "3px solid #ff3131", // เส้นขอบสีแดงตามรูปภาพ
-        borderRadius: "14px",        // ปุ่มขอบมน
+        color: "#ff3131",
+        border: "3px solid #ff3131",
+        borderRadius: "14px",
         padding: "10px 0",
         fontSize: "18px",
         fontWeight: "500",
         cursor: "pointer",
         textAlign: "center",
-        width: "45%",               // ขนาดปุ่มกะทัดรัด
-        alignSelf: "center",        // จัดให้อยู่กึ่งกลางหน้าจอ
+        alignSelf: "center",
         marginTop: "20px",
     },
     headerRow: {
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
-        marginBottom: '15px', // ระยะห่างระหว่างปุ่มกับเนื้อหาไข่ไก่ด้านล่าง
+        marginBottom: '15px',
     },
-
     reportBtn: {
         display: 'flex',
         alignItems: 'center',
-        backgroundColor: 'transparent', // พื้นหลังโปร่งใสเนียนไปกับหน้าจอ
-        border: '2px solid #A0A0A0', // เส้นขอบสีเทาตามภาพ
-        borderRadius: '12px',           // ความมนโค้งสไตล์มินิมอล
-        padding: '8px 16px',           // ช่องว่างข้างในปุ่มให้ดูไม่เบียดเกินไป
-        color: '#A0A0A0',              // สีตัวอักษรเทาเข้ม อ่านง่ายแต่ไม่แย่งซีน
-        fontSize: '17px',              // ขนาดตัวอักษรกำลังดี
+        backgroundColor: 'transparent',
+        border: '2px solid #A0A0A0',
+        borderRadius: '12px',
+        padding: '8px 16px',
+        color: '#A0A0A0',
         fontWeight: '500',
         cursor: 'pointer',
         outline: 'none',
-        // WebkitTapHighlightColor: 'transparent',
     },
-
     reportIcon: {
         marginRight: '8px',
         fontSize: '24px',
         display: 'inline-flex',
         alignItems: 'center'
     },
-
     reviewButton: {
         backgroundColor: "#ff8c00",
         color: "white",
@@ -1373,6 +1235,5 @@ const styles = {
         borderRadius: "8px",
         fontSize: "16px",
         cursor: "pointer",
-        width: "40%",
     }
 };
