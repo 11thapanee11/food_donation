@@ -8,10 +8,8 @@ export default function FoodReceive() {
     const [bookings, setBookings] = useState([]);
     const [activeTab, setActiveTab] = useState('current');
 
-    // State สำหรับเช็คว่ากำลังเปิดบนอุปกรณ์ Mobile หรือไม่
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-    // ตรวจจับการย่อ/ขยายหน้าจอ real-time
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth <= 768);

@@ -3,7 +3,19 @@ import React, { useState, useEffect } from 'react';
 export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+    // ดักจับการ resize หน้าจอใน useEffect
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // ดึงข้อมูล API
     useEffect(() => {
         const fetchStats = async () => {
             try {
@@ -24,19 +36,26 @@ export default function AdminDashboard() {
         fetchStats();
     }, []);
 
-    if (!stats) return <div style={styles.loading}>กำลังโหลดข้อมูล...</div>;
-    if (loading) return <div style={styles.loading}>กำลังโหลดข้อมูล...</div>;
+    if (loading || !stats) return <div style={styles.loading}>กำลังโหลดข้อมูล...</div>;
 
     return (
         <div style={styles.container}>
-            <h2 style={styles.mainTitle}>สถิติภาพรวมของระบบ</h2>
+            <h2 style={{ ...styles.mainTitle, fontSize: isMobile ? '22px' : '30px' }}>
+                สถิติภาพรวมของระบบ
+            </h2>
 
-            <div style={styles.flexRow}>
+            {/* การ์ด 3 ช่องบน */}
+            <div style={{
+                ...styles.flexRow,
+                flexDirection: isMobile ? 'column' : 'row'
+            }}>
                 {/* ผู้ใช้งานทั้งหมด */}
                 <div style={{ ...styles.card, backgroundColor: '#ffe8cc' }}>
                     <div style={styles.content}>
                         <p style={styles.label}>ผู้ใช้งานทั้งหมด</p>
-                        <h3 style={styles.value}>{stats.totalUsers} <span style={styles.unit}>Accounts</span></h3>
+                        <h3 style={styles.value}>
+                            {stats.totalUsers} <span style={styles.unit}>Accounts</span>
+                        </h3>
                     </div>
                     <div>
                         <span className="material-symbols-outlined" style={styles.icon}>
@@ -49,7 +68,9 @@ export default function AdminDashboard() {
                 <div style={{ ...styles.card, backgroundColor: '#ffe8cc' }}>
                     <div style={styles.content}>
                         <p style={styles.label}>จำนวนอาหารบริจาค</p>
-                        <h3 style={styles.value}>{stats.totalFoods} <span style={styles.unit}>Items</span></h3>
+                        <h3 style={styles.value}>
+                            {stats.totalFoods} <span style={styles.unit}>Items</span>
+                        </h3>
                     </div>
                     <div>
                         <span className="material-symbols-outlined" style={styles.icon}>
@@ -62,7 +83,9 @@ export default function AdminDashboard() {
                 <div style={{ ...styles.card, backgroundColor: '#328d7d', color: '#fff' }}>
                     <div style={styles.content}>
                         <p style={styles.labelDark}>CARBON ที่ช่วยลดได้</p>
-                        <h3 style={styles.value}>{stats.totalCarbon} <span style={styles.unitDark}>kgCO2e</span></h3>
+                        <h3 style={styles.value}>
+                            {stats.totalCarbon} <span style={styles.unitDark}>kgCO2e</span>
+                        </h3>
                     </div>
                     <div>
                         <span className="material-symbols-outlined" style={{ ...styles.icon, color: 'white' }}>
@@ -72,22 +95,35 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <h2 style={styles.header}>สถานะรายการอาหารในระบบ</h2>
+            <h2 style={{ ...styles.header, fontSize: isMobile ? '20px' : '24px' }}>
+                สถานะรายการอาหารในระบบ
+            </h2>
 
-            <div style={styles.statusGrid}>
-                {/* ช่องสถานะเล็ก */}
-                <div style={styles.grid2x2}>
+            {/* สถานะรายการอาหารและรายงานปัญหา */}
+            <div style={{
+                ...styles.statusGrid,
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr'
+            }}>
+                {/* ช่องสถานะเล็ก 4 ช่อง */}
+                <div style={{
+                    ...styles.grid2x2,
+                    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr'
+                }}>
                     <div style={{ ...styles.smallBox, borderColor: '#6b9222', backgroundColor: '#f9ffed' }}>
-                        <span style={{ fontWeight: '500', color: '#6b9222' }}>บริจาคเสร็จสิ้น</span> <br /><strong style={{ fontSize: '28px', color: '#6b9222' }}>{stats.completed}</strong>
+                        <span style={{ fontWeight: '500', color: '#6b9222' }}>บริจาคเสร็จสิ้น</span> <br />
+                        <strong style={{ fontSize: '28px', color: '#6b9222' }}>{stats.completed}</strong>
                     </div>
                     <div style={{ ...styles.smallBox, borderColor: '#f9d601', backgroundColor: '#fffce6' }}>
-                        <span style={{ fontWeight: '500', color: '#ebb512' }}>กำลังดำเนินการ</span> <br /><strong style={{ fontSize: '28px', color: '#ebb512' }}>{stats.pending}</strong>
+                        <span style={{ fontWeight: '500', color: '#ebb512' }}>กำลังดำเนินการ</span> <br />
+                        <strong style={{ fontSize: '28px', color: '#ebb512' }}>{stats.pending}</strong>
                     </div>
                     <div style={{ ...styles.smallBox, borderColor: '#ed171f', backgroundColor: '#fef4f4' }}>
-                        <span style={{ fontWeight: '500', color: '#ed171f' }}>ยกเลิก</span> <br /><strong style={{ fontSize: '28px', color: '#ed171f' }}>{stats.cancelled}</strong>
+                        <span style={{ fontWeight: '500', color: '#ed171f' }}>ยกเลิก</span> <br />
+                        <strong style={{ fontSize: '28px', color: '#ed171f' }}>{stats.cancelled}</strong>
                     </div>
                     <div style={{ ...styles.smallBox, borderColor: '#ff8c00', backgroundColor: '#fff3e4' }}>
-                        <span style={{ fontWeight: '500', color: '#ff8c00' }}>หมดอายุ</span> <br /><strong style={{ fontSize: '28px', color: '#ff8c00' }}>{stats.expired}</strong>
+                        <span style={{ fontWeight: '500', color: '#ff8c00' }}>หมดอายุ</span> <br />
+                        <strong style={{ fontSize: '28px', color: '#ff8c00' }}>{stats.expired}</strong>
                     </div>
                 </div>
 
@@ -98,11 +134,17 @@ export default function AdminDashboard() {
                             report
                         </span>
                     </div>
-                    <p style={{ fontSize: '20px', margin: '0 0' }}>จำนวนรายงานปัญหาทั้งหมด</p>
-                    <strong style={{ fontSize: '36px', color: '#f44336' }}>{stats.totalReports}</strong>
-                    <div style={styles.reportStatus}>
+                    <p style={{ fontSize: isMobile ? '16px' : '20px', margin: '0 0' }}>จำนวนรายงานปัญหาทั้งหมด</p>
+                    <strong style={{ fontSize: isMobile ? '28px' : '36px', color: '#f44336' }}>
+                        {stats.totalReports}
+                    </strong>
+                    <div style={{
+                        ...styles.reportStatus,
+                        flexDirection: isMobile ? 'column' : 'row',
+                        gap: isMobile ? '4px' : '0'
+                    }}>
                         <span style={{ color: 'red' }}>รอตรวจสอบ : {stats.pendingReport || 0}</span>
-                        {" | "}
+                        {!isMobile && " | "}
                         <span style={{ color: 'green' }}>ตรวจสอบแล้ว : {stats.checkedReport || 0}</span>
                     </div>
                 </div>
@@ -119,21 +161,29 @@ const styles = {
     },
     mainTitle: {
         color: "#333",
-        fontSize: "30px",
         fontWeight: "bold",
         marginBottom: "20px"
     },
-    header: { marginTop: '40px' },
-    flexRow: { display: 'flex', gap: '20px', flexWrap: 'wrap' },
+    header: { 
+        marginTop: '40px',
+        marginBottom: '20px',
+        color: "#333",
+        fontWeight: "bold"
+    },
+    flexRow: { 
+        display: 'flex', 
+        gap: '20px',
+        width: '100%'
+    },
     card: {
         flex: '1',
-        minWidth: '280px',
+        minWidth: '0',
         padding: '30px',
         borderRadius: '15px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        // boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        boxSizing: 'border-box'
     },
     content: { display: 'flex', flexDirection: 'column' },
     label: { fontSize: '18px', color: '#328d7d', margin: '0 0 5px 0' },
@@ -141,17 +191,13 @@ const styles = {
     value: { fontSize: '32px', margin: '0', fontWeight: 'bold' },
     unit: { fontSize: '18px', color: '#666', fontWeight: 'normal' },
     unitDark: { fontSize: '18px', color: '#eee', fontWeight: 'normal' },
-    icon: { fontSize: '60px', color: '#ff8c00', marginTop: '10px' },
-    statsRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' },
-    // card: { padding: '25px', borderRadius: '15px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' },
+    icon: { fontSize: '60px', color: '#ff8c00' },
     statusGrid: {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr', // แบ่งเป็นกลุ่ม 4 ช่อง กับ ช่องรายงาน
         gap: '20px'
     },
     grid2x2: {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr', // บังคับให้ 4 ช่องข้างในเรียงเป็น 2x2
         gap: '15px'
     },
     smallBox: {
@@ -168,12 +214,17 @@ const styles = {
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '10px'
     },
     reportStatus: {
         marginTop: '10px',
         fontSize: '16px',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     loading: {
         textAlign: "center",
