@@ -6,9 +6,24 @@ export default function ListFood() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // State สำหรับตรวจจับหน้าจอมือถือ
+    const [isMobile, setIsMobile] = useState(
+        typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+    );
+
     const navigate = useNavigate();
 
     const BASE_URL = "http://localhost:8082";
+
+    // ดักจับ Resize Event โดยใช้ useEffect
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const STATUS_CONFIG = {
         available: {
@@ -70,25 +85,44 @@ export default function ListFood() {
 
     return (
         <div style={styles.container}>
-            <p style={styles.mainTitle}>รายการอาหารทั้งหมด</p>
+            <p style={{ ...styles.mainTitle, fontSize: isMobile ? "22px" : "30px" }}>รายการอาหารทั้งหมด</p>
             
             {foods.slice().reverse().map((food) => {
                 // ดึงค่า config ตามสถานะ (ถ้าไม่ตรงกับ key เลย ให้ใช้ค่า default หรือแสดงข้อความว่าง)
                 const statusInfo = STATUS_CONFIG[food.foodStatus] || { text: food.status, color: "gray" };
 
                 return (
-                    <div key={food.foodId} style={styles.card}>
-                        <img src={`${BASE_URL}${food.foodImage}`} alt={food.foodName} style={styles.image} />
+                    <div 
+                        key={food.foodId || food.id} 
+                        style={{
+                            ...styles.card,
+                            flexDirection: isMobile ? 'column' : 'row',
+                            alignItems: isMobile ? 'stretch' : 'center',
+                            gap: isMobile ? '15px' : '0'
+                        }}
+                    >
+                        <img 
+                            src={`${BASE_URL}${food.foodImage}`} 
+                            alt={food.foodName} 
+                            style={{
+                                ...styles.image,
+                                width: isMobile ? '100%' : '130px',
+                                height: isMobile ? '180px' : '130px',
+                                marginRight: isMobile ? '0' : '20px'
+                            }} 
+                        />
 
-                        <div style={styles.info}>
-                            <span style={{ color: '#333', fontWeight: 'bold', fontSize: '18px' }}>{food.foodName}</span>
+                        <div style={{ ...styles.info, marginLeft: isMobile ? '0' : '8px' }}>
+                            <span style={{ color: '#333', fontWeight: 'bold', fontSize: isMobile ? '16px' : '18px' }}>
+                                {food.foodName}
+                            </span>
 
-                            <div style={{ marginLeft: '8px' }}>
+                            <div style={{ marginLeft: isMobile ? '0' : '8px' }}>
                                 <span style={{ color: '#333', marginRight: '5px' }}>จำนวนที่บริจาค และจำนวนที่เหลือ :</span>
                                 <span style={{ color: '#328d7d' }}> {food.totalUnit} / {food.remainingUnit}</span>
                             </div>
 
-                            <div style={{ marginLeft: '8px' }}>
+                            <div style={{ marginLeft: isMobile ? '0' : '8px' }}>
                                 <span style={{ color: '#333', marginRight: '5px' }}>วันหมดอายุ :</span>
                                 <span style={{ color: '#328d7d' }}>
                                     {new Date(food.expiryDate).toLocaleDateString('th-TH', {
@@ -105,19 +139,43 @@ export default function ListFood() {
                             </div>
                         </div>
 
-                        {/* แสดงสถานะด้วยสไตล์ที่ดึงมาจาก STATUS_CONFIG */}
-                        <div style={styles.status}>
-                            <span style={{
-                                color: statusInfo.color,
-                                fontSize: '16px'
+                        {/* โครงสร้างปุ่มกดและสถานะ ปรับแบบจัดวางซ้าย-ขวา ยามแสดงผลบน Mobile */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            justifyContent: isMobile ? 'space-between' : 'flex-end',
+                            alignItems: 'center',
+                            width: isMobile ? '100%' : 'auto',
+                            borderTop: isMobile ? '1px solid #eee' : 'none',
+                            paddingTop: isMobile ? '10px' : '0'
+                        }}>
+                            {/* แสดงสถานะด้วยสไตล์ดั้งเดิม */}
+                            <div style={{
+                                ...styles.status,
+                                marginRight: isMobile ? '0' : '50px',
+                                width: isMobile ? 'auto' : '150px',
+                                textAlign: isMobile ? 'left' : 'center'
                             }}>
-                                {statusInfo.text}
-                            </span>
-                        </div>
+                                <span style={{
+                                    color: statusInfo.color,
+                                    fontSize: '16px'
+                                }}>
+                                    {statusInfo.text}
+                                </span>
+                            </div>
 
-                        <button style={styles.detailBtn} onClick={() => {
-                            navigate('/food-detail', { state: { id: food.id, fromPage: '/manage-foods' } });
-                        }}>ดูรายละเอียด</button>
+                            <button 
+                                style={{
+                                    ...styles.detailBtn,
+                                    marginRight: isMobile ? '0' : '20px'
+                                }} 
+                                onClick={() => {
+                                    navigate('/food-detail', { state: { id: food.foodId || food.id, fromPage: '/manage-foods' } });
+                                }}
+                            >
+                                ดูรายละเอียด
+                            </button>
+                        </div>
                     </div>
                 );
             })}
@@ -125,7 +183,7 @@ export default function ListFood() {
     );
 };
 
-// ตัวอย่าง style เบื้องต้น
+// สไตล์เดิมคงไว้ครบถ้วน
 const styles = {
     container: {
         maxWidth: "1100px",
