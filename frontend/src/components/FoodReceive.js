@@ -8,6 +8,18 @@ export default function FoodReceive() {
     const [bookings, setBookings] = useState([]);
     const [activeTab, setActiveTab] = useState('current');
 
+    // State สำหรับเช็คว่ากำลังเปิดบนอุปกรณ์ Mobile หรือไม่
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    // ตรวจจับการย่อ/ขยายหน้าจอ real-time
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // กรองข้อมูลตามสถานะของการจอง (Booking Status)
     const currentBookings = bookings.filter(b => b.bookingStatus === 'pending');
     const historyBookings = bookings.filter(b => b.bookingStatus === 'completed' || b.bookingStatus === 'cancelled');
@@ -35,10 +47,9 @@ export default function FoodReceive() {
                                     headers: { "Authorization": `Bearer ${token}` }
                                 });
                                 const foodData = await foodRes.json();
-                                // รวมข้อมูล food เข้าไปใน booking object
                                 return { ...booking, food: foodData.data || foodData };
                             } catch (e) {
-                                return { ...booking, food: null }; // ถ้าดึง food ไม่ได้ ก็ใส่ null ไว้
+                                return { ...booking, food: null };
                             }
                         })
                     );
@@ -74,7 +85,6 @@ export default function FoodReceive() {
         return `${formattedDate} เวลา ${formattedTime}`;
     };
 
-    // ฟังก์ชันแปลงวันที่ให้เป็นแบบไทยย่อ
     const formatPickupDate = (dateString) => {
         if (!dateString) return "-";
         const cleanDate = dateString.split("T")[0];
@@ -89,7 +99,6 @@ export default function FoodReceive() {
         });
     };
 
-    // ฟังก์ชันตัดเลขวินาทีของเวลา
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
         return timeString.substring(0, 5);
@@ -115,12 +124,7 @@ export default function FoodReceive() {
             text: "ถูกระงับ",
             color: "#ef6c00",
             bgColor: "#fff3e0"
-        },
-        // expired: {
-        //     text: "หมดอายุ",
-        //     color: "#37474f",
-        //     bgColor: "#eceff1"
-        // }
+        }
     };
 
     const renderContent = () => {
@@ -128,7 +132,6 @@ export default function FoodReceive() {
             return <p style={styles.emptyText}>กำลังโหลดข้อมูลการจองของคุณ...</p>;
         }
 
-        // เลือกชุดข้อมูลมาลูปตามแท็บที่เปิดใช้งานอยู่
         const displayData = activeTab === 'current' ? currentBookings : historyBookings;
 
         if (!displayData || displayData.length === 0) {
@@ -138,15 +141,26 @@ export default function FoodReceive() {
         return (
             <div style={styles.list}>
                 {displayData.map((booking) => {
-                    // แตก Object ชั้นอาหารออกมาใช้งานเพื่อให้อ่านโค้ดง่ายขึ้น
-                    // console.log("Booking Item:", booking);
                     const food = booking.food;
                     const status = STATUS_CONFIG[booking.bookingStatus] || { text: booking.bookingStatus, color: "#37474f", bgColor: "#eceff1" };
 
                     return (
-                        <div key={booking.id} style={styles.card}>
-                            {/* ฝั่งซ้าย: รูปภาพอาหารที่ถูกจอง */}
-                            <div style={styles.imageWrapper}>
+                        <div
+                            key={booking.id}
+                            style={{
+                                ...styles.card,
+                                flexDirection: isMobile ? "column" : "row", // เปลี่ยนการจัดวางการ์ดเป็นแนวตั้งบนมือถือ
+                                padding: isMobile ? "15px" : "20px"
+                            }}
+                        >
+                            {/* ฝั่งซ้าย/บน: รูปภาพอาหารที่ถูกจอง */}
+                            <div
+                                style={{
+                                    ...styles.imageWrapper,
+                                    width: isMobile ? "100%" : "220px",
+                                    height: isMobile ? "200px" : "220px",
+                                }}
+                            >
                                 <img
                                     src={`${BASE_URL}${food?.foodImage}`}
                                     alt={food?.foodName}
@@ -154,16 +168,25 @@ export default function FoodReceive() {
                                 />
                             </div>
 
-                            {/* ฝั่งขวา: รายละเอียดข้อความการจอง */}
-                            <div style={styles.details}>
+                            {/* ฝั่งขวา/ล่าง: รายละเอียดข้อความการจอง */}
+                            <div
+                                style={{
+                                    ...styles.details,
+                                    paddingLeft: isMobile ? "0px" : "25px",
+                                    paddingTop: isMobile ? "15px" : "0px"
+                                }}
+                            >
                                 <div style={styles.rowBetween}>
-                                    <h3 style={styles.foodName}>{food?.foodName}</h3>
-                                    {/* ป้ายสถานะการจองตามที่ตั้งค่าพาสเทลไว้ */}
+                                    <h3 style={{ ...styles.foodName, fontSize: isMobile ? "18px" : "22px" }}>
+                                        {food?.foodName}
+                                    </h3>
                                     <span
                                         style={{
                                             ...styles.statusBadge,
                                             backgroundColor: status.bgColor,
                                             color: status.color,
+                                            fontSize: isMobile ? "13px" : "15px",
+                                            padding: isMobile ? "4px 10px" : "6px 14px"
                                         }}
                                     >
                                         {status.text}
@@ -171,51 +194,54 @@ export default function FoodReceive() {
                                 </div>
 
                                 <div style={styles.infoContainer}>
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            calendar_clock
-                                        </span>
-                                        <span style={styles.label}>วันหมดอายุ</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>calendar_clock</span>
+                                            <span style={styles.label}>วันหมดอายุ</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "30px" : "0px" }}>
                                             {formatExpiryDate(food?.expiryDate)} น.
                                         </span>
                                     </div>
 
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            schedule
-                                        </span>
-                                        <span style={styles.label}>วันและเวลาที่สามารถรับได้</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>schedule</span>
+                                            <span style={styles.label}>วันและเวลาที่สามารถรับได้</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "30px" : "0px" }}>
                                             {formatPickupDate(food?.pickupDateStart)} - {formatPickupDate(food?.pickupDateEnd)} &nbsp; {formatPickupTime(food?.pickupStartTime)} น. - {formatPickupTime(food?.pickupEndTime)} น.
                                         </span>
                                     </div>
 
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            package_2
-                                        </span>
-                                        <span style={styles.label}>จำนวนที่รับบริจาค</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>package_2</span>
+                                            <span style={styles.label}>จำนวนที่รับบริจาค</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "30px" : "0px" }}>
                                             {booking.bookingUnit}
                                         </span>
                                     </div>
 
-                                    <div style={styles.infoRow}>
-                                        <span className="material-symbols-outlined" style={styles.icon}>
-                                            calendar_month
-                                        </span>
-                                        <span style={styles.label}>วันที่ทำการจอง</span>
-                                        <span style={styles.value}>
+                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <span className="material-symbols-outlined" style={styles.icon}>calendar_month</span>
+                                            <span style={styles.label}>วันที่ทำการจอง</span>
+                                        </div>
+                                        <span style={{ ...styles.value, marginLeft: isMobile ? "30px" : "0px" }}>
                                             {formatExpiryDate(booking.bookingDate)} น.
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* ปุ่มกดเข้าไปดูหน้ารายละเอียดเพื่อโชว์ตั๋ว/รหัสยืนยันรับอาหาร */}
                                 <button
                                     type="button"
-                                    style={styles.detailBtn}
+                                    style={{
+                                        ...styles.detailBtn,
+                                        width: isMobile ? "100%" : "fit-content", // บนมือถือปรับให้ปุ่มเต็มความกว้าง
+                                        marginTop: isMobile ? "15px" : "auto"
+                                    }}
                                     onClick={() => navigate('/food-detail', { state: { id: booking.bookingId, fromPage: '/receive', bookingStatus: booking.bookingStatus } })}
                                 >
                                     ดูรายละเอียดการจอง
@@ -230,26 +256,28 @@ export default function FoodReceive() {
 
     return (
         <div style={styles.page}>
-            <div style={styles.container}>
+            <div style={{ ...styles.container, padding: isMobile ? "15px 12px" : "20px 20px" }}>
                 {/* Header Section */}
                 <div style={styles.header}>
-                    <h1 style={styles.title}>รายการรับอาหารบริจาคของฉัน</h1>
+                    <h1 style={{ ...styles.title, fontSize: isMobile ? "22px" : "30px" }}>
+                        รายการรับอาหารบริจาคของฉัน
+                    </h1>
                 </div>
 
                 <div style={{
                     display: 'flex',
-                    gap: '32px',
+                    gap: isMobile ? '16px' : '32px',
                     marginBottom: '24px',
-                    paddingBottom: '8px'
+                    paddingBottom: '8px',
                 }}>
                     <button
-                        type="button" // ระบุประเภทปุ่มป้องกันการซับมิตฟอร์ม
+                        type="button"
                         onClick={() => setActiveTab('current')}
                         style={{
                             background: 'none',
                             border: 'none',
                             padding: '0 0 8px 0',
-                            fontSize: '18px',
+                            fontSize: isMobile ? '15px' : '18px',
                             fontWeight: '500',
                             cursor: 'pointer',
                             color: activeTab === 'current' ? '#ff9800' : '#6b7280',
@@ -267,7 +295,7 @@ export default function FoodReceive() {
                             background: 'none',
                             border: 'none',
                             padding: '0 0 8px 0',
-                            fontSize: '18px',
+                            fontSize: isMobile ? '15px' : '18px',
                             fontWeight: '500',
                             cursor: 'pointer',
                             color: activeTab === 'history' ? '#ff9800' : '#6b7280',
@@ -279,9 +307,7 @@ export default function FoodReceive() {
                     </button>
                 </div>
 
-                {/* Content Section เรียกใช้งานฟังก์ชันที่กรองตามสวิตช์แท็บไว้แล้ว */}
                 {renderContent()}
-
             </div>
         </div>
     );
@@ -291,7 +317,6 @@ const styles = {
     container: {
         maxWidth: "1100px",
         margin: "0 auto",
-        padding: "20px 20px"
     },
     header: {
         display: "flex",
@@ -301,7 +326,6 @@ const styles = {
     },
     title: {
         color: "#328d7d",
-        fontSize: "30px",
         fontWeight: "bold",
         marginBottom: "10px"
     },
@@ -312,15 +336,12 @@ const styles = {
     },
     card: {
         display: "flex",
-        backgroundColor: "#ffe8cc", // พื้นการ์ดสีครีมส้มอ่อนละมุนตาตรงตามตัวเดโมของคุณ
+        backgroundColor: "#ffe8cc",
         borderRadius: "20px",
-        padding: "20px",
         boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
         alignItems: "stretch"
     },
     imageWrapper: {
-        width: "220px",
-        height: "220px",
         flexShrink: 0,
     },
     image: {
@@ -331,7 +352,6 @@ const styles = {
     },
     details: {
         flex: 1,
-        paddingLeft: "25px",
         display: "flex",
         flexDirection: "column",
     },
@@ -342,17 +362,15 @@ const styles = {
         marginBottom: "12px",
     },
     foodName: {
-        fontSize: "22px",
         fontWeight: "bold",
         color: "#000",
         marginTop: "5px",
         marginBottom: "0px",
     },
     statusBadge: {
-        padding: "6px 14px",
         borderRadius: "10px",
-        fontSize: "15px",
-        fontWeight: "500"
+        fontWeight: "500",
+        whiteSpace: "nowrap"
     },
     infoContainer: {
         display: "flex",
@@ -362,40 +380,38 @@ const styles = {
     },
     infoRow: {
         display: "flex",
-        alignItems: "center",
-        fontSize: "15px",
+        fontSize: "14px",
     },
     icon: {
-        fontSize: "24px",
-        marginRight: "10px",
+        fontSize: "20px",
+        marginRight: "8px",
         display: "inline-block",
-        width: "20px",
-        color: "#ff8c00" // ไอคอนสัญลักษณ์สีส้มสดตัดสวย
+        color: "#ff8c00"
     },
     label: {
         color: "#111",
-        marginRight: "15px",
+        marginRight: "10px",
         fontWeight: "500",
         flexShrink: 0
     },
     value: {
-        color: "#328d7d", // ข้อมูลผลลัพธ์สีเขียวมินิมอล
+        color: "#328d7d",
+        wordBreak: "break-word"
     },
     detailBtn: {
         backgroundColor: "#ff8c00",
         color: "#fff",
         border: "none",
         borderRadius: "10px",
-        padding: "8px 25px",
+        padding: "10px 25px",
         fontSize: "15px",
         cursor: "pointer",
-        width: "fit-content",
-        marginTop: "auto" // บล็อกปุ่มไว้ล่างสุดของการ์ดเสมอเพิ่มความสมดุล
+        textAlign: "center"
     },
     emptyText: {
         textAlign: "center",
         marginTop: "60px",
         color: "#999",
-        fontSize: "18px",
+        fontSize: "16px",
     },
 };
