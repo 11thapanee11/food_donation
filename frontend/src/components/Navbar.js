@@ -435,7 +435,7 @@ export default function Navbar() {
                                     onClick={handleLogout}
                                     style={{ ...styles.dropdownItem, ...styles.logoutItem }}
                                 >
-                                    ล็อกเอ้าท์
+                                    Logout
                                 </button>
                             </div>
                         )}
