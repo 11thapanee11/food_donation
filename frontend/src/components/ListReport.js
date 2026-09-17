@@ -140,7 +140,7 @@ const styles = {
         alignItems: 'center',
         padding: '20px',
         border: '1px solid #ddd',
-        borderRadius: '15px',
+        borderRadius: '20px',
         marginBottom: '10px',
         fontSize: '17px',
         overflowX: 'auto'

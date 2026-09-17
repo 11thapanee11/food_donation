@@ -203,7 +203,7 @@ const styles = {
         border: '1px solid #ccc',
         padding: '15px',
         marginBottom: '15px',
-        borderRadius: '12px',
+        borderRadius: '20px',
         // background: '#fff'
     },
     image: {
