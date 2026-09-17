@@ -23,13 +23,11 @@ public class FoodCategoryService {
             throw new ApplicationException("ไม่พบหมวดหมู่อาหาร", HttpStatus.NOT_FOUND);
         }
 
-        return foodCategoryRepository.findAll()
-                .stream()
+        return categories.stream()
                 .map(cat -> new FoodCategoryDto(
                         cat.getFoodCateId(),
                         cat.getFoodCateName(),
-                        cat.getEmissionFactor()
-                ))
+                        cat.getEmissionFactor()))
                 .toList();
     }
 

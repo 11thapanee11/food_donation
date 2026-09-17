@@ -87,7 +87,7 @@ export default function ImpactDashboard() {
                         <div>
                             <p style={styles.pastelCardLabel}>จำนวนที่ส่งมอบ</p>
                             <h3 style={styles.pastelCardValue}>
-                                {summary.totalDonations} <span style={styles.pastelCardUnit}>มื้อ</span>
+                                {summary.totalDonations} <span style={styles.pastelCardUnit}>ครั้ง</span>
                             </h3>
                         </div>
                         <span style={styles.cardEmoji} className="material-symbols-outlined">fork_spoon</span>

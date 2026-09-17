@@ -55,4 +55,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
         // ค้นหาการจองที่มีสาถนะ pending และวันหมดอายุ
         List<Booking> findByBookingStatusAndFood_ExpiryDateBefore(String status, LocalDateTime time);
+
+        @Query("SELECT SUM(b.bookingUnit) FROM Booking b WHERE b.bookingStatus = 'completed'")
+        Double sumCompletedBookingUnits();
 }
