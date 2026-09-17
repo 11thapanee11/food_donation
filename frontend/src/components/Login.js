@@ -9,6 +9,12 @@ export default function Login() {
     const [errors, setErrors] = useState({ email: "", password: "" });
     const navigate = useNavigate();
 
+    const [showPassword, setShowPassword] = useState(false);
+
+    const toggleShowPassword = () => {
+        setShowPassword(prev => !prev);
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
 
@@ -27,6 +33,16 @@ export default function Login() {
             }
         }
     }, [navigate]);
+
+    const handleEmailChange = (e) => {
+        setEmail(e.target.value);
+        if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+    };
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+        if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+    };
 
     const validateForm = () => {
         let valid = true;
@@ -108,30 +124,64 @@ export default function Login() {
             <h2 style={styles.title}>เข้าสู่ระบบ</h2>
             <form style={styles.form} onSubmit={handleSubmit} noValidate>
                 <p style={styles.label}>อีเมล</p>
-                <div style={styles.inputBox}>
-                    <i className="material-icons" style={styles.inputIcon}>person</i>
+                <div style={{
+                    ...styles.inputBox,
+                    border: errors.email ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
+                    backgroundColor: errors.email ? "#fff1f0" : "#ffe8cc"
+                }}>
+                    <i className="material-icons" style={{
+                        ...styles.inputIcon,
+                        color: errors.email ? "#ff4d4f" : "#ff8c00"
+                    }}>person</i>
                     <input
                         type="email"
                         placeholder="กรอกอีเมล"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={handleEmailChange}
                         style={styles.input}
                     />
                 </div>
-                {errors.email && <p style={styles.errorText}>{errors.email}</p>}
+                {/* แสดง Error ซ่อน/แสดง แบบไม่ซ้อนทับกล่องล่าง */}
+                {errors.email && (
+                    <div style={styles.errorContainer}>
+                        <span style={styles.errorText}>{errors.email}</span>
+                    </div>
+                )}
 
                 <p style={styles.label}>รหัสผ่าน</p>
-                <div style={styles.inputBox}>
-                    <i className="material-icons" style={styles.inputIcon}>lock</i>
+                <div style={{
+                    ...styles.inputBox,
+                    border: errors.password ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
+                    backgroundColor: errors.password ? "#fff1f0" : "#ffe8cc"
+                }}>
+                    <i className="material-icons" style={{
+                        ...styles.inputIcon,
+                        color: errors.password ? "#ff4d4f" : "#ff8c00"
+                    }}>lock</i>
                     <input
-                        type="password"
+                        type={showPassword ? "text" : "password"} // สลับชนิด Input
                         placeholder="กรอกรหัสผ่าน"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={handlePasswordChange}
                         style={styles.input}
                     />
+                    {/* ปุ่มไอคอนลูกตา */}
+                    <i
+                        className="material-icons"
+                        onClick={toggleShowPassword}
+                        style={{
+                            ...styles.eyeIcon,
+                            color: errors.password ? "#ff4d4f" : "#888"
+                        }}
+                    >
+                        {showPassword ? "visibility" : "visibility_off"}
+                    </i>
                 </div>
-                {errors.password && <p style={styles.errorText}>{errors.password}</p>}
+                {errors.password && (
+                    <div style={styles.errorContainer}>
+                        <span style={styles.errorText}>{errors.password}</span>
+                    </div>
+                )}
 
                 <button
                     type="submit"
@@ -162,7 +212,8 @@ const styles = {
         marginBottom: "10px"
     },
     icon: {
-        fontSize: "60px"
+        fontSize: "60px",
+        lineHeight: 1
     },
     title: {
         color: "#328d7d",
@@ -172,7 +223,7 @@ const styles = {
         marginTop: "10px"
     },
     form: {
-        textAtign: "left"
+        textAlign: "left" // แก้คำผิดจาก textAtign
     },
     label: {
         fontSize: "16px",
@@ -185,27 +236,51 @@ const styles = {
         alignItems: "center",
         background: "#ffe8cc",
         borderRadius: "8px",
-        padding: "10px",
-        marginBottom: "15px"
+        padding: "10px 14px",
+        marginBottom: "4px",
+        boxSizing: "border-box", // ป้องกันขนาดกล่องเพี้ยน
+        transition: "all 0.2s ease-in-out"
     },
     inputIcon: {
         color: "#ff8c00",
-        marginRight: "10px"
+        marginRight: "10px",
+        fontSize: "22px",
+        lineHeight: 1,
+        fontFamily: "'Material Icons'", // บังคับใช้ฟอนต์ไอคอนโดยเฉพาะ
+        flexShrink: 0,                   // ป้องกันโดนบีบขนาด
+        display: "flex",
+        alignItems: "center"
+    },
+    eyeIcon: {
+        cursor: "pointer",
+        userSelect: "none",
+        fontSize: "22px",
+        marginLeft: "10px",
+        lineHeight: 1,
+        fontFamily: "'Material Icons'", // บังคับใช้ฟอนต์ไอคอนโดยเฉพาะ
+        flexShrink: 0,                   // ป้องกันโดนบีบขนาด
+        display: "flex",
+        alignItems: "center"
     },
     input: {
         border: "none",
         outline: "none",
         background: "transparent",
         width: "100%",
-        fontFamily: "inherit"
+        fontFamily: "inherit",
+        fontSize: "15px",
+        padding: 0
+    },
+    errorContainer: {
+        textAlign: "left",
+        marginTop: "2px",
+        marginBottom: "12px",
+        paddingLeft: "4px"
     },
     errorText: {
-        color: "red",
+        color: "#ff4d4f",
         fontSize: "13px",
-        marginTop: "-10px",
-        marginBottom: "10px",
-        display: "block",
-        textAlign: "left"
+        display: "block"
     },
     button: {
         width: "200px",
