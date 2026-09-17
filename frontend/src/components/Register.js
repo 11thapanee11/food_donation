@@ -17,6 +17,10 @@ function Register() {
 
     const [errors, setErrors] = useState({});
 
+    // State สำหรับเปิด-ปิดการมองเห็นรหัสผ่าน
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     // ---------------- Helper Functions ----------------
     const validateName = (value, fieldName) => {
         if (!value.trim()) return `กรุณากรอก${fieldName}`;
@@ -77,13 +81,11 @@ function Register() {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // อัปเดตค่าใน formData ตามปกติ
         setFormData((prevData) => ({
             ...prevData,
             [name]: value
         }));
 
-        // ถ้ามีการพิมพ์ข้อมูลแล้วให้ลบ Error
         if (value.trim() !== "") {
             setErrors((prevErrors) => ({
                 ...prevErrors,
@@ -109,7 +111,6 @@ function Register() {
                 Swal.fire({
                     icon: "success",
                     title: result.message || "สมัครสมาชิกเรียบร้อยแล้ว",
-                    // text: result.message || "สมัครสมาชิกสำเร็จเรียบร้อยแล้ว",
                     confirmButtonColor: "#2ecc71"
                 }).then(() => navigate("/login"));
             } else {
@@ -134,7 +135,6 @@ function Register() {
     // ---------------- Render ----------------
     return (
         <div style={styles.container} className="register-container">
-            {/* CSS สำหรับ Responsive Media Queries */}
             <style>{`
                 @media (max-width: 868px) {
                     .register-container {
@@ -147,7 +147,7 @@ function Register() {
                         max-width: 100% !important;
                     }
                     .register-image-section {
-                        display: none !important; /* ซ่อนรูปเมื่อหน้าจอเล็ก */
+                        display: none !important;
                     }
                 }
 
@@ -206,19 +206,25 @@ function Register() {
                     <InputField
                         label="รหัสผ่าน"
                         name="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleChange}
                         error={errors.password}
+                        isPassword={true}
+                        showPassword={showPassword}
+                        onTogglePassword={() => setShowPassword(prev => !prev)}
                     />
 
                     <InputField
                         label="ยืนยันรหัสผ่าน"
                         name="confirmPassword"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         error={errors.confirmPassword}
+                        isPassword={true}
+                        showPassword={showConfirmPassword}
+                        onTogglePassword={() => setShowConfirmPassword(prev => !prev)}
                     />
 
                     <button type="submit" style={styles.button} className="register-button">
@@ -235,30 +241,63 @@ function Register() {
 }
 
 // ---------------- Reusable Input Component ----------------
-const InputField = ({ label, name, type = "text", value, onChange, error, style, autoComplete = "off" }) => (
-    <div style={{ ...styles.inputBox, ...style }}>
+const InputField = ({
+    label,
+    name,
+    type = "text",
+    value,
+    onChange,
+    error,
+    isPassword = false,
+    showPassword = false,
+    onTogglePassword
+}) => (
+    <div style={styles.fieldGroup}>
         <p style={styles.label}>{label}</p>
-        <input
-            type={type}
-            name={name}
-            placeholder={`กรุณากรอก${label}`}
-            value={value}
-            onChange={onChange}
-            autoComplete={type === "password" ? "new-password" : autoComplete}
-            style={styles.input}
-        />
-        {error && <span style={styles.errorText}>{error}</span>}
+        <div style={{
+            ...styles.inputBox,
+            border: error ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
+            backgroundColor: error ? "#fff1f0" : "#ffe8cc"
+        }}>
+            <input
+                type={type}
+                name={name}
+                placeholder={`กรุณากรอก${label}`}
+                value={value}
+                onChange={onChange}
+                autoComplete={isPassword ? "new-password" : "off"}
+                style={styles.input}
+            />
+            {isPassword && (
+                <i
+                    className="material-icons"
+                    onClick={onTogglePassword}
+                    style={{
+                        ...styles.eyeIcon,
+                        color: error ? "#ff4d4f" : "#888"
+                    }}
+                >
+                    {showPassword ? "visibility" : "visibility_off"}
+                </i>
+            )}
+        </div>
+        {error && (
+            <div style={styles.errorContainer}>
+                <span style={styles.errorText}>{error}</span>
+            </div>
+        )}
     </div>
 );
 
 export default Register;
 
+// ---------------- Styles ----------------
 const styles = {
     container: {
         display: "flex",
         justifyContent: "center",
         padding: "30px",
-        gap: "30px",
+        gap: "40px", // เพิ่มระยะห่างระหว่างฟอร์มกับรูปภาพ
         fontFamily: "'Noto Sans Thai', sans-serif",
         backgroundColor: "#fffcf8",
         minHeight: "auto",
@@ -273,48 +312,73 @@ const styles = {
         color: "#328d7d",
         fontWeight: "bold",
         marginTop: "0px",
+        marginBottom: "25px", // เพิ่มระยะห่างใต้หัวข้อ
         fontSize: "30px"
     },
     row: {
         display: "flex",
         gap: "15px",
-        width: "100%",
-        marginBottom: 0
+        width: "100%"
     },
-    inputBox: {
+    fieldGroup: {
         flex: 1,
-        marginBottom: "25px",
+        width: "100%",
+        marginBottom: "20px", // เพิ่มระยะห่างระหว่างแต่ละอินพุตให้โปร่งขึ้น
         position: "relative"
     },
     label: {
         fontSize: "16px",
         display: "block",
         marginTop: 0,
-        marginBottom: "5px",
+        marginBottom: "8px",
         lineHeight: "1.2",
-        color: "#333"
+        color: "#333",
+        textAlign: "left"
+    },
+    inputBox: {
+        display: "flex",
+        alignItems: "center",
+        background: "#ffe8cc",
+        borderRadius: "8px",
+        padding: "10px 14px",
+        boxSizing: "border-box",
+        transition: "all 0.2s ease-in-out"
     },
     input: {
-        width: "100%",
-        padding: "12px",
-        borderRadius: "8px",
         border: "none",
-        backgroundColor: "#ffe8cc",
         outline: "none",
-        boxSizing: "border-box",
-        fontSize: "14px"
+        background: "transparent",
+        width: "100%",
+        fontFamily: "inherit",
+        fontSize: "14px",
+        padding: 0
+    },
+    eyeIcon: {
+        cursor: "pointer",
+        userSelect: "none",
+        fontSize: "20px",
+        marginLeft: "10px",
+        lineHeight: 1,
+        fontFamily: "'Material Icons'",
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center"
+    },
+    errorContainer: {
+        textAlign: "left",
+        marginTop: "2px",
+        position: "absolute", // จัดให้ข้อความ error ไม่ดันความสูงกล่อง
+        left: "4px"
     },
     errorText: {
-        color: "red",
+        color: "#ff4d4f",
         fontSize: "13px",
-        position: "absolute",
-        bottom: "-22px",
-        left: "0"
+        display: "block"
     },
     button: {
         width: "250px",
         display: "block",
-        margin: "30px auto 0 auto",
+        margin: "35px auto 0 auto",
         padding: "12px",
         backgroundColor: "#ff8c00",
         color: "white",
