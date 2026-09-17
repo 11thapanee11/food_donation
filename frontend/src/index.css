@@ -108,6 +108,7 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
+
 /* เปลี่ยนสีพื้นหลังและตัวหนังสือของ option */
 select option {
   background-color: #fff;
@@ -188,6 +189,6 @@ select option {
 .material-icons-outlined,
 .material-symbols-outlined,
 .material-symbols {
-    font-display: block;
-    overflow: hidden;
+  font-display: block;
+  overflow: hidden;
 }

@@ -1,4 +1,3 @@
-/* global globalThis */
 import React, { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -45,6 +44,19 @@ export default function FoodForm() {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
+        // เคลียร์ error ของ field ที่กำลังพิมพ์ทันที
+        setErrors((prev) => {
+            const newErrors = { ...prev, [name]: "" };
+
+            // หากเป็นการเลือก expiryDate ให้ลบ error ของ pickupDateEnd และ pickupEndTime ออกด้วยทันที
+            if (name === "expiryDate") {
+                delete newErrors.pickupDateEnd;
+                delete newErrors.pickupEndTime;
+            }
+
+            return newErrors;
+        });
+
         if (name === "expiryDate" && value) {
 
             // นำค่าวันที่หมดอายุที่เลือกมาสร้างเป็นอ็อบเจกต์ Date
@@ -79,8 +91,6 @@ export default function FoodForm() {
                 [name]: value
             }));
         }
-        // setFormData({ ...formData, [name]: value });
-        // setErrors({ ...errors, [name]: "" }); // เคลียร์ error เมื่อมีการกรอก
     };
 
     // ฟังก์ชันจัดการรูปภาพ
@@ -240,18 +250,20 @@ export default function FoodForm() {
             if (!skipFields.has(key)) {
                 const value = formData[key];
 
+                // เช็คค่าว่าง null หรือ undefined
                 if (value === "" || value === null || value === undefined) {
                     newErrors[key] = "กรุณากรอกข้อมูล";
                 }
-                // if (key.toLowerCase().includes('date') || key.toLowerCase().includes('time')) {
-                //     newErrors[key] = "กรุณาเลือกวันที่/เวลาให้ครบถ้วน";
-                // }
-                else if (typeof value === "number" && value <= 0 && key !== "remainingUnit") {
-                    // ถ้าฟิลด์ตัวเลขอื่นๆ ห้ามเป็น 0 ให้เช็คตรงนี้เพิ่มเติมได้ครับ
+                // เช็คฟิลด์ตัวเลข (รองรับทั้ง String "0" และ Number 0)
+                else if (!isNaN(value) && Number(value) <= 0 && key !== "remainingUnit") {
+                    // เช็คเฉพาะฟิลด์ที่ควรจะเป็นตัวเลขที่มากกว่า 0
+                    const numericFields = ["totalUnit", "unitWeightKg", "peopleCountPerMeal", "limitPerPerson"];
+
+                    if (numericFields.includes(key)) {
+                        newErrors[key] = "กรุณากรอกจำนวนที่มากกว่า 0";
+                    }
                 }
-                // else {
-                //     newErrors[key] = "กรุณากรอกข้อมูล";
-                // }
+                // 3. เช็ควันที่
                 else if (value instanceof Date) {
                     if (Number.isNaN(value.getTime())) {
                         newErrors[key] = "กรุณาเลือกวันที่/เวลา";
@@ -289,15 +301,9 @@ export default function FoodForm() {
 
         // วันรับต้องไม่ตรงกับวันหมดอายุ
         if (expiryDate) {
-            // if (pickupStartDate.toDateString() === expiryDate.toDateString()) {
-            //     newErrors.pickupDateStart = "วันเริ่มรับต้องไม่ตรงกับวันหมดอายุ";
-            // }
             if (pickupEndDate > expiryDate) {
                 newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่เกินวันหมดอายุ";
             }
-            //     // if (pickupEndDate.toDateString() === expiryDate.toDateString()) {
-            //     //     newErrors.pickupDateEnd = "วันสิ้นสุดรับต้องไม่ตรงกับวันหมดอายุ";
-            //     // }
         }
 
         // วันหมดอายุจริง
@@ -317,11 +323,6 @@ export default function FoodForm() {
             newErrors.pickupEndTime = "เวลาสิ้นสุดการรับ ต้องไม่เกินวันหมดอายุ";
         }
         else if (currentPickupEndCombined > maxPickupDeadline) {
-            // ถ้าผู้ใช้พยายามจะขยับเวลาให้รับได้ช้ากว่าเส้นตาย 4 ชั่วโมง จะพ่น Error ทันที
-            // newErrors.pickupDateEnd = "เวลาสิ้นสุดการรับ ต้องล่วงหน้าอย่างน้อย 4 ชั่วโมงก่อนวันหมดอายุ";
-
-            // หรือถ้าอยากแยกฟิลด์แสดงเออเร่อตรงเวลาด้วย:
-            // newErrors.pickupEndTime = "เวลาสิ้นสุดการรับเกินกำหนด";
             newErrors.pickupEndTime = "เวลาสิ้นสุดการรับ ต้องล่วงหน้าอย่างน้อย 4 ชั่วโมงก่อนวันหมดอายุ";
         }
 
@@ -361,8 +362,6 @@ export default function FoodForm() {
         if (imageFile) {
             data.append("fileImage", imageFile);
         }
-
-
 
         data.append("foodName", formData.foodName);
         data.append("description", formData.description);
@@ -664,7 +663,7 @@ export default function FoodForm() {
                 maxlength: '6',
                 autocapitalize: 'off',
                 autocorrect: 'off',
-                style: 'text-align: center; font-size: 22px; letter-spacing: 4px; border-radius: 12px; border: 1px solid #ccc; width: 80%; margin: 15px auto;'
+                style: 'text-align: center; font-size: 22px; letter-spacing: 4px; border-radius: 12px; border: none; width: 80%; margin: 15px auto;'
             },
             preConfirm: (code) => {
                 if (!code) {
@@ -746,7 +745,7 @@ export default function FoodForm() {
                 {/* <h1 style={styles.mainTitle}>สร้างรายการอาหารบริจาค</h1> */}
                 {/* แสดง Dropdown สถานะเฉพาะตอน Edit Mode เท่านั้น ตามภาพต้นแบบ */}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
 
                     {isEditMode && !isExpired && (
                         <div style={{
@@ -811,12 +810,7 @@ export default function FoodForm() {
                             type="button"
                             name="fileImage"
                             onClick={handleClickUpload}
-                            // style={{
-                            //     ...styles.uploadBox,
-                            //     background: "none",
-                            //     cursor: "pointer",
-                            // }}
-                            disabled={!isEditable} // ล็อกไม่ให้คลิกเลือกรูปใหม่
+                            disabled={!isEditable}
                             style={{
                                 ...styles.uploadBox,
                                 background: "none",
@@ -841,13 +835,7 @@ export default function FoodForm() {
                             </div>
                         </button>
 
-                        {/* {imagePreview && (
-                            <img src={imagePreview} alt="Preview" style={styles.previewImg} />
-                        )} */}
-
-
                         {renderFoodImage()}
-
                     </div>
                     {errors.fileImage && (
                         <div style={{ color: "red", marginBottom: "10px" }}>{errors.fileImage}</div>
@@ -856,7 +844,7 @@ export default function FoodForm() {
                     {/* Section 2: ข้อมูลอาหาร */}
                     <div style={styles.sectionTitle}>
                         <i className="material-icons-outlined" style={styles.iconHeader}>article</i>
-                        <p style={styles.textHeader}> ข้อมูลอาหาร </p>
+                        <p style={styles.textHeader}>ข้อมูลอาหาร</p>
                     </div>
                     <div style={styles.row}>
                         <div style={styles.inputGroup}>
@@ -865,9 +853,12 @@ export default function FoodForm() {
                                 name="foodName"
                                 value={formData.foodName}
                                 placeholder="กรอกชื่ออาหาร"
-                                disabled={!isEditable} // ล็อกถ้ายังไม่กดปุ่มแก้ไข
+                                disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.foodName ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.foodName ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "text" : "not-allowed"
                                 }}
@@ -878,11 +869,14 @@ export default function FoodForm() {
                         <div style={styles.inputGroup}>
                             <p style={styles.label}>หมวดหมู่</p>
                             <select
-                                name="foodCateId" // เปลี่ยนชื่อให้ตรงกับ state
+                                name="foodCateId"
                                 value={String(formData.foodCateId || "")}
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.foodCateId ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.foodCateId ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "pointer" : "not-allowed"
                                 }}
@@ -905,15 +899,18 @@ export default function FoodForm() {
                             name="description"
                             value={formData.description}
                             placeholder="กรอกรายละเอียด"
-                            // style={{ ...styles.input, height: "80px", paddingTop: "10px", resize: "none" }}
-                            disabled={!isEditable} ฏโ
+                            disabled={!isEditable}
                             style={{
                                 ...styles.input,
+                                border: errors.description ? "1px solid #e53935" : "none",
+                                backgroundColor: errors.description ? "#fff5f5" : "#FFEEDD",
+                                outline: "none",
                                 color: isEditable ? "#000" : "#a6a6a6",
                                 cursor: isEditable ? "text" : "not-allowed"
                             }}
                             onChange={handleChange}
                         />
+                        {errors.description && <span style={{ color: "red" }}>{errors.description}</span>}
                     </div>
 
                     <div style={styles.row}>
@@ -926,8 +923,9 @@ export default function FoodForm() {
                                 disabled={isEditMode}
                                 style={{
                                     ...styles.input,
-                                    // color: "#a6a6a6",
-                                    // cursor: "not-allowed",
+                                    border: errors.expiryDate ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.expiryDate ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditMode ? "#a6a6a6" : "#000",
                                     cursor: isEditMode ? "not-allowed" : "pointer"
                                 }}
@@ -945,10 +943,13 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.unitWeightKg ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.unitWeightKg ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "text" : "not-allowed"
                                 }}
-                                // บังคับที่คีย์บอร์ด ถ้าผู้ใช้พยายามพิมพ์เครื่องหมายลบ (-) หรือตัว e ให้ดีดออกทันที
+                                onWheel={(e) => e.target.blur()}
                                 onKeyDown={(e) => {
                                     if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
                                         e.preventDefault();
@@ -971,10 +972,13 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.totalUnit ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.totalUnit ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "text" : "not-allowed"
                                 }}
-                                min="0"
+                                onWheel={(e) => e.target.blur()}
                                 onKeyDown={(e) => {
                                     if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
                                         e.preventDefault();
@@ -984,7 +988,7 @@ export default function FoodForm() {
                             />
                             {errors.totalUnit && <span style={{ color: "red" }}>{errors.totalUnit}</span>}
                         </div>
-                        <div style={styles.inputGroup}>
+                        {/* <div style={styles.inputGroup}>
                             <p style={styles.label}>จำนวนคนที่เหมาะสมต่อมื้อ</p>
                             <input
                                 type="number"
@@ -994,6 +998,9 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.peopleCountPerMeal ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.peopleCountPerMeal ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "text" : "not-allowed"
                                 }}
@@ -1005,9 +1012,37 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
+                            {errors.peopleCountPerMeal && <span style={{ color: "red" }}>{errors.peopleCountPerMeal}</span>}
+                        </div> */}
+                        <div style={{ ...styles.inputGroup }}>
+                            <p style={styles.label}>จำนวนจำกัดบริจาคต่อคน</p>
+                            <input
+                                type="number"
+                                name="limitPerPerson"
+                                value={formData.limitPerPerson}
+                                placeholder="กรอกจำนวน"
+                                disabled={!isEditable}
+                                style={{
+                                    ...styles.input,
+                                    border: errors.limitPerPerson ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.limitPerPerson ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
+                                    color: isEditable ? "#000" : "#a6a6a6",
+                                    cursor: isEditable ? "text" : "not-allowed"
+                                }}
+                                onWheel={(e) => e.target.blur()}
+                                onKeyDown={(e) => {
+                                    if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                onChange={handleChange}
+                            />
+                            {errors.limitPerPerson && <span style={{ color: "red" }}>{errors.limitPerPerson}</span>}
                         </div>
                     </div>
-                    <div style={{ ...styles.inputGroup, width: "48%" }}>
+
+                    {/* <div style={{ ...styles.inputGroup, width: "48%" }}>
                         <p style={styles.label}>จำนวนจำกัดบริจาคต่อคน</p>
                         <input
                             type="number"
@@ -1017,6 +1052,9 @@ export default function FoodForm() {
                             disabled={!isEditable}
                             style={{
                                 ...styles.input,
+                                border: errors.limitPerPerson ? "1px solid #e53935" : "none",
+                                backgroundColor: errors.limitPerPerson ? "#fff5f5" : "#FFEEDD",
+                                outline: "none",
                                 color: isEditable ? "#000" : "#a6a6a6",
                                 cursor: isEditable ? "text" : "not-allowed"
                             }}
@@ -1029,15 +1067,16 @@ export default function FoodForm() {
                             onChange={handleChange}
                         />
                         {errors.limitPerPerson && <span style={{ color: "red" }}>{errors.limitPerPerson}</span>}
-                    </div>
+                    </div> */}
 
                     {/* Section 3: สถานที่และเวลา */}
                     <div style={{ ...styles.sectionTitle, marginTop: "20px" }}>
                         <i className="material-icons-outlined" style={styles.iconHeader}>location_on</i>
-                        <p style={styles.textHeader}> สถานที่และเวลารับอาหาร </p>
+                        <p style={styles.textHeader}>สถานที่และเวลารับอาหาร</p>
                     </div>
+
                     <div style={styles.inputGroupFull}>
-                        <p style={styles.label}> สถานที่รับ </p>
+                        <p style={styles.label}>สถานที่รับ</p>
                         <input
                             name="address"
                             value={formData.address}
@@ -1045,6 +1084,9 @@ export default function FoodForm() {
                             disabled={!isEditable}
                             style={{
                                 ...styles.input,
+                                border: errors.address ? "1px solid #e53935" : "none",
+                                backgroundColor: errors.address ? "#fff5f5" : "#FFEEDD",
+                                outline: "none",
                                 color: isEditable ? "#000" : "#a6a6a6",
                                 cursor: isEditable ? "text" : "not-allowed"
                             }}
@@ -1063,6 +1105,9 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.pickupDateStart ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.pickupDateStart ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "pointer" : "not-allowed"
                                 }}
@@ -1079,6 +1124,9 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.pickupDateEnd ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.pickupDateEnd ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "pointer" : "not-allowed"
                                 }}
@@ -1098,6 +1146,9 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.pickupStartTime ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.pickupStartTime ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "pointer" : "not-allowed"
                                 }}
@@ -1114,6 +1165,9 @@ export default function FoodForm() {
                                 disabled={!isEditable}
                                 style={{
                                     ...styles.input,
+                                    border: errors.pickupEndTime ? "1px solid #e53935" : "none",
+                                    backgroundColor: errors.pickupEndTime ? "#fff5f5" : "#FFEEDD",
+                                    outline: "none",
                                     color: isEditable ? "#000" : "#a6a6a6",
                                     cursor: isEditable ? "pointer" : "not-allowed"
                                 }}
@@ -1125,23 +1179,17 @@ export default function FoodForm() {
 
                     {/* Map Placeholder */}
                     <div style={styles.mapContainer}>
-                        {/* ส่วนของ Google Map */}
-
                         <GoogleMap
-                            mapContainerStyle={styles.mapCanvas} // ใช้ style จากเครื่อง
+                            mapContainerStyle={styles.mapCanvas}
                             center={currentPos}
                             zoom={17}
-                            // onClick={handleMapClick}
-                            // ห้ามคลิกแผนที่ถ้าไม่ได้อยู่ในโหมดแก้ไข (ถ้า !isEditable ให้ค่าเป็น null)
                             onClick={isEditable ? handleMapClick : null}
                         >
                             <Marker
                                 position={currentPos}
-                                // ห้ามลากหมุดถ้าไม่ได้อยู่ในโหมดแก้ไข
                                 draggable={isEditable}
-                                // ห้ามอัปเดตพิกัดจากการลากหมุด
                                 onDragEnd={(e) => {
-                                    if (!isEditable) return; // ดักจับเผื่อไว้เพื่อความปลอดภัย
+                                    if (!isEditable) return;
                                     setFormData((prev) => ({
                                         ...prev,
                                         latitude: e.latLng.lat(),
@@ -1152,7 +1200,6 @@ export default function FoodForm() {
                             />
                         </GoogleMap>
 
-                        {/* ปุ่มใช้ตำแหน่งปัจจุบัน (ย้ายมาไว้ข้างใน Container เพื่อให้ลอยทับ) */}
                         {isEditable && (
                             <button
                                 type="button"
@@ -1170,7 +1217,6 @@ export default function FoodForm() {
                             </button>
                         )}
 
-                        {/* ค่าพิกัดแฝงสำหรับส่งฟอร์ม */}
                         <input type="hidden" name="latitude" value={formData.latitude} />
                         <input type="hidden" name="longitude" value={formData.longitude} />
                     </div>
@@ -1191,7 +1237,6 @@ export default function FoodForm() {
                             {errors.location}
                         </p>
                     )}
-
                     {/* Action Buttons */}
                     <div style={styles.buttonGroup}>
                         {renderActionButtons()}
@@ -1264,13 +1309,29 @@ const styles = {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        gap: "8px"
+        gap: "8px",
+        position: "relative",      // เพิ่มเพื่อให้อ้างอิงตำแหน่ง Error Container แบบ Absolute
+        marginBottom: "15px"       // เพิ่มระยะห่างเว้นเผื่อบรรทัด Error ด้านล่าง
     },
     inputGroupFull: {
         width: "100%",
         display: "flex",
         flexDirection: "column",
         gap: "8px",
+        position: "relative",
+        marginBottom: "15px"
+    },
+    errorContainer: {
+        textAlign: "left",
+        marginTop: "4px",
+        position: "absolute",
+        top: "100%",                // จัดให้อยู่ใต้อินพุตพอดี
+        left: "4px"
+    },
+    errorText: {
+        color: "#ff4d4f",           // สีแดงมาตรฐานแบบเดียวกับหน้า Login/Register
+        fontSize: "13px",
+        display: "block"
     },
     label: {
         fontSize: "16px",
@@ -1284,7 +1345,6 @@ const styles = {
         border: "none",
         backgroundColor: "#FFEEDD",
         fontSize: "15px",
-        outline: "none",
         fontFamily: "inherit"
     },
     mapPlaceholder: {
@@ -1320,19 +1380,6 @@ const styles = {
         borderRadius: "20px",
         border: "1px solid #ddd",
     },
-    // currentLocationBtn: {
-    //     position: "absolute",
-    //     bottom: "20px",
-    //     right: "20px",
-    //     padding: "10px 15px",
-    //     backgroundColor: "#fff",
-    //     border: "none",
-    //     borderRadius: "10px",
-    //     boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-    //     cursor: "pointer",
-    //     zIndex: 5,
-    //     fontFamily: "inherit"
-    // },
     buttonGroup: {
         display: "flex",
         justifyContent: "center",
