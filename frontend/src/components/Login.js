@@ -254,7 +254,7 @@ const styles = {
     eyeIcon: {
         cursor: "pointer",
         userSelect: "none",
-        fontSize: "22px",
+        fontSize: "20px",
         marginLeft: "10px",
         lineHeight: 1,
         fontFamily: "'Material Icons'", // บังคับใช้ฟอนต์ไอคอนโดยเฉพาะ
