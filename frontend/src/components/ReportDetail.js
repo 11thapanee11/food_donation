@@ -276,7 +276,7 @@ export default function ReportDetail() {
                             </div>
                         </div>
 
-                        <div style={styles.infoRow}>
+                        {/* <div style={styles.infoRow}>
                             <span className="material-symbols-outlined" style={styles.icon}>
                                 hand_package
                             </span>
@@ -284,7 +284,7 @@ export default function ReportDetail() {
                                 <div style={styles.infoLabel}>จำนวนจำกัดต่อคน</div>
                                 <div style={styles.infoValue}>{report.foodDetail?.limitPerPerson} </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 
@@ -388,7 +388,7 @@ const styles = {
         padding: '12px',
         backgroundColor: '#000',
         color: '#fff',
-        borderRadius: '8px',
+        borderRadius: '15px',
         border: 'none',
         marginBottom: '10px',
         cursor: 'pointer',
@@ -398,7 +398,7 @@ const styles = {
         padding: '12px',
         backgroundColor: '#ff4d4f',
         color: '#fff',
-        borderRadius: '8px',
+        borderRadius: '15px',
         border: 'none',
         marginBottom: '10px',
         cursor: 'pointer',
@@ -408,7 +408,7 @@ const styles = {
         padding: '12px',
         backgroundColor: '#d9d9d9',
         border: 'none',
-        borderRadius: '8px',
+        borderRadius: '15px',
         cursor: 'pointer',
         fontSize: '16px'
     },
