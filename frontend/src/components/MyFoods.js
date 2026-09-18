@@ -98,7 +98,7 @@ export default function MyFoods() {
         available: { text: "เปิดให้รับบริจาค", color: "#2e7d32", bgColor: "#e8f5e9" },
         closed: { text: "ปิดให้รับบริจาค", color: "#707070", bgColor: "#f0f0f0" },
         disable: { text: "ถูกระงับ", color: "#c41414", bgColor: "#ffc8c8" },
-        expired: { text: "หมดอายุ", color: "#37474f", bgColor: "#eceff1" }
+        expired: { text: "หมดอายุ", color: "#f9630c", bgColor: "#fff7f2" }
     };
 
     const handleCreateClick = async () => {

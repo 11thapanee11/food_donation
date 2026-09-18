@@ -669,10 +669,22 @@ export default function FoodDetail() {
                         alt={food.foodName}
                         style={{ ...styles.foodImage, height: isMobile ? "250px" : "360px" }}
                     />
-                    <p style={styles.donorText}>
+                    <p style={{ ...styles.donorText, marginTop: "10px" }}>
                         <span style={{ color: "#ff8c00", fontWeight: "bold" }}>บริจาคโดย</span>
                         <span> {food.donorName}</span>
                     </p>
+                    {isFromReceive ? (<p style={{ ...styles.donorText, margin: "5px 0px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ color: "#328d7d", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <span className="material-symbols" style={{ fontSize: "18px", color: "#328d7d" }}>
+                                call
+                            </span>
+                            เบอร์โทรติดต่อ
+                        </span>
+                        <span>
+                            {food.donorPhoneNum}
+                        </span>
+                    </p>) : (null)}
+
 
                     {isFromReceive ? (
                         <>
@@ -851,7 +863,7 @@ export default function FoodDetail() {
                             </div>
                         </div>
 
-                        <div style={styles.infoRow}>
+                        {/* <div style={styles.infoRow}>
                             <span className="material-icons" style={styles.icon}>
                                 person
                             </span>
@@ -859,7 +871,7 @@ export default function FoodDetail() {
                                 <div style={styles.infoLabel}>จำนวนคนที่เหมาะต่อการบริโภค</div>
                                 <div style={styles.infoValue}>{food.peopleCountPerMeal === null ? "ไม่ระบุ" : food.peopleCountPerMeal} คน</div>
                             </div>
-                        </div>
+                        </div> */}
 
                         <div style={styles.infoRow}>
                             <span className="material-icons" style={styles.icon}>
@@ -1024,7 +1036,7 @@ const styles = {
     },
     donorText: {
         fontSize: "18px",
-        marginTop: "16px",
+        margin: "0px",
         color: "#333"
     },
     reviewCard: {

@@ -58,6 +58,7 @@ public class FoodService {
             if (food.getDonor().getUser() != null) {
                 dto.setDonorName(
                         food.getDonor().getUser().getFirstName() + " " + food.getDonor().getUser().getLastName());
+                dto.setDonorPhoneNum(food.getDonor().getUser().getPhoneNumber());
             }
         }
         return dto;

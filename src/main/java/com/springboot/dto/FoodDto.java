@@ -47,6 +47,7 @@ public class FoodDto {
     // private Integer donor;
     private Integer donorId;
     private String donorName;
+    private String donorPhoneNum;
 
     public String getFoodName() {
         return foodName;
@@ -224,8 +225,11 @@ public class FoodDto {
         this.foodCateName = foodCateName;
     }
 
-    
+    public String getDonorPhoneNum() {
+        return donorPhoneNum;
+    }
 
-    
-
+    public void setDonorPhoneNum(String donorPhoneNum) {
+        this.donorPhoneNum = donorPhoneNum;
+    }
 }
