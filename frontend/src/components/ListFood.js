@@ -27,29 +27,24 @@ export default function ListFood() {
 
     const STATUS_CONFIG = {
         available: {
-            text: "AVAILABLE",
+            text: "เปิดให้รับบริจาค",
             color: "#51862e",
             bgColor: "#e8f5e9"
         },
         closed: {
-            text: "UNAVAILABLE",
+            text: "ปิดให้รับบริจาค",
             color: "#707070",
             bgColor: "#f0f0f0"
         },
-        // suspended: {
-        //     text: "ถูกระงับ",
-        //     color: "#ef6c00",
-        //     bgColor: "#fff3e0"
-        // },
         disable: {
-            text: "DISABLE",
-            color: "#d32f2f", 
+            text: "ถูกปิดการแสดงผล",
+            color: "#d32f2f",
             bgColor: "#ffebee"
         },
         expired: {
-            text: "EXPIRED",
-            color: "#f1d900",
-            bgColor: "#eceff1"
+            text: "หมดอายุ",
+            color: "#f0a400",
+            bgColor: "#fff6db"
         }
     };
 
@@ -86,14 +81,14 @@ export default function ListFood() {
     return (
         <div style={styles.container}>
             <p style={{ ...styles.mainTitle, fontSize: isMobile ? "22px" : "30px" }}>รายการอาหารทั้งหมด</p>
-            
+
             {foods.slice().reverse().map((food) => {
                 // ดึงค่า config ตามสถานะ (ถ้าไม่ตรงกับ key เลย ให้ใช้ค่า default หรือแสดงข้อความว่าง)
                 const statusInfo = STATUS_CONFIG[food.foodStatus] || { text: food.status, color: "gray" };
 
                 return (
-                    <div 
-                        key={food.foodId || food.id} 
+                    <div
+                        key={food.foodId || food.id}
                         style={{
                             ...styles.card,
                             flexDirection: isMobile ? 'column' : 'row',
@@ -101,15 +96,15 @@ export default function ListFood() {
                             gap: isMobile ? '15px' : '0'
                         }}
                     >
-                        <img 
-                            src={`${BASE_URL}${food.foodImage}`} 
-                            alt={food.foodName} 
+                        <img
+                            src={`${BASE_URL}${food.foodImage}`}
+                            alt={food.foodName}
                             style={{
                                 ...styles.image,
                                 width: isMobile ? '100%' : '130px',
                                 height: isMobile ? '180px' : '130px',
                                 marginRight: isMobile ? '0' : '20px'
-                            }} 
+                            }}
                         />
 
                         <div style={{ ...styles.info, marginLeft: isMobile ? '0' : '8px' }}>
@@ -153,22 +148,31 @@ export default function ListFood() {
                             <div style={{
                                 ...styles.status,
                                 marginRight: isMobile ? '0' : '50px',
-                                width: isMobile ? 'auto' : '150px',
-                                textAlign: isMobile ? 'left' : 'center'
+                                width: isMobile ? 'fit-content' : '120px',
+                                textAlign: 'center',
+
+                                // ปรับแต่งกรอบและสีพื้นหลังตามสถานะ
+                                backgroundColor: statusInfo.bgColor,
+                                borderRadius: '10px',                  // ปรับความโค้งมนของกรอบ
+                                padding: '6px',                   // ระยะห่างด้านในกรอบ
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             }}>
                                 <span style={{
                                     color: statusInfo.color,
-                                    fontSize: '16px'
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'                 // เพิ่มความหนาตัวอักษรให้ดูอ่านง่ายขึ้น
                                 }}>
                                     {statusInfo.text}
                                 </span>
                             </div>
 
-                            <button 
+                            <button
                                 style={{
                                     ...styles.detailBtn,
                                     marginRight: isMobile ? '0' : '20px'
-                                }} 
+                                }}
                                 onClick={() => {
                                     navigate('/food-detail', { state: { id: food.foodId || food.id, fromPage: '/manage-foods' } });
                                 }}
@@ -227,12 +231,15 @@ const styles = {
         textAlign: "center"
     },
     detailBtn: {
-        cursor: 'pointer',
+        backgroundColor: '#fffcf8',          // หรือใช้สีส้มทึบ #ff8c00 แล้วตัวอักษรสีขาว
+        border: '1.5px solid #ff8c00',       // เส้นขอบสีส้มเข้ากับธีม
         color: '#ff8c00',
-        border: 'none',
-        background: 'none',
-        fontSize: "16px",
-        marginRight: '20px',
+        padding: '6px 16px',
+        borderRadius: '12px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        fontSize: '14px',
+        transition: 'all 0.2s ease'
     },
     loading: {
         textAlign: "center",

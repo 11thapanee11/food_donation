@@ -95,10 +95,30 @@ export default function MyFoods() {
     };
 
     const STATUS_CONFIG = {
-        available: { text: "เปิดให้รับบริจาค", color: "#2e7d32", bgColor: "#e8f5e9" },
-        closed: { text: "ปิดให้รับบริจาค", color: "#707070", bgColor: "#f0f0f0" },
-        disable: { text: "ถูกระงับ", color: "#c41414", bgColor: "#ffc8c8" },
-        expired: { text: "หมดอายุ", color: "#f9630c", bgColor: "#fff7f2" }
+        // available: { text: "เปิดให้รับบริจาค", color: "#2e7d32", bgColor: "#e8f5e9" },
+        // closed: { text: "ปิดให้รับบริจาค", color: "#707070", bgColor: "#f0f0f0" },
+        // disable: { text: "ถูกระงับ", color: "#c41414", bgColor: "#ffc8c8" },
+        // expired: { text: "หมดอายุ", color: "#f9630c", bgColor: "#fff7f2" }
+        available: {
+            text: "เปิดให้รับบริจาค",
+            color: "#51862e",
+            bgColor: "#e8f5e9"
+        },
+        closed: {
+            text: "ปิดให้รับบริจาค",
+            color: "#707070",
+            bgColor: "#f0f0f0"
+        },
+        disable: {
+            text: "ถูกปิดการแสดงผล",
+            color: "#d32f2f",
+            bgColor: "#ffebee"
+        },
+        expired: {
+            text: "หมดอายุ",
+            color: "#f0a400",
+            bgColor: "#fff6db"
+        }
     };
 
     const handleCreateClick = async () => {
@@ -124,7 +144,7 @@ export default function MyFoods() {
                 });
                 return;
             }
-            
+
             navigate("/food-form");
         } catch (error) {
             console.error("Check Status Error:", error);
@@ -140,15 +160,15 @@ export default function MyFoods() {
             <div style={styles.list}>
                 {[...myFoods].reverse().map((food) => {
                     return (
-                        <div 
-                            key={food.foodId} 
+                        <div
+                            key={food.foodId}
                             style={{
                                 ...styles.card,
                                 flexDirection: isMobile ? "column" : "row",
                                 alignItems: isMobile ? "stretch" : "stretch"
                             }}
                         >
-                            <div 
+                            <div
                                 style={{
                                     ...styles.imageWrapper,
                                     width: isMobile ? "100%" : "220px",
@@ -162,7 +182,7 @@ export default function MyFoods() {
                                 />
                             </div>
 
-                            <div 
+                            <div
                                 style={{
                                     ...styles.details,
                                     paddingLeft: isMobile ? "0px" : "25px",
@@ -248,7 +268,7 @@ export default function MyFoods() {
     return (
         <div style={styles.page}>
             <div style={{ ...styles.container, padding: isMobile ? "15px" : "20px" }}>
-                <div 
+                <div
                     style={{
                         ...styles.header,
                         flexDirection: isMobile ? "column" : "row",

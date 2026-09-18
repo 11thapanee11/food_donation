@@ -235,9 +235,9 @@ export default function ImpactDashboard() {
 }
 
 const styles = {
-    container: { maxWidth: "1140px", margin: "0 auto", padding: "20px" },
+    container: { maxWidth: "1140px", margin: "0 auto", padding: "20px 20px" },
     header: { marginBottom: "20px", marginTop: "20px" },
-    mainTitle: { fontSize: "28px", fontWeight: "bold", color: "#1A1A1A", margin: 0 },
+    mainTitle: { fontSize: "30px", fontWeight: "bold", color: "#1A1A1A", margin: 0 },
     topSection: { display: "flex", gap: "20px", marginBottom: "20px", flexWrap: "wrap" },
 
     // Hero Card
