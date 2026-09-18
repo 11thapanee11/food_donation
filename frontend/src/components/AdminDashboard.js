@@ -137,7 +137,7 @@ export default function ImpactDashboard() {
             <div style={styles.threeCardsRow}>
                 {/* การ์ดที่ 1: การจองทั้งหมด */}
                 <div style={styles.whiteCard}>
-                    <p style={{ color: '#000000', margin: '0 0 10px 0', fontSize: '16px', fontWeight: 'bold' }}>การจองทั้งหมด</p>
+                    <p style={{ color: '#000000', margin: '0 0 10px 0', fontSize: '17px', fontWeight: 'bold' }}>การจองทั้งหมด</p>
                     <h1 style={{ fontSize: '44px', margin: '0 0 12px 0', fontWeight: 'bold' }}>{stats.totalBookings}</h1>
                     <p style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#595959' }}>
                         อัตราสำเร็จ <span style={{ color: '#6b9222', fontWeight: 'bold' }}>{successRate}%</span>
@@ -212,20 +212,50 @@ export default function ImpactDashboard() {
                     รายงานปัญหา
                 </h1>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <span style={{ color: '#595959' }}>รายงานทั้งหมด</span>
-                        <span style={{ fontWeight: 'bold', color: '#262626' }}>{stats.totalReports || 0} รายการ</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #f0f0f0' }}>
+                        <span style={{ color: '#595959', fontWeight: '500' }}>รายงานทั้งหมด</span>
+                        <span style={{
+                            fontWeight: 'bold',
+                            color: '#262626',
+                            backgroundColor: '#f5f5f5',
+                            borderRadius: '12px',
+                            padding: '4px 12px',
+                            fontSize: '14px'
+                        }}>
+                            {stats.totalReports || 0} รายการ
+                        </span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <span style={{ color: '#595959' }}>รอดำเนินการ (Pending)</span>
-                        <span style={{ color: '#ed171f' }}>{stats.pendingReport || 0} รายการ</span>
+                    {/* รอดำเนินการ */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #f0f0f0' }}>
+                        <span style={{ color: '#595959', fontWeight: '500' }}>รอดำเนินการ</span>
+                        <span style={{
+                            fontWeight: 'bold',
+                            color: '#f05d62',
+                            backgroundColor: '#fff1f0',
+                            // border: '1px solid #ffccc7',
+                            borderRadius: '12px',
+                            padding: '4px 12px',
+                            fontSize: '14px'
+                        }}>
+                            {stats.pendingReport || 0} รายการ
+                        </span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                        <span style={{ color: '#595959' }}>ตรวจสอบแล้ว (Checked)</span>
-                        <span style={{ color: '#6a9e50' }}>{stats.checkedReport || 0} รายการ</span>
+                    {/* ตรวจสอบแล้ว */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0' }}>
+                        <span style={{ color: '#595959', fontWeight: '500' }}>ตรวจสอบแล้ว</span>
+                        <span style={{
+                            fontWeight: 'bold',
+                            color: '#6b9c53',
+                            backgroundColor: '#e5f1d0',
+                            borderRadius: '12px',
+                            padding: '4px 12px',
+                            fontSize: '14px'
+                        }}>
+                            {stats.checkedReport || 0} รายการ
+                        </span>
                     </div>
                 </div>
             </div>
@@ -274,13 +304,13 @@ const styles = {
     subCard: {
         padding: "16px 20px",
         borderRadius: "16px",
-        borderStyle: 'solid',
-        borderWidth: '1.5px',
+        // borderStyle: 'solid',
+        // borderWidth: '1.5px',
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
     },
-    subCardLabel: { fontSize: "13px", color: "#555", margin: "0 0 4px 0" },
+    subCardLabel: { fontSize: "14px", color: "#555", margin: "0 0 4px 0" },
     subCardValue: { fontSize: "24px", fontWeight: "bold", margin: 0 },
     subCardUnit: { fontSize: "14px", fontWeight: "normal", color: "#666" },
     iconBg: { borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" },
@@ -288,7 +318,7 @@ const styles = {
     // แถว 3 การ์ดเดิม
     threeCardsRow: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" },
     whiteCard: { padding: '20px', borderRadius: '16px', border: '2px solid #f0f0f0' },
-    cardTitle: { fontSize: '16px', fontWeight: 'bold', color: '#262626', margin: '0 0 15px 0' },
+    cardTitle: { fontSize: '17px', fontWeight: 'bold', color: '#262626', margin: '0 0 15px 0' },
     donutCenterText: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' },
     legendItem: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' },
     badge: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },

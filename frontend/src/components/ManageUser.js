@@ -29,9 +29,22 @@ export default function ManageUsers() {
             .catch(err => console.error("Error:", err));
     }, []);
 
+    const STATUS_MAP = {
+        active: {
+            text: 'ใช้งานได้',
+            color: '#689f38',
+            bgColor: '#f1f8e9'
+        },
+        deactive: {
+            text: 'ถูกปิดใช้งาน',
+            color: '#777575',
+            bgColor: '#f5f5f5'
+        }
+    };
+
     const handleToggleStatus = (donor) => {
         const isActive = donor.status === 'active';
-        const nextStatus = isActive ? 'deactivate' : 'active';
+        const nextStatus = isActive ? 'deactive' : 'active';
         const actionLabel = isActive ? 'ระงับบัญชี' : 'เปิดใช้งาน';
         const color = isActive ? '#ff4d4d' : '#2ecc71';
 
@@ -123,10 +136,16 @@ export default function ManageUsers() {
                     <div style={{ flex: isMobile ? 'none' : 1, width: isMobile ? '100%' : 'auto' }}>
                         {isMobile && <span style={styles.mobileLabel}>สถานะ: </span>}
                         <span style={{
-                            color: donor.status === 'active' ? '#689f38' : '#757575',
-                            fontWeight: isMobile ? 'bold' : 'normal'
+                            color: STATUS_MAP[donor.status?.toLowerCase()]?.color || '#777575',
+                            backgroundColor: STATUS_MAP[donor.status?.toLowerCase()]?.bgColor || '#f5f5f5',
+                            border: `1px solid ${STATUS_MAP[donor.status?.toLowerCase()]?.color || '#777575'}`,
+                            padding: '4px 12px',
+                            borderRadius: '13px',
+                            fontSize: '14px',
+                            
+                            display: 'inline-block'
                         }}>
-                            {donor.status ? donor.status.toUpperCase() : ''}
+                            {STATUS_MAP[donor.status?.toLowerCase()]?.text || donor.status || ''}
                         </span>
                     </div>
 

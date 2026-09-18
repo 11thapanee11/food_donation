@@ -110,6 +110,7 @@ export default function ListReport() {
                             style={{
                                 ...styles.detailBtn, 
                                 color: report.reportStatus === 'checked' ? '#777' : '#ff8c00',
+                                border: report.reportStatus === 'checked' ? '1.5px solid #777' : '1.5px solid #ff8c00',
                                 whiteSpace: 'nowrap'
                             }}
                             onClick={() => navigate('/report-detail', { state: { id: report.reportId, fromPage: '/manage-report' } })}
@@ -146,13 +147,15 @@ const styles = {
         overflowX: 'auto'
     },
     detailBtn: {
-        border: 'none',
-        background: 'none',
+        backgroundColor: '#fffcf8',          // หรือใช้สีส้มทึบ #ff8c00 แล้วตัวอักษรสีขาว
+        border: '1.5px solid #ff8c00',       // เส้นขอบสีส้มเข้ากับธีม
         color: '#ff8c00',
+        padding: '6px 16px',
+        borderRadius: '12px',
+        // fontWeight: 'bold',
         cursor: 'pointer',
-        fontSize: '17px',
-        whiteSpace: 'nowrap',
-        padding: 0
+        fontSize: '15px',
+        transition: 'all 0.2s ease'
     },
     loading: {
         textAlign: "center",

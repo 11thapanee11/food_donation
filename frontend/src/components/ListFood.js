@@ -161,8 +161,8 @@ export default function ListFood() {
                             }}>
                                 <span style={{
                                     color: statusInfo.color,
-                                    fontSize: '14px',
-                                    fontWeight: 'bold'                 // เพิ่มความหนาตัวอักษรให้ดูอ่านง่ายขึ้น
+                                    fontSize: '15px',
+                                    // fontWeight: 'bold'                 // เพิ่มความหนาตัวอักษรให้ดูอ่านง่ายขึ้น
                                 }}>
                                     {statusInfo.text}
                                 </span>
@@ -236,9 +236,9 @@ const styles = {
         color: '#ff8c00',
         padding: '6px 16px',
         borderRadius: '12px',
-        fontWeight: 'bold',
+        // fontWeight: 'bold',
         cursor: 'pointer',
-        fontSize: '14px',
+        fontSize: '15px',
         transition: 'all 0.2s ease'
     },
     loading: {
