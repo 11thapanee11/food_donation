@@ -266,8 +266,9 @@ const styles = {
         color: "#328d7d"
     },
     tableBox: {
-        backgroundColor: '#e4ece9',
+        backgroundColor: 'none',
         borderRadius: '16px',
+        border: '4px solid #e4ece9',
         padding: '24px',
     },
     tableHeaderRow: {

@@ -1,6 +1,7 @@
 package com.springboot.service;
 
 import com.springboot.dto.FoodDto;
+import com.springboot.dto.FoodStatsDto;
 import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.repository.*;
@@ -223,6 +224,12 @@ public class FoodService {
     // ดึงรายการอาหารที่ใกล้หมดอายุ (ระหว่าง cutoffTime ถึง 24 ชม. ข้างหน้า)
     public List<Food> getNearExpiryFoods(LocalDateTime cutoffTime, LocalDateTime tomorrow) {
         return foodRepository.findByExpiryDateBetweenAndFoodStatus(cutoffTime, tomorrow, "available");
+    }
+
+    public FoodStatsDto getFoodStats() {
+        Long totalFoods = foodRepository.count();
+        Long expired = foodRepository.countByFoodStatus("expired");
+        return new FoodStatsDto(totalFoods, expired);
     }
 
 }

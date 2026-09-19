@@ -1,6 +1,7 @@
 package com.springboot.service;
 
 import com.springboot.dto.ReportDto;
+import com.springboot.dto.ReportStatsDto;
 import com.springboot.exception.ApplicationException;
 import com.springboot.model.*;
 import com.springboot.repository.*;
@@ -55,19 +56,19 @@ public class ReportService {
 
     public List<ReportDto> getAllReports() {
         return reportRepository.findAll().stream()
-        // รียงลำดับจากใหม่ล่าสุด
-        .sorted(Comparator.comparing(Report::getReportDate).reversed())
-        .map(r -> {
-            ReportDto dto = new ReportDto();
-            dto.setReportId(r.getReportId());
-            dto.setReason(r.getReportReason());
-            dto.setFoodName(r.getBooking().getFood().getFoodName());
-            dto.setReporterName(r.getBooking().getRecipient().getUser().getFirstName() + " "
-                    + r.getBooking().getRecipient().getUser().getLastName());
-            dto.setReportDate(r.getReportDate());
-            dto.setReportStatus(r.getReportStatus());
-            return dto;
-        }).toList();
+                // รียงลำดับจากใหม่ล่าสุด
+                .sorted(Comparator.comparing(Report::getReportDate).reversed())
+                .map(r -> {
+                    ReportDto dto = new ReportDto();
+                    dto.setReportId(r.getReportId());
+                    dto.setReason(r.getReportReason());
+                    dto.setFoodName(r.getBooking().getFood().getFoodName());
+                    dto.setReporterName(r.getBooking().getRecipient().getUser().getFirstName() + " "
+                            + r.getBooking().getRecipient().getUser().getLastName());
+                    dto.setReportDate(r.getReportDate());
+                    dto.setReportStatus(r.getReportStatus());
+                    return dto;
+                }).toList();
     }
 
     public ReportDto getReportById(Integer id) {
@@ -87,7 +88,8 @@ public class ReportService {
             dto.setBookingId(report.getBooking().getBookingId());
             dto.setFoodId(report.getBooking().getFood().getFoodId());
             dto.setFoodName(report.getBooking().getFood().getFoodName());
-            dto.setReporterName(report.getBooking().getRecipient().getUser().getFirstName() + " " + report.getBooking().getRecipient().getUser().getLastName());
+            dto.setReporterName(report.getBooking().getRecipient().getUser().getFirstName() + " "
+                    + report.getBooking().getRecipient().getUser().getLastName());
             dto.setDonorStatus(report.getBooking().getFood().getDonor().getDonorStatus());
         }
 
@@ -100,5 +102,12 @@ public class ReportService {
 
         report.setReportStatus(newStatus);
         reportRepository.save(report);
+    }
+
+    public ReportStatsDto getReportStats() {
+        Long totalReports = reportRepository.count();
+        Long pendingReport = reportRepository.countByReportStatus("pending");
+        Long checkedReport = reportRepository.countByReportStatus("checked");
+        return new ReportStatsDto(totalReports, pendingReport, checkedReport);
     }
 }

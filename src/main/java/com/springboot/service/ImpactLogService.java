@@ -88,4 +88,8 @@ public class ImpactLogService {
         impactLogDtos.sort((a, b) -> b.getDate().compareTo(a.getDate()));
         return impactLogDtos;
     }
+
+    public Double calculateTotalCarbon() {
+        return impactLogRepository.calculateTotalCarbon();
+    }
 }

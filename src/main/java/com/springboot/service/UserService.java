@@ -29,7 +29,8 @@ public class UserService {
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ApplicationException("ไม่พบผู้ใช้งานด้วยอีเมลนี้: " + email, HttpStatus.NOT_FOUND));
+                .orElseThrow(
+                        () -> new ApplicationException("ไม่พบผู้ใช้งานด้วยอีเมลนี้: " + email, HttpStatus.NOT_FOUND));
     }
 
     public User authenticate(String authHeader) {
@@ -42,7 +43,8 @@ public class UserService {
 
         Integer userId = Integer.parseInt(idStr);
         return userRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException("ไม่พบสิทธิ์และข้อมูลบัญชีผู้ใช้ในระบบ", HttpStatus.NOT_FOUND));
+                .orElseThrow(
+                        () -> new ApplicationException("ไม่พบสิทธิ์และข้อมูลบัญชีผู้ใช้ในระบบ", HttpStatus.NOT_FOUND));
     }
 
     public void registerUser(RegisterDto request) {
@@ -101,6 +103,10 @@ public class UserService {
             throw new ApplicationException("ไม่สามารถแก้ไขข้อมูลได้ กรุณาลองใหม่อีกครั้ง" + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public Long getUserStats() {
+        return userRepository.countNonAdminUsers();
     }
 
 }

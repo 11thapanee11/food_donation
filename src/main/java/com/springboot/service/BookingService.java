@@ -162,4 +162,13 @@ public class BookingService {
                 recipient.getUserId(), foodId, statuses);
     }
 
+    public BookingStatsDto getBookingStats() {
+        Double completedWeight = bookingRepository.sumCompletedBookingUnits();
+        Long completed = bookingRepository.countByBookingStatus("completed");
+        Long pending = bookingRepository.countByBookingStatus("pending");
+        Long cancelled = bookingRepository.countByBookingStatus("cancelled");
+
+        return new BookingStatsDto(completedWeight, completed, pending, cancelled);
+    }
+
 }
