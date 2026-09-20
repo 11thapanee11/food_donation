@@ -1040,7 +1040,7 @@ const styles = {
         color: "#333"
     },
     reviewCard: {
-        backgroundColor: "#ffe8cc",
+        backgroundColor: "#fff0df",
         borderRadius: "16px",
         marginTop: "2px"
     },
@@ -1155,7 +1155,7 @@ const styles = {
         alignSelf: "center"
     },
     bookingDetailCard: {
-        backgroundColor: "#ffe8cc",
+        backgroundColor: "#fff0df",
         borderRadius: "24px",
         marginTop: "2px",
         display: "flex",

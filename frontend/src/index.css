@@ -19,9 +19,9 @@ div {
 }
 
 input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0px 1000px #ffe8cc inset;
+  -webkit-box-shadow: 0 0 0px 1000px #fff0df inset;
   /* ใส่สีพื้นหลังที่คุณต้องการ */
-  box-shadow: 0 0 0px 1000px #ffe8cc inset;
+  box-shadow: 0 0 0px 1000px #fff0df inset;
   -webkit-text-fill-color: #000;
   /* ให้ตัวหนังสือเป็นสีดำ */
 }

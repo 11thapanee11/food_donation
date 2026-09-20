@@ -227,7 +227,7 @@ const styles = {
         padding: "14px 30px 14px 55px",
         borderRadius: "50px",
         border: "none",
-        backgroundColor: "#ffe8cc",
+        backgroundColor: "#fff0df",
         fontSize: "16px",
         color: "#4A7C72",
         outline: "none",
@@ -275,7 +275,7 @@ const styles = {
     },
     cardContent: {
         padding: "20px",
-        backgroundColor: "#ffe8cc"
+        backgroundColor: "#fff0df"
         // backgroundColor: "#fff2e2"
     },
     foodNameText: {

@@ -257,7 +257,7 @@ const InputField = ({
         <div style={{
             ...styles.inputBox,
             border: error ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
-            backgroundColor: error ? "#fff1f0" : "#ffe8cc"
+            backgroundColor: error ? "#fff1f0" : "#fff0df"
         }}>
             <input
                 type={type}
@@ -338,7 +338,7 @@ const styles = {
     inputBox: {
         display: "flex",
         alignItems: "center",
-        background: "#ffe8cc",
+        background: "#fff0df",
         borderRadius: "8px",
         padding: "10px 14px",
         boxSizing: "border-box",

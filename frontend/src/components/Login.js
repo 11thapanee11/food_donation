@@ -127,7 +127,7 @@ export default function Login() {
                 <div style={{
                     ...styles.inputBox,
                     border: errors.email ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
-                    backgroundColor: errors.email ? "#fff1f0" : "#ffe8cc"
+                    backgroundColor: errors.email ? "#fff1f0" : "#fff0df"
                 }}>
                     <i className="material-icons" style={{
                         ...styles.inputIcon,
@@ -152,7 +152,7 @@ export default function Login() {
                 <div style={{
                     ...styles.inputBox,
                     border: errors.password ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
-                    backgroundColor: errors.password ? "#fff1f0" : "#ffe8cc"
+                    backgroundColor: errors.password ? "#fff1f0" : "#fff0df"
                 }}>
                     <i className="material-icons" style={{
                         ...styles.inputIcon,
@@ -234,7 +234,7 @@ const styles = {
     inputBox: {
         display: "flex",
         alignItems: "center",
-        background: "#ffe8cc",
+        background: "#fff0df",
         borderRadius: "8px",
         padding: "10px 14px",
         marginBottom: "4px",

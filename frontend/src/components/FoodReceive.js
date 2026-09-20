@@ -106,12 +106,12 @@ export default function FoodReceive() {
         pending: {
             text: "รอการเข้ารับ",
             color: "#f0b002",
-            bgColor: "#fff3a6"
+            bgColor: "#fdf5c1"
         },
         completed: {
             text: "รับบริจาคสำเร็จ",
             color: "#2e7d32",
-            bgColor: "#e8f5e9"
+            bgColor: "#eaffe7"
         },
         cancelled: {
             text: "ยกเลิกรายการ",
@@ -334,7 +334,7 @@ const styles = {
     },
     card: {
         display: "flex",
-        backgroundColor: "#ffe8cc",
+        backgroundColor: "#fff0df",
         borderRadius: "20px",
         boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
         alignItems: "stretch"

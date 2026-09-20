@@ -54,11 +54,11 @@ export default function RankingPage() {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank2, justifyContent: 'center', opacity: 0.5 }}>
+                    <div style={{ ...styles.podiumCard, ...styles.podiumRank2, justifyContent: 'center', }}>
                         {/* <p style={{ color: '#666' }}>ยังไม่มีข้อมูล</p> */}
                         <div style={{ ...styles.badge, backgroundColor: '#aab4c2' }}>2</div>
                         <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#9da3ad" }}>
+                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#aab4c2" }}>
                                 social_leaderboard
                             </span>
                         </div>
@@ -69,7 +69,7 @@ export default function RankingPage() {
                 {/* --- อันดับ 1 --- */}
                 {top1 ? (
                     <div style={{ ...styles.podiumCard, ...styles.podiumRank1 }}>
-                        <div style={{ ...styles.badge, backgroundColor: '#f4d13d', width: '36px', height: '36px', marginTop: '-28px' }}>1</div>
+                        <div style={{ ...styles.badge, backgroundColor: '#ffdc40', width: '36px', height: '36px', marginTop: '-28px' }}>1</div>
                         <div style={styles.podiumContent}>
                             <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#ebb512" }}>
                                 social_leaderboard
@@ -84,8 +84,8 @@ export default function RankingPage() {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank1, justifyContent: 'center', opacity: 0.5 }}>
-                        <div style={{ ...styles.badge, backgroundColor: '#f4d13d', width: '36px', height: '36px', marginTop: '-28px' }}>1</div>
+                    <div style={{ ...styles.podiumCard, ...styles.podiumRank1, justifyContent: 'center' }}>
+                        <div style={{ ...styles.badge, backgroundColor: '#ffdc40', width: '36px', height: '36px', marginTop: '-28px' }}>1</div>
                         <div style={styles.podiumContent}>
                             <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#ebb512" }}>
                                 social_leaderboard
@@ -112,9 +112,9 @@ export default function RankingPage() {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank3, justifyContent: 'center', opacity: 0.5 }}>
+                    <div style={{ ...styles.podiumCard, ...styles.podiumRank3, justifyContent: 'center', }}>
                         {/* <p style={{ color: '#666' }}>ยังไม่มีข้อมูล</p> */}
-                        <div style={{ ...styles.badge, backgroundColor: '#a15b41' }}>3</div>
+                        <div style={{ ...styles.badge, backgroundColor: '#be6645' }}>3</div>
                         <div style={styles.podiumContent}>
                             <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#954b35" }}>
                                 social_leaderboard
@@ -198,20 +198,20 @@ const styles = {
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
     },
     podiumRank1: {
-        backgroundColor: '#f8eec5',
-        borderBottom: '8px solid #f4d13d',
+        backgroundColor: '#fff8db',
+        borderBottom: '8px solid #ffdc40',
         height: '280px',
         zIndex: 2,
         transform: 'scale(1.03)',
     },
     podiumRank2: {
-        backgroundColor: '#dbe0e6',
-        borderBottom: '8px solid #aab4c2',
+        backgroundColor: '#f3f3f3',
+        borderBottom: '8px solid #a7b2c2',
         height: '240px',
     },
     podiumRank3: {
-        backgroundColor: '#e8d1c9',
-        borderBottom: '8px solid #a15b41',
+        backgroundColor: '#f7e7e2',
+        borderBottom: '8px solid #be6645',
         height: '220px',
     },
     badge: {

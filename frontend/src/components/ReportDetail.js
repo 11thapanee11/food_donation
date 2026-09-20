@@ -441,7 +441,7 @@ const styles = {
         fontWeight: "500"
     },
     bookingDetailCard: {
-        backgroundColor: "#ffe8cc",
+        backgroundColor: "#fff0df",
         borderRadius: "15px",
         marginBottom: "20px",
         display: "flex",

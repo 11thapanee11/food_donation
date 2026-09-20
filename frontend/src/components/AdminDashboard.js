@@ -93,41 +93,41 @@ export default function ImpactDashboard() {
                 {/* การ์ดย่อย 3 ใบที่แยกออกจากกัน */}
                 <div style={styles.subKpiGrid}>
                     {/* ขยะอาหารที่ช่วยลดได้ */}
-                    <div style={{ ...styles.subCard, backgroundColor: '#FFE8CD', borderColor: '#D97706' }}>
+                    <div style={{ ...styles.subCard, backgroundColor: '#ffe8cc', borderColor: '#f07220' }}>
                         <div>
                             <p style={styles.subCardLabel}>จำนวนรายการอาหารที่หมดอายุ</p>
-                            <h3 style={{ ...styles.subCardValue, color: '#D97706' }}>
+                            <h3 style={{ ...styles.subCardValue, color: '#f07220' }}>
                                 {stats.expired} <span style={styles.subCardUnit}>รายการ</span>
                             </h3>
                         </div>
                         <div style={{ ...styles.iconBg }}>
-                            <span className="material-symbols-outlined" style={{ color: '#D97706', fontSize: '30px' }}>delete_sweep</span>
+                            <span className="material-symbols-outlined" style={{ color: '#f07220', fontSize: '30px' }}>delete_sweep</span>
                         </div>
                     </div>
 
                     {/* บริจาคสำเร็จ (แยกออกมา) */}
-                    <div style={{ ...styles.subCard, backgroundColor: '#E0F2FE', borderColor: '#0369A1' }}>
+                    <div style={{ ...styles.subCard, backgroundColor: '#bee8ef', borderColor: '#0369A1' }}>
                         <div>
                             <p style={styles.subCardLabel}>จำนวนอาหารบริจาค</p>
-                            <h3 style={{ ...styles.subCardValue, color: '#0369A1' }}>
+                            <h3 style={{ ...styles.subCardValue, color: '#1b9cb2' }}>
                                 {stats.totalFoods} <span style={styles.subCardUnit}>รายการ</span>
                             </h3>
                         </div>
                         <div style={{ ...styles.iconBg }}>
-                            <span className="material-symbols-outlined" style={{ color: '#0369A1', fontSize: '30px' }}>hand_meal</span>
+                            <span className="material-symbols-outlined" style={{ color: '#1b9cb2', fontSize: '30px' }}>hand_meal</span>
                         </div>
                     </div>
 
                     {/* ผู้ใช้งานทั้งหมด (แยกออกมา) */}
-                    <div style={{ ...styles.subCard, backgroundColor: '#F3E8FF', borderColor: '#664680' }}>
+                    <div style={{ ...styles.subCard, backgroundColor: '#f8ddff', borderColor: '#664680' }}>
                         <div>
                             <p style={styles.subCardLabel}>ผู้ใช้งานทั้งหมด</p>
-                            <h3 style={{ ...styles.subCardValue, color: '#664680' }}>
+                            <h3 style={{ ...styles.subCardValue, color: '#9d71a8' }}>
                                 {stats.totalUsers} <span style={styles.subCardUnit}>ราย</span>
                             </h3>
                         </div>
                         <div style={{ ...styles.iconBg }}>
-                            <span className="material-symbols-outlined" style={{ color: '#664680', fontSize: '30px' }}>diversity_3</span>
+                            <span className="material-symbols-outlined" style={{ color: '#9d71a8', fontSize: '30px' }}>diversity_3</span>
                         </div>
                     </div>
                 </div>

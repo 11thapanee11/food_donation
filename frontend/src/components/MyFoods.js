@@ -116,8 +116,8 @@ export default function MyFoods() {
         },
         expired: {
             text: "หมดอายุ",
-            color: "#f0a400",
-            bgColor: "#fff6db"
+            color: "#f08000",
+            bgColor: "#fff6ec"
         }
     };
 
@@ -332,7 +332,7 @@ const styles = {
     },
     card: {
         display: "flex",
-        backgroundColor: "#ffe8cc",
+        backgroundColor: "#fff0df",
         borderRadius: "20px",
         padding: "20px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
