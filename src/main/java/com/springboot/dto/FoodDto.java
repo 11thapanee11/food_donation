@@ -20,7 +20,6 @@ public class FoodDto {
     private Double unitWeightKg;
     private Integer totalUnit;
     private Integer remainingUnit;
-    private Integer peopleCountPerMeal;
     private String address;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -95,14 +94,6 @@ public class FoodDto {
 
     public void setRemainingUnit(Integer remainingUnit) {
         this.remainingUnit = remainingUnit;
-    }
-
-    public Integer getPeopleCountPerMeal() {
-        return peopleCountPerMeal;
-    }
-
-    public void setPeopleCountPerMeal(Integer peopleCountPerMeal) {
-        this.peopleCountPerMeal = peopleCountPerMeal;
     }
 
     public String getAddress() {

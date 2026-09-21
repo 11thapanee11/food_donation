@@ -2,10 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-// import { useParams } from "react-router-dom";
 
 export default function FoodForm() {
-    // const token = localStorage.getItem("accessToken");
 
     const navigate = useNavigate();
 
@@ -150,6 +148,70 @@ export default function FoodForm() {
         }
     }
 
+    const UNIT_OPTIONS = [
+        // หมวดน้ำหนัก (Weight)
+        { label: 'กิโลกรัม', value: 'kg', type: 'weight', factor: 1 },
+        { label: 'กรัม', value: 'g', type: 'weight', factor: 0.001 },
+        { label: 'ปอนด์', value: 'lb', type: 'weight', factor: 0.453592 },
+
+        // หมวดปริมาตร (Volume - โดยประมาณ 1L = 1kg)
+        { label: 'ลิตร', value: 'L', type: 'volume', factor: 1 },
+        { label: 'มิลลิลิตร', value: 'ml', type: 'volume', factor: 0.001 },
+
+        // หมวดนับชิ้น/ภาชนะ (Countable - ใช้ค่าน้ำหนักประมาณการมาตรฐาน)
+        { label: 'ชิ้น', value: 'piece', type: 'count', defaultWeightKg: 0.1 },
+        { label: 'กล่อง / ถุง', value: 'box', type: 'count', defaultWeightKg: 0.35 },
+        { label: 'ขวด / กระป๋อง', value: 'bottle', type: 'count', defaultWeightKg: 0.5 },
+        { label: 'แพ็ค / โหล', value: 'pack', type: 'count', defaultWeightKg: 1.5 },
+    ];
+    const [selectedUnit, setSelectedUnit] = useState('kg');
+    const [inputQuantity, setInputQuantity] = useState(formData.unitWeightKg || '');
+
+    const calculateKgValue = (qty, unitValue) => {
+        if (!qty || isNaN(qty) || qty <= 0) return 0;
+
+        const unitInfo = UNIT_OPTIONS.find(u => u.value === unitValue);
+        if (!unitInfo) return parseFloat(qty);
+
+        if (unitInfo.type === 'weight' || unitInfo.type === 'volume') {
+            // แปลงตามตัวคูณมาตรฐาน
+            return parseFloat(qty) * unitInfo.factor;
+        } else if (unitInfo.type === 'count') {
+            // คำนวณน้ำหนักประมาณการต่อชิ้น
+            return parseFloat(qty) * unitInfo.defaultWeightKg;
+        }
+        return parseFloat(qty);
+    };
+
+    const handleQuantityChange = (e) => {
+        const val = e.target.value;
+        setInputQuantity(val);
+
+        const calculatedKg = calculateKgValue(val, selectedUnit);
+
+        handleChange({
+            target: {
+                name: 'unitWeightKg',
+                value: calculatedKg
+            }
+        });
+    };
+
+    // จัดการเมื่อผู้ใช้เปลี่ยนหน่วยใน Dropdown
+    const handleUnitSelectChange = (e) => {
+        const newUnit = e.target.value;
+        setSelectedUnit(newUnit);
+
+        const calculatedKg = calculateKgValue(inputQuantity, newUnit);
+
+        handleChange({
+            target: {
+                name: 'unitWeightKg',
+                value: calculatedKg
+            }
+        });
+    };
+
     const isExpired = formData.foodStatus === 'expired' || formData.foodStatus === 'disable';
 
     useEffect(() => {
@@ -263,7 +325,7 @@ export default function FoodForm() {
                         newErrors[key] = "กรุณากรอกจำนวนที่มากกว่า 0";
                     }
                 }
-                // 3. เช็ควันที่
+                // เช็ควันที่
                 else if (value instanceof Date) {
                     if (Number.isNaN(value.getTime())) {
                         newErrors[key] = "กรุณาเลือกวันที่/เวลา";
@@ -838,7 +900,7 @@ export default function FoodForm() {
                         {renderFoodImage()}
                     </div>
                     {errors.fileImage && (
-                        <div style={{ color: "red", marginBottom: "10px" }}>{errors.fileImage}</div>
+                        <div style={{ color: "red", marginBottom: '-30px', marginBottom: "10px" }}>{errors.fileImage}</div>
                     )}
 
                     {/* Section 2: ข้อมูลอาหาร */}
@@ -864,7 +926,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.foodName && <span style={{ color: "red" }}>{errors.foodName}</span>}
+                            {errors.foodName && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.foodName}</span>}
                         </div>
                         <div style={styles.inputGroup}>
                             <p style={styles.label}>หมวดหมู่</p>
@@ -889,7 +951,7 @@ export default function FoodForm() {
                                     </option>
                                 ))}
                             </select>
-                            {errors.foodCateId && <span style={{ color: "red" }}>{errors.foodCateId}</span>}
+                            {errors.foodCateId && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.foodCateId}</span>}
                         </div>
                     </div>
 
@@ -910,7 +972,7 @@ export default function FoodForm() {
                             }}
                             onChange={handleChange}
                         />
-                        {errors.description && <span style={{ color: "red" }}>{errors.description}</span>}
+                        {errors.description && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.description}</span>}
                     </div>
 
                     <div style={styles.row}>
@@ -931,33 +993,88 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.expiryDate && <span style={{ color: "red" }}>{errors.expiryDate}</span>}
+                            {errors.expiryDate && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.expiryDate}</span>}
                         </div>
-                        <div style={styles.inputGroup}>
-                            <p style={styles.label}>น้ำหนักต่อหน่วยที่บริจาค (Kg)</p>
-                            <input
-                                type="number"
-                                name="unitWeightKg"
-                                value={formData.unitWeightKg}
-                                placeholder="กรอกน้ำหนัก"
-                                disabled={!isEditable}
-                                style={{
-                                    ...styles.input,
-                                    border: errors.unitWeightKg ? "1px solid #e53935" : "none",
-                                    backgroundColor: errors.unitWeightKg ? "#fff5f5" : "#FFEEDD",
-                                    outline: "none",
-                                    color: isEditable ? "#000" : "#a6a6a6",
-                                    cursor: isEditable ? "text" : "not-allowed"
-                                }}
-                                onWheel={(e) => e.target.blur()}
-                                onKeyDown={(e) => {
-                                    if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
-                                        e.preventDefault();
-                                    }
-                                }}
-                                onChange={handleChange}
-                            />
-                            {errors.unitWeightKg && <span style={{ color: "red" }}>{errors.unitWeightKg}</span>}
+                        <div style={{ ...styles.inputGroup}}>
+                            <p style={styles.label}>น้ำหนักต่อหน่วยที่บริจาค</p>
+
+                            {/* Wrapper สำหรับคุม Input + Dropdown ให้อยู่บรรทัดเดียวกันโดยไม่ตกขอบ */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '8px',
+                                alignItems: 'center',
+                                width: '100%',
+                                boxSizing: 'border-box'
+                            }}>
+                                <input
+                                    type="number"
+                                    name="quantityInput"
+                                    value={inputQuantity}
+                                    placeholder="กรอกจำนวนหรือน้ำหนัก"
+                                    disabled={!isEditable}
+                                    style={{
+                                        ...styles.input,
+                                        flex: '1', // บังคับให้บีบขนาดตามพื้นที่ส่วนที่เหลือ
+                                        minWidth: '0',
+                                        border: errors.unitWeightKg ? "1px solid #e53935" : "none",
+                                        backgroundColor: errors.unitWeightKg ? "#fff5f5" : "#FFEEDD",
+                                        outline: "none",
+                                        color: isEditable ? "#000" : "#a6a6a6",
+                                        cursor: isEditable ? "text" : "not-allowed"
+                                    }}
+                                    onWheel={(e) => e.target.blur()}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    onChange={handleQuantityChange}
+                                />
+
+                                {/* Dropdown ตัวเลือกหน่วยทั้งหมด */}
+                                <select
+                                    value={selectedUnit}
+                                    onChange={handleUnitSelectChange}
+                                    disabled={!isEditable}
+                                    style={{
+                                        flex: '0 0 auto', // ล็อกความกว้างตามเนื้อหา ไม่ให้โดนบีบย่น
+                                        width: 'auto',
+                                        minWidth: '100px',
+                                        padding: '10px 12px',
+                                        borderRadius: '12px',
+                                        border: "none",
+                                        backgroundColor: '#FFEEDD',
+                                        color: isEditable ? "#000" : "#a6a6a6",
+                                        cursor: isEditable ? "pointer" : "not-allowed",
+                                        fontSize: '15px',
+                                        fontFamily: 'inherit',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    {UNIT_OPTIONS.map((u) => (
+                                        <option key={u.value} value={u.value}>
+                                            {u.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div style={{ position: 'relative', width: '100%',marginBottom: '-30px' }}>
+                                {errors.unitWeightKg ? (<span style={{ color: "red" }}>{errors.unitWeightKg}</span>
+                                ) : (inputQuantity > 0 && selectedUnit !== 'kg') ? (
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '2px',
+                                        left: '0',
+                                        color: '#328d7d',
+                                        fontSize: '12px',
+                                        fontFamily: 'inherit',
+                                        whiteSpace: 'nowrap',
+                                    }}>
+                                        * คำนวณเป็นน้ำหนักสุทธิประมาณ: <strong>{formData.unitWeightKg} kg</strong>
+                                    </span>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
 
@@ -986,7 +1103,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.totalUnit && <span style={{ color: "red" }}>{errors.totalUnit}</span>}
+                            {errors.totalUnit && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.totalUnit}</span>}
                         </div>
                         {/* <div style={styles.inputGroup}>
                             <p style={styles.label}>จำนวนคนที่เหมาะสมต่อมื้อ</p>
@@ -1012,7 +1129,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.peopleCountPerMeal && <span style={{ color: "red" }}>{errors.peopleCountPerMeal}</span>}
+                            {errors.peopleCountPerMeal && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.peopleCountPerMeal}</span>}
                         </div> */}
                         <div style={{ ...styles.inputGroup }}>
                             <p style={styles.label}>จำนวนจำกัดบริจาคต่อคน</p>
@@ -1038,7 +1155,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.limitPerPerson && <span style={{ color: "red" }}>{errors.limitPerPerson}</span>}
+                            {errors.limitPerPerson && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.limitPerPerson}</span>}
                         </div>
                     </div>
 
@@ -1066,7 +1183,7 @@ export default function FoodForm() {
                             }}
                             onChange={handleChange}
                         />
-                        {errors.limitPerPerson && <span style={{ color: "red" }}>{errors.limitPerPerson}</span>}
+                        {errors.limitPerPerson && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.limitPerPerson}</span>}
                     </div> */}
 
                     {/* Section 3: สถานที่และเวลา */}
@@ -1092,7 +1209,7 @@ export default function FoodForm() {
                             }}
                             onChange={handleChange}
                         />
-                        {errors.address && <span style={{ color: "red" }}>{errors.address}</span>}
+                        {errors.address && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.address}</span>}
                     </div>
 
                     <div style={styles.row}>
@@ -1113,7 +1230,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.pickupDateStart && <span style={{ color: "red" }}>{errors.pickupDateStart}</span>}
+                            {errors.pickupDateStart && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.pickupDateStart}</span>}
                         </div>
                         <div style={styles.inputGroup}>
                             <p style={styles.label}>วันที่สิ้นสุดการรับ</p>
@@ -1132,7 +1249,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.pickupDateEnd && <span style={{ color: "red" }}>{errors.pickupDateEnd}</span>}
+                            {errors.pickupDateEnd && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.pickupDateEnd}</span>}
                         </div>
                     </div>
 
@@ -1154,7 +1271,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.pickupStartTime && <span style={{ color: "red" }}>{errors.pickupStartTime}</span>}
+                            {errors.pickupStartTime && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.pickupStartTime}</span>}
                         </div>
                         <div style={styles.inputGroup}>
                             <p style={styles.label}>เวลาสิ้นสุดการรับ</p>
@@ -1173,7 +1290,7 @@ export default function FoodForm() {
                                 }}
                                 onChange={handleChange}
                             />
-                            {errors.pickupEndTime && <span style={{ color: "red" }}>{errors.pickupEndTime}</span>}
+                            {errors.pickupEndTime && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.pickupEndTime}</span>}
                         </div>
                     </div>
 
@@ -1223,7 +1340,7 @@ export default function FoodForm() {
 
                     {errors.location && (
                         <p style={{
-                            color: "red",
+                            color: "red", marginBottom: '-30px',
                             fontSize: "16px",
                             marginTop: "8px",
                             fontWeight: "500",
@@ -1372,7 +1489,7 @@ const styles = {
     mapContainer: {
         position: "relative",
         width: "100%",
-        marginTop: "15px",
+        marginTop: "20px",
     },
     mapCanvas: {
         width: "100%",

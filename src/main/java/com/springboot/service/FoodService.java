@@ -37,7 +37,6 @@ public class FoodService {
         dto.setUnitWeightKg(food.getUnitWeightKg());
         dto.setTotalUnit(food.getTotalUnit());
         dto.setRemainingUnit(food.getRemainingUnit());
-        dto.setPeopleCountPerMeal(food.getPeopleCountPerMeal());
         dto.setAddress(food.getAddress());
         dto.setPickupDateStart(food.getPickupDateStart());
         dto.setPickupDateEnd(food.getPickupDateEnd());
@@ -97,7 +96,6 @@ public class FoodService {
         food.setTotalUnit(foodDto.getTotalUnit());
         food.setRemainingUnit(foodDto.getTotalUnit());
         food.setDescription(foodDto.getDescription());
-        food.setPeopleCountPerMeal(foodDto.getPeopleCountPerMeal());
         food.setAddress(foodDto.getAddress());
 
         food.setPickupDateStart(foodDto.getPickupDateStart());
@@ -172,7 +170,6 @@ public class FoodService {
         food.setExpiryDate(foodDto.getExpiryDate());
         food.setUnitWeightKg(foodDto.getUnitWeightKg());
         food.setDescription(foodDto.getDescription());
-        food.setPeopleCountPerMeal(foodDto.getPeopleCountPerMeal());
         food.setAddress(foodDto.getAddress());
         food.setTotalUnit(newTotal);
         food.setRemainingUnit(newRemaining);

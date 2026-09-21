@@ -35,9 +35,6 @@ public class Food {
     @Column(name = "remaining_unit", nullable = false)
     private Integer remainingUnit = 0;
 
-    @Column(name = "people_count_per_meal")
-    private Integer peopleCountPerMeal;
-
     @Column(name = "address", length = 225, nullable = false)
     private String address;
 
@@ -77,36 +74,8 @@ public class Food {
 
     public Food() {
         super();
+ 
     }
-
-    // public Food(Integer foodId, String foodImage, String foodName, String description, LocalDateTime expiryDate,
-    //         Double unitWeightKg, Integer totalUnit, Integer remainingUnit, Integer peopleCountPerMeal, String address,
-    //         LocalDate pickupDateStart, LocalDate pickupDateEnd, LocalTime pickupStartTime, LocalTime pickupEndTime,
-    //         Integer limitPerPerson, Double latitude, Double longitude, String foodStatus, FoodCategory foodCategory,
-    //         User donor) {
-    //     this.foodId = foodId;
-    //     this.foodImage = foodImage;
-    //     this.foodName = foodName;
-    //     this.description = description;
-    //     this.expiryDate = expiryDate;
-    //     this.unitWeightKg = unitWeightKg;
-    //     this.totalUnit = totalUnit;
-    //     this.remainingUnit = remainingUnit;
-    //     this.peopleCountPerMeal = peopleCountPerMeal;
-    //     this.address = address;
-    //     this.pickupDateStart = pickupDateStart;
-    //     this.pickupDateEnd = pickupDateEnd;
-    //     this.pickupStartTime = pickupStartTime;
-    //     this.pickupEndTime = pickupEndTime;
-    //     this.limitPerPerson = limitPerPerson;
-    //     this.latitude = latitude;
-    //     this.longitude = longitude;
-    //     this.foodStatus = foodStatus;
-    //     this.foodCategory = foodCategory;
-    //     this.donor = donor;
-    // }
-
-
 
     // --- Getter & Setter ---
     public Integer getFoodId() {
@@ -171,14 +140,6 @@ public class Food {
 
     public void setRemainingUnit(Integer remainingUnit) {
         this.remainingUnit = remainingUnit;
-    }
-
-    public Integer getPeopleCountPerMeal() {
-        return peopleCountPerMeal;
-    }
-
-    public void setPeopleCountPerMeal(Integer peopleCountPerMeal) {
-        this.peopleCountPerMeal = peopleCountPerMeal;
     }
 
     public String getAddress() {
@@ -268,14 +229,5 @@ public class Food {
     public void setDonor(Donor donor) {
         this.donor = donor;
     }
-
-    // public User getDonor() {
-    //     return donor;
-    // }
-
-    // public void setDonor(User donor) {
-    //     this.donor = donor;
-    // }
-
     
 }
