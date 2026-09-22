@@ -8,10 +8,11 @@ export default function Home() {
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
-    const navigate = useNavigate();
 
+    const navigate = useNavigate();
     const BASE_URL = "http://localhost:8082";
 
+    // 1. โหลดหมวดหมู่
     useEffect(() => {
         fetch(`${BASE_URL}/food-categories`)
             .then(res => {
@@ -22,7 +23,6 @@ export default function Home() {
                 if (resData.success) {
                     const allOption = { id: 0, name: "ทั้งหมด" };
                     setCategories([allOption, ...resData.data]);
-                    
                 } else {
                     throw new Error(resData.message || "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
                 }
@@ -31,12 +31,10 @@ export default function Home() {
             .finally(() => setLoading(false));
     }, []);
 
-    // โหลดอาหารตามหมวดหมู่ที่เลือก
+    // 2. โหลดรายการอาหาร
     useEffect(() => {
-        // ดักจับ: ถ้า categories ยังโหลดไม่เสร็จ (มีความยาวแค่ 0) ให้แตกแถวออกไปก่อน ไม่ต้องยิง API
         if (categories.length === 0) return;
-        // console.log("Categories:", categories);
-        
+
         const token = localStorage.getItem("accessToken");
         let url = `${BASE_URL}/foods`;
 
@@ -73,34 +71,51 @@ export default function Home() {
 
     }, [selectedCategory, categories]);
 
-    const filteredFoods = foods.filter(f =>
-        f.foodName.toLowerCase().includes(search.toLowerCase())
-    );
+    // ฟังก์ชันคำนวณจำนวนวันที่เหลือก่อนหมดอายุ
+    const getDaysRemaining = (expiryDateString) => {
+        if (!expiryDateString) return null;
+        const now = new Date();
+        const expiry = new Date(expiryDateString);
+        
+        // เคลียร์เวลาให้เปรียบเทียบเฉพาะวันที่
+        now.setHours(0, 0, 0, 0);
+        const expiryZero = new Date(expiry);
+        expiryZero.setHours(0, 0, 0, 0);
 
-    if (loading) return <div style={styles.loading}>กำลังโหลด...</div>;
-    if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
+        const diffTime = expiryZero - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return { text: "หมดอายุแล้ว", isExpired: true };
+        if (diffDays === 0) return { text: "หมดอายุวันนี้", isUrgent: true };
+        return { text: `จะหมดอายุในอีก ${diffDays} วัน`, isUrgent: diffDays <= 2 };
+    };
+
+    // 3. กรองข้อมูลตามคำค้นหา + เรียงลำดับตามวันใกล้หมดอายุก่อนให้อัตโนมัติ
+    const filteredFoods = foods
+        .filter(f => f.foodName.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
 
-        // แยกส่วนวันที่ (เช่น 25 มีนาคม 2569)
         const formattedDate = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', {
-            day: 'numeric',      // ใช้ 'numeric' จะตัดเลข 0 นำหน้าออก เช่น "25" หรือ "5" (ดูเป็นธรรมชาติกว่า)
+            day: 'numeric',
             month: 'long',
             year: 'numeric'
         }).format(date);
 
-        // แยกส่วนเวลา (เช่น 16:43)
         const formattedTime = new Intl.DateTimeFormat('th-TH', {
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false        // ใช้รูปแบบ 24 ชั่วโมง (00:00 - 23:59)
+            hour12: false
         }).format(date);
 
-        // นำมาร้อยเรียงเข้าด้วยกันพร้อมใส่คำว่า "เวลา" และ "น."
         return `${formattedDate} ${formattedTime} น.`;
     };
+
+    if (loading) return <div style={styles.loading}>กำลังโหลด...</div>;
+    if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
 
     return (
         <div style={styles.pageBackground}>
@@ -108,15 +123,17 @@ export default function Home() {
                 <h1 style={styles.mainTitle}>รายการอาหารบริจาค</h1>
 
                 {/* Search Bar */}
-                <div style={styles.searchWrapper}>
-                    <i className="material-icons-outlined" style={styles.searchIcon}>search</i>
-                    <input
-                        type="text"
-                        placeholder="ค้นหารายการอาหารบริจาค"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        style={styles.searchInput}
-                    />
+                <div style={styles.filterBarWrapper}>
+                    <div style={styles.searchWrapper}>
+                        <i className="material-icons-outlined" style={styles.searchIcon}>search</i>
+                        <input
+                            type="text"
+                            placeholder="ค้นหารายการอาหารบริจาค"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={styles.searchInput}
+                        />
+                    </div>
                 </div>
 
                 {/* Category Buttons */}
@@ -139,55 +156,71 @@ export default function Home() {
                 {/* Food Grid */}
                 <div style={styles.foodGrid}>
                     {filteredFoods.length > 0 ? (
-                        filteredFoods.map(food => (
-                            <div key={food.id} style={styles.foodCard}>
-                                <img
-                                    src={`${BASE_URL}${food.foodImage}`}
-                                    alt={food.foodName}
-                                    style={styles.cardImage}
-                                    // แถม: ดักจับกรณีถ้ารูปภาพต้นทางเสียหาย ให้สลับมาแสดงรูปภาพ Default แทน
-                                    onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = "https://placehold.co/600x400?text=No+Image";
-                                    }}
-                                />
-                                <div style={styles.cardContent}>
-                                    <h3 style={styles.foodNameText}>{food.foodName}</h3>
-                                    <div style={styles.infoLine}>
-                                        <span className="material-symbols-outlined" style={{ color: "#ff8c00" }}>
-                                            calendar_clock
-                                        </span>
-                                        <span>
-                                            <span style={{ color: "black", fontSize: "15px" }}>หมดอายุ : </span>
-                                            <span style={{ color: "#328d7d", fontSize: "15px" }}>{formatDate(food.expiryDate)}</span>
-                                        </span>
+                        filteredFoods.map(food => {
+                            const daysInfo = getDaysRemaining(food.expiryDate);
+
+                            return (
+                                <div key={food.id} style={styles.foodCard}>
+                                    <div style={styles.cardImageWrapper}>
+                                        <img
+                                            src={`${BASE_URL}${food.foodImage}`}
+                                            alt={food.foodName}
+                                            style={styles.cardImage}
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = "https://placehold.co/600x400?text=No+Image";
+                                            }}
+                                        />
+                                        {/* ปุ่มบอกจำนวนวันที่เหลือ มุมขวาบนของการ์ด */}
+                                        {daysInfo && (
+                                            <span style={{
+                                                ...styles.expiryBadge,
+                                                ...(daysInfo.isExpired ? styles.badgeExpired : {}),
+                                                ...(daysInfo.isUrgent ? styles.badgeUrgent : {})
+                                            }}>
+                                                {daysInfo.text}
+                                            </span>
+                                        )}
                                     </div>
-                                    <div style={styles.infoLine}>
-                                        <span className="material-symbols-outlined" style={{ color: "#ff8c00" }}>
-                                            package_2
-                                        </span>
-                                        <span style={{ color: "black", fontSize: "15px" }}>จำนวนที่บริจาค และ คงเหลือ : </span>
-                                        <span style={{ color: "#328d7d", fontSize: "15px" }}>{food.totalUnit} / {food.remainingUnit}</span>
+
+                                    <div style={styles.cardContent}>
+                                        <h3 style={styles.foodNameText}>{food.foodName}</h3>
+                                        <div style={styles.infoLine}>
+                                            <span className="material-symbols-outlined" style={{ color: "#ff8c00" }}>
+                                                calendar_clock
+                                            </span>
+                                            <span>
+                                                <span style={{ color: "black", fontSize: "15px" }}>หมดอายุ : </span>
+                                                <span style={{ color: "#328d7d", fontSize: "15px" }}>{formatDate(food.expiryDate)}</span>
+                                            </span>
+                                        </div>
+                                        <div style={styles.infoLine}>
+                                            <span className="material-symbols-outlined" style={{ color: "#ff8c00" }}>
+                                                package_2
+                                            </span>
+                                            <span style={{ color: "black", fontSize: "15px" }}>จำนวนที่บริจาค และ คงเหลือ : </span>
+                                            <span style={{ color: "#328d7d", fontSize: "15px" }}>{food.totalUnit} / {food.remainingUnit}</span>
+                                        </div>
+                                        <div style={styles.infoLine}>
+                                            <span className="material-symbols-outlined" style={{ color: "#ff8c00" }}>
+                                                hand_package
+                                            </span>
+                                            <span style={{ color: "black", fontSize: "15px" }}>จำนวนจำกัดต่อคน : </span>
+                                            <span style={{ color: "#328d7d", fontSize: "15px" }}>{food.limitPerPerson}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigate('/food-detail', { state: { id: food.id, fromPage: '/' } });
+                                            }}
+                                            style={styles.detailBtn}
+                                        >
+                                            ดูรายละเอียด
+                                        </button>
                                     </div>
-                                    <div style={styles.infoLine}>
-                                        <span className="material-symbols-outlined" style={{ color: "#ff8c00" }}>
-                                            hand_package
-                                        </span>
-                                        <span style={{ color: "black", fontSize: "15px" }}>จำนวนจำกัดต่อคน : </span>
-                                        <span style={{ color: "#328d7d", fontSize: "15px" }}>{food.limitPerPerson}</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            navigate('/food-detail', { state: { id: food.id, fromPage: '/' } });
-                                        }}
-                                        style={styles.detailBtn}
-                                    >
-                                        ดูรายละเอียด
-                                    </button>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <p style={styles.noData}>ไม่พบผลลัพธ์ที่ตรงกับเงื่อนไขการค้นหา</p>
                     )}
@@ -197,7 +230,7 @@ export default function Home() {
     );
 }
 
-// --- Styles ประกาศเป็น Constant ---
+// --- Styles ---
 const styles = {
     container: {
         maxWidth: "1100px",
@@ -210,12 +243,20 @@ const styles = {
         fontWeight: "bold",
         marginBottom: "20px"
     },
+    filterBarWrapper: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: "15px",
+        marginBottom: "30px"
+    },
     searchWrapper: {
         position: "relative",
-        marginBottom: "30px"
+        width: "80%",
     },
     searchIcon: {
         position: "absolute",
+        color: '#328d7d',
         left: "20px",
         top: "50%",
         transform: "translateY(-50%)",
@@ -223,7 +264,7 @@ const styles = {
         opacity: 0.5
     },
     searchInput: {
-        width: "60%",
+        width: "100%",
         padding: "14px 30px 14px 55px",
         borderRadius: "50px",
         border: "none",
@@ -266,17 +307,39 @@ const styles = {
         boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.05)",
         border: "1px solid #FFF2E2"
     },
+    cardImageWrapper: {
+        position: "relative",
+        width: "100%",
+        height: "220px"
+    },
     cardImage: {
         width: "100%",
-        height: "220px",
+        height: "100%",
         objectFit: "cover",
         display: "block",
-        verticalAlign: "bottom",
+    },
+    expiryBadge: {
+        position: "absolute",
+        top: "15px",
+        right: "15px",
+        backgroundColor: "#ff9114",
+        color: "#fff",
+        padding: "6px 14px",
+        borderRadius: "15px",
+        fontSize: "14px",
+        fontWeight: "bold",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+        zIndex: 1
+    },
+    badgeUrgent: {
+        backgroundColor: "#ff8c00",
+    },
+    badgeExpired: {
+        backgroundColor: "#ef4444",
     },
     cardContent: {
         padding: "20px",
         backgroundColor: "#fff0df"
-        // backgroundColor: "#fff2e2"
     },
     foodNameText: {
         color: "#328d7d",

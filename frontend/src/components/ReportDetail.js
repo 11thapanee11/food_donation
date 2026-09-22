@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -22,73 +22,79 @@ export default function ReportDetail() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    useEffect(() => {
+    const fetchReport = useCallback(async () => {
         if (!id) return;
+        setLoading(true);
+        try {
+            // ดึงข้อมูลรายงานก่อน
+            const reportRes = await fetch(`http://localhost:8082/report/${id}`);
+            const reportResponse = await reportRes.json();
+            let reportData = reportResponse.data;
 
-        const loadDataAndUpdateStatus = async () => {
-            setLoading(true);
-            try {
-                // ดึงข้อมูลรายงานก่อน
-                const reportRes = await fetch(`http://localhost:8082/report/${id}`);
-                const reportResponse = await reportRes.json();
-                let reportData = reportResponse.data;
-
-                if (reportData.reportStatus === 'pending') {
-                    try {
-                        await fetch(`http://localhost:8082/report/${id}/status`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ status: "checked" })
-                        });
-                    } catch (error) {
-                        console.error("Failed to update status on backend:", error);
-                    }
+            if (reportData.reportStatus === 'pending') {
+                try {
+                    await fetch(`http://localhost:8082/report/${id}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: "checked" })
+                    });
+                } catch (error) {
+                    console.error("Failed to update status on backend:", error);
                 }
-
-                // ดึงข้อมูล Food/Booking ต่อ
-                if (reportData.foodId || reportData.bookingId) {
-                    const fetchFood = reportData.foodId ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json()) : Promise.resolve(null);
-                    const fetchBooking = reportData.bookingId ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json()) : Promise.resolve(null);
-
-                    const [foodRes, bookingRes] = await Promise.all([fetchFood, fetchBooking]);
-
-                    reportData = {
-                        ...reportData,
-                        foodDetail: foodRes?.data || foodRes,
-                        bookingDetail: bookingRes?.data || bookingRes
-                    };
-                }
-
-                setReport(reportData);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
             }
-        };
 
-        loadDataAndUpdateStatus();
+            // ดึงข้อมูล Food/Booking ต่อ
+            if (reportData.foodId || reportData.bookingId) {
+                const fetchFood = reportData.foodId ? fetch(`http://localhost:8082/foods/${reportData.foodId}`).then(r => r.json()) : Promise.resolve(null);
+                const fetchBooking = reportData.bookingId ? fetch(`http://localhost:8082/bookings/${reportData.bookingId}`).then(r => r.json()) : Promise.resolve(null);
+
+                const [foodRes, bookingRes] = await Promise.all([fetchFood, fetchBooking]);
+
+                reportData = {
+                    ...reportData,
+                    foodDetail: foodRes?.data || foodRes,
+                    bookingDetail: bookingRes?.data || bookingRes
+                };
+            }
+
+            setReport(reportData);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     }, [id]);
+
+    useEffect(() => {
+        fetchReport();
+    }, [fetchReport]);
+
+    const isFoodDisabled = report?.foodDetail?.foodStatus === 'disable';
+    const isUserDisabled = report?.donorStatus === 'deactivate';
 
     const handleAction = async (actionType) => {
         const isFood = actionType === 'food';
-        const actionLabel = isFood ? "ปิดการแสดงอาหาร" : "ระงับบัญชีผู้ใช้";
+        const isFoodDisabled = report?.foodDetail?.foodStatus === 'disable';
+        const isUserDisabled = report?.donorStatus === 'deactivate';
 
-        if (isFood && report.foodDetail.foodStatus === 'disable') {
-            Swal.fire('อาหารรายการนี้ถูกปิดการแสดงผลไปแล้ว', '', 'info');
-            return;
-        }
-        if (!isFood && report.donorStatus === 'deactivate') {
-            Swal.fire('บัญชีผู้ใช้งานนี้ถูกระงับไปแล้ว', '', 'info');
-            return;
+        // กำหนดค่าตามสถานะปัจจุบัน (ถ้าระงับอยู่ -> กดแล้วจะเป็นการปลดระงับ)
+        let actionLabel = "";
+        let nextStatus = "";
+
+        if (isFood) {
+            actionLabel = isFoodDisabled ? "เปิดการแสดงอาหาร" : "ปิดการแสดงอาหาร";
+            nextStatus = isFoodDisabled ? "available" : "disable"; // ปรับสถานะใช้งานให้ตรงกับ DB ของคุณ
+        } else {
+            actionLabel = isUserDisabled ? "ปลดระงับบัญชีผู้ใช้" : "ระงับบัญชีผู้ใช้";
+            nextStatus = isUserDisabled ? "active" : "deactivate"; // ปรับสถานะใช้งานให้ตรงกับ DB ของคุณ
         }
 
         const result = await Swal.fire({
             title: `ยืนยันการ${actionLabel}?`,
             icon: 'warning',
-            iconColor: '#d33',
+            iconColor: isFoodDisabled || isUserDisabled ? '#2ecc71' : '#d33',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
+            confirmButtonColor: isFoodDisabled || isUserDisabled ? '#2ecc71' : '#d33',
             cancelButtonColor: '#a0a0a0',
             confirmButtonText: 'ยืนยัน',
             cancelButtonText: 'ยกเลิก',
@@ -103,8 +109,6 @@ export default function ReportDetail() {
                 ? `http://localhost:8082/foods/${report.foodDetail.id}/status`
                 : `http://localhost:8082/donor/${report.foodDetail.donorId}/status`;
 
-            const statusToSend = isFood ? 'disable' : 'deactivate';
-
             const res = await fetch(endpoint, {
                 method: 'PUT',
                 headers: {
@@ -112,7 +116,7 @@ export default function ReportDetail() {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    status: statusToSend
+                    status: nextStatus
                 })
             });
 
@@ -124,7 +128,11 @@ export default function ReportDetail() {
                     confirmButtonColor: '#2ecc71',
                     confirmButtonText: 'ยืนยัน',
                 });
-                navigate('/manage-report');
+
+                // เรียกฟังก์ชันดึงข้อมูลในหน้าเดิมใหม่เพื่ออัปเดตสถานะปุ่มและ UI ทันที
+                if (typeof fetchReport === 'function') {
+                    fetchReport();
+                }
             } else {
                 throw new Error("เกิดข้อผิดพลาดจากฝั่ง Server");
             }
@@ -300,7 +308,7 @@ export default function ReportDetail() {
                             <p style={styles.bookingRow}>
                                 <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>น้ำหนักที่รับบริจาค :</span>
                                 <span style={styles.bookingValue}>
-                                    {report.bookingDetail?.bookingWeightKg} Kg
+                                    {report.bookingDetail?.bookingWeightKg ? Number(report.bookingDetail.bookingWeightKg).toFixed(2) : '0.00'} Kg
                                 </span>
                             </p>
                             <p style={styles.bookingRow}>
@@ -328,16 +336,24 @@ export default function ReportDetail() {
                         {/* ปุ่มจัดการ */}
                         <div style={styles.buttonGroup}>
                             <button
-                                style={{ ...styles.btnDeactivate, width: isMobile ? "100%" : "60%" }}
                                 onClick={() => handleAction('food')}
+                                style={{
+                                    ...styles.btnSuspend,
+                                    width: isMobile ? "100%" : "60%",
+                                    backgroundColor: isFoodDisabled ? '#38a164' : '#070707', // เขียวเมื่อกดเพื่อเปิดคืน / แดงเมื่อกดเพื่อปิด
+                                }}
                             >
-                                ปิดการแสดงอาหารบริจาค
+                                {isFoodDisabled ? 'เปิดการแสดงอาหาร' : 'ปิดการแสดงอาหาร'}
                             </button>
                             <button
-                                style={{ ...styles.btnSuspend, width: isMobile ? "100%" : "60%" }}
                                 onClick={() => handleAction('user')}
+                                style={{
+                                    ...styles.btnSuspend,
+                                    width: isMobile ? "100%" : "60%",
+                                    backgroundColor: isUserDisabled ? '#38a164' : '#e74c3c', // เขียวเมื่อกดปลดระงับ / แดงเมื่อกดระงับ
+                                }}
                             >
-                                ระงับบัญชีผู้ใช้งาน
+                                {isUserDisabled ? 'ปลดระงับบัญชีผู้ใช้งาน' : 'ระงับบัญชีผู้ใช้งาน'}
                             </button>
                             <button
                                 style={{ ...styles.btnCancel, width: isMobile ? "100%" : "60%" }}

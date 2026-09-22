@@ -22,7 +22,6 @@ export default function FoodForm() {
         unitWeightKg: "",
         totalUnit: "",
         remainingUnit: "",
-        peopleCountPerMeal: "",
         limitPerPerson: "",
         address: "",
         pickupDateStart: "",
@@ -124,19 +123,38 @@ export default function FoodForm() {
                 .then(resData => {
                     if (resData.success) {
                         console.log("=== ข้อมูลอาหารจาก API ===", resData.data);
-
-                        // แงะข้อมูลก้อนวัตถุอาหารออกมาจาก resData.data
                         const foodInfo = resData.data;
 
-                        console.log("เช็คข้อมูลอาหาร (foodInfo):", foodInfo);
+                        const weightKg = Number(foodInfo.unitWeightKg) || 0;
 
-                        setFormData({
-                            ...foodInfo, // กระจายข้อมูลอาหารเดิมลงฟอร์ม
-                            // ดึง ID หมวดหมู่เดิมออกมากดเลือกให้ตรงกับ Select Dropdown ในหน้าเว็บ
+                        let calculatedQty = weightKg;
+                        let calculatedUnit = 'kg';
+
+                        // ย้อนแปลงหน่วยเพื่อความสวยงามในการแสดงผล
+                        if (weightKg > 0) {
+                            // หากน้ำหนักน้อยกว่า 1 kg ให้แปลงแสดงเป็น "กรัม" (g) เพื่อให้อ่านง่าย
+                            if (weightKg < 1) {
+                                calculatedQty = Math.round(weightKg / 0.001); // เช่น 0.25 kg -> 250 g
+                                calculatedUnit = 'g';
+                            } else {
+                                calculatedQty = weightKg;
+                                calculatedUnit = 'kg';
+                            }
+                        }
+
+                        // อัปเดตข้อมูลลง Form Data
+                        setFormData(prev => ({
+                            ...prev,
+                            ...foodInfo,
                             foodCateId: foodInfo.foodCateId,
-                            fileImage: foodInfo.foodImage
-                            // foodCateId: foodInfo.foodCateId ?? foodInfo.foodCategory?.id ?? ""
-                        });
+                            fileImage: foodInfo.foodImage,
+                            inputQuantity: calculatedQty,
+                            selectedUnit: calculatedUnit
+                        }));
+
+                        // อัปเดต State สำหรับ Component Input / Select
+                        setInputQuantity(calculatedQty);
+                        setSelectedUnit(calculatedUnit);
 
                     } else {
                         setFetchError(resData.message || "ไม่พบข้อมูลอาหารรายการนี้");
@@ -146,7 +164,7 @@ export default function FoodForm() {
                     console.error("Error fetching single food details:", err);
                 });
         }
-    }
+    };
 
     const UNIT_OPTIONS = [
         // หมวดน้ำหนัก (Weight)
@@ -247,7 +265,7 @@ export default function FoodForm() {
     // const [markerPos, setMarkerPos] = useState({ lat: 18.7883, lng: 98.9853 }); // ค่าเริ่มต้น (เชียงใหม่)
 
     const { isLoaded } = useJsApiLoader({
-        googleMapsApiKey: "AIzaSyCz2II4Ff_LEqyvP03ls-0qb6-PVZWxw-0"
+        googleMapsApiKey: "AIzaSyCnukRCzb4dVhy8beM7oLM0AUyf_8kuEm0"
     });
     // เมื่อคลิกบนแผนที่ → ย้าย marker
     // เมื่อคลิกบนแผนที่ → อัปเดตพิกัดใน formData
@@ -299,7 +317,6 @@ export default function FoodForm() {
         const skipFields = new Set([
             "fileImage",
             "description",
-            "peopleCountPerMeal",
             "remainingUnit",
             "donorId",
             "foodStatus",
@@ -319,7 +336,7 @@ export default function FoodForm() {
                 // เช็คฟิลด์ตัวเลข (รองรับทั้ง String "0" และ Number 0)
                 else if (!isNaN(value) && Number(value) <= 0 && key !== "remainingUnit") {
                     // เช็คเฉพาะฟิลด์ที่ควรจะเป็นตัวเลขที่มากกว่า 0
-                    const numericFields = ["totalUnit", "unitWeightKg", "peopleCountPerMeal", "limitPerPerson"];
+                    const numericFields = ["totalUnit", "unitWeightKg", "limitPerPerson"];
 
                     if (numericFields.includes(key)) {
                         newErrors[key] = "กรุณากรอกจำนวนที่มากกว่า 0";
@@ -440,10 +457,6 @@ export default function FoodForm() {
         data.append("longitude", Number.parseFloat(formData.longitude));
         data.append("foodCateId", Number.parseInt(formData.foodCateId, 10));
         data.append("foodStatus", formData.foodStatus);
-
-        if (formData.peopleCountPerMeal !== "" && formData.peopleCountPerMeal != null) {
-            data.append("peopleCountPerMeal", Number.parseInt(formData.peopleCountPerMeal, 10));
-        }
 
         const targetUrl = isEditMode
             ? `http://localhost:8082/foods/${foodId}`
@@ -995,7 +1008,7 @@ export default function FoodForm() {
                             />
                             {errors.expiryDate && <span style={{ color: "red", marginBottom: '-30px' }}>{errors.expiryDate}</span>}
                         </div>
-                        <div style={{ ...styles.inputGroup}}>
+                        <div style={{ ...styles.inputGroup }}>
                             <p style={styles.label}>น้ำหนักต่อหน่วยที่บริจาค</p>
 
                             {/* Wrapper สำหรับคุม Input + Dropdown ให้อยู่บรรทัดเดียวกันโดยไม่ตกขอบ */}
@@ -1004,7 +1017,7 @@ export default function FoodForm() {
                                 gap: '8px',
                                 alignItems: 'center',
                                 width: '100%',
-                                boxSizing: 'border-box'
+                                boxSizing: 'border-box',
                             }}>
                                 <input
                                     type="number"
@@ -1020,7 +1033,7 @@ export default function FoodForm() {
                                         backgroundColor: errors.unitWeightKg ? "#fff5f5" : "#FFEEDD",
                                         outline: "none",
                                         color: isEditable ? "#000" : "#a6a6a6",
-                                        cursor: isEditable ? "text" : "not-allowed"
+                                        cursor: isEditable ? "pointer" : "not-allowed",
                                     }}
                                     onWheel={(e) => e.target.blur()}
                                     onKeyDown={(e) => {
@@ -1059,7 +1072,7 @@ export default function FoodForm() {
                                 </select>
                             </div>
 
-                            <div style={{ position: 'relative', width: '100%',marginBottom: '-30px' }}>
+                            <div style={{ position: 'relative', width: '100%', marginBottom: '-30px' }}>
                                 {errors.unitWeightKg ? (<span style={{ color: "red" }}>{errors.unitWeightKg}</span>
                                 ) : (inputQuantity > 0 && selectedUnit !== 'kg') ? (
                                     <span style={{

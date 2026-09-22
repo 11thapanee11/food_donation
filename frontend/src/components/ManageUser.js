@@ -35,7 +35,7 @@ export default function ManageUsers() {
             color: '#689f38',
             bgColor: '#f1f8e9'
         },
-        deactive: {
+        deactivate: {
             text: 'ถูกปิดใช้งาน',
             color: '#777575',
             bgColor: '#f5f5f5'
@@ -44,7 +44,7 @@ export default function ManageUsers() {
 
     const handleToggleStatus = (donor) => {
         const isActive = donor.status === 'active';
-        const nextStatus = isActive ? 'deactive' : 'active';
+        const nextStatus = isActive ? 'deactivate' : 'active';
         const actionLabel = isActive ? 'ระงับบัญชี' : 'เปิดใช้งาน';
         const color = isActive ? '#ff4d4d' : '#2ecc71';
 

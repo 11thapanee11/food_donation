@@ -142,7 +142,7 @@ export default function ImpactDashboard() {
                                         padding: '10px 15px'
                                     }}
                                     labelStyle={{ color: '#333333', fontWeight: 'bold', marginBottom: '4px' }}
-                                    formatter={(value) => [`${value} kgCO2e`, 'การลดคาร์บอน']}
+                                    formatter={(value) => [`${Number(value).toFixed(2)} kgCO2e`, 'การลดคาร์บอน']}
                                 />
 
                                 {/* เส้นกราฟ Smooth สีเขียวธีมหลัก */}

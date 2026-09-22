@@ -20,6 +20,7 @@ export default function Navbar() {
     const [notifications, setNotifications] = useState([]);
 
     const [userId, setUserId] = useState(null);
+    const [displayName, setDisplayName] = useState("");
     const [isAdmin, setIsAdmin] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -54,6 +55,7 @@ export default function Navbar() {
             try {
                 const decoded = jwtDecode(token);
                 setUserId(decoded?.sub);
+                setDisplayName(decoded?.displayName);
                 setIsAdmin(decoded?.isAdmin === true);
                 setIsLoggedIn(true);
 
@@ -291,6 +293,10 @@ export default function Navbar() {
                             width: 290px !important;
                             right: -60px !important;
                         }
+
+                        .user-display-name {
+                            display: none !important;
+                        }
                     }
                 `}
             </style>
@@ -419,6 +425,29 @@ export default function Navbar() {
                                 </i>
                             )}
                         </button>
+
+                        {isLoggedIn && (
+                            <span
+                                onClick={handleIconClick}
+                                className="user-display-name"
+                                style={{
+                                    cursor: "pointer",
+                                    fontWeight: "600",
+                                    fontSize: "15px",
+                                    color: "#333",
+                                    padding: "6px 0px 4px 6px",
+                                    maxWidth: "120px",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                    verticalAlign: "middle"
+                                }}
+                                title={displayName}
+                            >
+                                {displayName}
+                            </span>
+                        )}
 
                         {isLoggedIn && openDropdown && (
                             <div style={styles.profileDropdown}>

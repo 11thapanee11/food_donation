@@ -52,7 +52,7 @@ export default function FoodDetail() {
         } else {
             setUserId(null);
         }
-        setLoading(false);
+        // setLoading(false);
     }, []);
 
     useEffect(() => {
@@ -210,7 +210,7 @@ export default function FoodDetail() {
     };
 
     const { isLoaded } = useJsApiLoader({
-        googleMapsApiKey: "AIzaSyCz2II4Ff_LEqyvP03ls-0qb6-PVZWxw-0"
+        googleMapsApiKey: "AIzaSyCnukRCzb4dVhy8beM7oLM0AUyf_8kuEm0"
     });
 
     if (loading || !isLoaded) {
@@ -249,7 +249,10 @@ export default function FoodDetail() {
             input: 'number',
             inputAttributes: {
                 min: '1',
-                step: '1'
+                step: '1',
+                autocomplete: 'off',
+                autocorrect: 'off',
+                spellcheck: 'false'
             },
             showCancelButton: true,
             confirmButtonText: 'ยืนยัน',
@@ -276,11 +279,11 @@ export default function FoodDetail() {
                 const quantity = Number.parseInt(value);
 
                 if (food.limitPerPerson && quantity > food.limitPerPerson) {
-                    return `ขออภัยครับ รายการนี้จำกัดสิทธิ์การจองไม่เกิน ${food.limitPerPerson} ชิ้นต่อคน`;
+                    return `ขออภัย รายการนี้จำกัดสิทธิ์การจองไม่เกิน ${food.limitPerPerson} ชิ้นต่อคน`;
                 }
 
                 if (quantity > food.remainingUnit) {
-                    return `ขออภัยครับ อาหารรายการนี้เหลือให้จองได้อีกเพียง ${food.remainingUnit} ชิ้นเท่านั้น`;
+                    return `ขออภัย อาหารรายการนี้เหลือให้จองได้อีกเพียง ${food.remainingUnit} ชิ้นเท่านั้น`;
                 }
             }
         }).then((result) => {
@@ -673,18 +676,19 @@ export default function FoodDetail() {
                         <span style={{ color: "#ff8c00", fontWeight: "bold" }}>บริจาคโดย</span>
                         <span> {food.donorName}</span>
                     </p>
-                    {isFromReceive ? (<p style={{ ...styles.donorText, margin: "5px 0px", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ color: "#328d7d", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                            <span className="material-symbols" style={{ fontSize: "18px", color: "#328d7d" }}>
-                                call
+                    {isFromReceive && bookingStatus !== 'cancelled' ? (
+                        <p style={{ ...styles.donorText, margin: "5px 0px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span style={{ color: "#328d7d", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                <span className="material-symbols" style={{ fontSize: "18px", color: "#328d7d" }}>
+                                    call
+                                </span>
+                                เบอร์โทรติดต่อ
                             </span>
-                            เบอร์โทรติดต่อ
-                        </span>
-                        <span>
-                            {food.donorPhoneNum}
-                        </span>
-                    </p>) : (null)}
-
+                            <span>
+                                {food.donorPhoneNum}
+                            </span>
+                        </p>
+                    ) : null}
 
                     {isFromReceive ? (
                         <>
@@ -702,7 +706,7 @@ export default function FoodDetail() {
                                         <p style={styles.bookingRow}>
                                             <span style={{ ...styles.bookingLabel, width: isMobile ? "130px" : "160px" }}>น้ำหนักที่รับบริจาค :</span>
                                             <span style={styles.bookingValue}>
-                                                {booking.bookingWeightKg} Kg
+                                                {booking.bookingWeightKg ? Number(booking.bookingWeightKg).toFixed(2) : '0.00'} Kg
                                             </span>
                                         </p>
                                         <p style={styles.bookingRow}>
@@ -711,7 +715,7 @@ export default function FoodDetail() {
                                         </p>
 
                                         {booking.bookingStatus !== "completed" && (
-                                            <div style={{ ...styles.claimCodeContainer, flexDirection: isMobile ? "column" : "row", gap: isMobile ? "8px" : "0" }}>
+                                            <div style={{ ...styles.claimCodeContainer, flexDirection: isMobile ? "column" : "row", gap: isMobile ? "8px" : "80px" }}>
                                                 <span style={{ ...styles.claimCodeLabel, fontSize: isMobile ? "18px" : "24px" }}>รหัสยืนยันการจอง</span>
                                                 <span style={{ ...styles.claimCodeValue, fontSize: isMobile ? "28px" : "36px" }}>
                                                     {booking.confirmationCode || "000000"}
@@ -909,6 +913,25 @@ export default function FoodDetail() {
                     </div>
 
                     <div style={styles.mapWrapper}>
+                        {/* ปุ่มนำทางไปยัง Google Maps */}
+                        <button
+                            type="button"
+                            style={styles.navigateBtn}
+                            onClick={() => {
+                                const lat = Number(food.latitude);
+                                const lng = Number(food.longitude);
+                                if (lat && lng) {
+                                    const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+                                    window.open(mapUrl, '_blank', 'noopener,noreferrer');
+                                }
+                            }}
+                        >
+                            <span className="material-icons" style={{ fontSize: '18px', marginRight: '6px' }}>
+                                directions
+                            </span>
+                            นำทางด้วย Google Maps
+                        </button>
+
                         <GoogleMap
                             mapContainerStyle={{ width: "100%", height: "100%" }}
                             center={{
@@ -1133,14 +1156,14 @@ const styles = {
         color: "#328d7d",
         fontWeight: "500"
     },
-    mapWrapper: {
-        width: "100%",
-        height: "180px",
-        borderRadius: "16px",
-        overflow: "hidden",
-        marginBottom: "30px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-    },
+    // mapWrapper: {
+    //     width: "100%",
+    //     height: "180px",
+    //     borderRadius: "16px",
+    //     overflow: "hidden",
+    //     marginBottom: "30px",
+    //     boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+    // },
     reserveBtn: {
         backgroundColor: "#ff8c00",
         color: "#FFFFFF",
@@ -1247,5 +1270,31 @@ const styles = {
         borderRadius: "8px",
         fontSize: "16px",
         cursor: "pointer",
-    }
+    },
+    mapWrapper: {
+        position: 'relative', // สำคัญ: เพื่อให้ปุ่มจัดตำแหน่งเทียบกับกรอบแผนที่ได้
+        width: '100%',
+        height: '250px', // หรือความสูงตามที่คุณใช้อยู่
+        borderRadius: '15px',
+        overflow: 'hidden',
+        marginBottom: '20px'
+    },
+    navigateBtn: {
+        position: 'absolute',
+        top: '12px',
+        left: '12px',
+        zIndex: 10, // แสดงอยู่เหนือ Google Maps
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        color: '#1a73e8',
+        border: '1px solid #dadce0',
+        borderRadius: '8px',
+        padding: '8px 14px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+        transition: 'background-color 0.2s',
+    },
 };

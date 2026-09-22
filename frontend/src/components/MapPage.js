@@ -21,7 +21,7 @@ const MapPage = () => {
 
     // เรียกใช้งาน useJsApiLoader ในการดึงสคริปต์แผนที่จากกูเกิล
     const { isLoaded, loadError } = useJsApiLoader({
-        googleMapsApiKey: "AIzaSyCz2II4Ff_LEqyvP03ls-0qb6-PVZWxw-0"
+        googleMapsApiKey: "AIzaSyCnukRCzb4dVhy8beM7oLM0AUyf_8kuEm0"
     });
 
     // พิกัดสำรองกรณีผู้ใช้ไม่ให้สิทธิ์ GPS (ม.แม่โจ้)

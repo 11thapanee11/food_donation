@@ -135,11 +135,16 @@ export default function MyFoods() {
 
             const resData = await response.json();
 
-            if (response.status === 403 || !resData.success) {
+            if (response.status === 404 || resData.isFirstTime) {
+                navigate("/food-form");
+                return;
+            }
+
+            if (response.status === 403 || !response.ok || !resData.success) {
                 Swal.fire({
                     icon: 'error',
                     title: 'ไม่สามารถสร้างบริจาคได้',
-                    text: resData.message,
+                    text: resData.message || 'บัญชีของคุณไม่สามารถทำการบริจาคได้ในขณะนี้',
                     confirmButtonColor: '#e74c3c'
                 });
                 return;
