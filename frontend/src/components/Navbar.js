@@ -4,6 +4,8 @@ import { jwtDecode } from "jwt-decode";
 
 import profileMember from "../assets/images/member_profile.jpg";
 import profileAdmin from "../assets/images/admin_profile.jpg";
+import logoImg from "../assets/images/ppw_logo.png"; // นำเข้าโลโก้ PNG
+
 import foodIcon from "../assets/images/new.png";
 import bookingIcon from "../assets/images/received.png";
 import cancelIcon from "../assets/images/cancel.png";
@@ -26,6 +28,21 @@ export default function Navbar() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [myReadIds, setMyReadIds] = useState([]);
+
+    // Pastel Theme Color Palette (อ้างอิงจากตารางสีโลโก้)
+    const theme = {
+        primary: "#c084fc",        // ม่วงลาเวนเดอร์พาสเทล
+        primaryHover: "#a855f7",
+        primaryBg: "#f5f3ff",       // พื้นหลังม่วงอ่อนพาสเทล
+        skyBlue: "#38bdf8",         // ฟ้าพาสเทล
+        skyBlueBg: "#f0f9ff",
+        mint: "#34d399",            // เขียวมิ้นต์
+        magenta: "#e879f9",         // ชมพูอมม่วง accent
+        textMain: "#334155",        // เทาสเลทเข้ม
+        textMuted: "#64748b",       // เทาสเลทกลาง
+        borderSoft: "#f1f5f9",
+        bgLight: "#f8fafc",
+    };
 
     // Close dropdowns on outside click
     useEffect(() => {
@@ -237,16 +254,16 @@ export default function Navbar() {
 
     const unreadCount = notifications.filter((n) => !isRead(n.id)).length;
 
-    // Helper Style for Navigation Chips
+    // Helper Style for Navigation Chips (Pastel Soft Lavender Active)
     const getChipStyle = (isActive) => ({
         textDecoration: "none",
         padding: "8px 18px",
         borderRadius: "99px",
         fontSize: "0.92rem",
         fontWeight: isActive ? "600" : "500",
-        color: isActive ? "#ff7a00" : "#64748b",
+        color: isActive ? theme.primary : theme.textMuted,
         backgroundColor: isActive ? "#ffffff" : "transparent",
-        boxShadow: isActive ? "0 2px 8px rgba(0, 0, 0, 0.06)" : "none",
+        boxShadow: isActive ? "0 2px 10px rgba(192, 132, 252, 0.15)" : "none",
         whiteSpace: "nowrap",
         transition: "all 0.25s ease",
     });
@@ -256,14 +273,14 @@ export default function Navbar() {
         width: "42px",
         height: "42px",
         borderRadius: "50%",
-        border: isActive ? "1px solid #ffe0c2" : "1px solid #f1f5f9",
-        background: isActive ? "#fff5eb" : "#ffffff",
+        border: isActive ? `1px solid ${theme.primaryBg}` : `1px solid ${theme.borderSoft}`,
+        background: isActive ? theme.primaryBg : "#ffffff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
-        color: isActive ? "#ff7a00" : "#64748b",
-        boxShadow: isActive ? "0 2px 8px rgba(255, 122, 0, 0.15)" : "none",
+        color: isActive ? theme.primary : theme.textMuted,
+        boxShadow: isActive ? "0 2px 10px rgba(192, 132, 252, 0.2)" : "none",
         transition: "all 0.25s ease",
     });
 
@@ -277,8 +294,8 @@ export default function Navbar() {
                 position: "sticky",
                 top: 0,
                 zIndex: 1000,
-                boxShadow: "0 4px 20px -2px rgba(0, 0, 0, 0.05)",
-                borderBottom: "1px solid rgba(235, 238, 242, 0.8)",
+                boxShadow: "0 4px 20px -2px rgba(148, 163, 184, 0.08)",
+                borderBottom: "1px solid rgba(241, 245, 249, 0.9)",
                 transition: "all 0.3s ease",
             }}
         >
@@ -292,7 +309,7 @@ export default function Navbar() {
                     justifyContent: "space-between",
                 }}
             >
-                {/* Brand Logo & Name */}
+                {/* Brand Logo & Name (Pan-Plate-Waste) */}
                 <Link
                     to="/"
                     style={{
@@ -300,32 +317,37 @@ export default function Navbar() {
                         alignItems: "center",
                         gap: "12px",
                         textDecoration: "none",
-                        color: "#ff7a00",
-                        fontWeight: 700,
-                        fontSize: "1.15rem",
                         transition: "transform 0.2s ease",
                     }}
                 >
-                    <div
+                    <img
+                        src={logoImg}
+                        alt="Pan-Plate-Waste Logo"
                         style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "12px",
-                            background: "linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%)",
-                            color: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 4px 12px rgba(255, 122, 0, 0.25)",
+                            height: "42px",
+                            width: "auto",
+                            objectFit: "contain",
+                            filter: "drop-shadow(0 2px 8px rgba(192, 132, 252, 0.25))",
                         }}
-                    >
-                        <span className="material-icons-outlined" style={{ fontSize: "24px" }}>
-                            volunteer_activism
+                    />
+                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                        <span
+                            style={{
+                                fontSize: "1.2rem",
+                                fontWeight: "800",
+                                letterSpacing: "-0.5px",
+                                background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.skyBlue} 50%, ${theme.mint} 100%)`,
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                lineHeight: "1.15",
+                            }}
+                        >
+                            Pan · Plate · Waste
+                        </span>
+                        <span style={{ fontSize: "0.72rem", color: theme.textMuted, fontWeight: "500" }}>
+                            ระบบจัดการและบริจาคอาหารส่วนเกิน
                         </span>
                     </div>
-                    <span style={{ letterSpacing: "-0.3px", color: "#1e293b" }}>
-                        <span style={{ color: "#ff7a00" }}>แพลตฟอร์มการบริหารจัดการการบริจาคอาหาร</span>
-                    </span>
                 </Link>
 
                 {/* Navigation Links */}
@@ -333,11 +355,11 @@ export default function Navbar() {
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
-                        background: "#f8fafc",
+                        gap: "6px",
+                        background: theme.bgLight,
                         padding: "4px 6px",
                         borderRadius: "99px",
-                        border: "1px solid #f1f5f9",
+                        border: `1px solid ${theme.borderSoft}`,
                     }}
                 >
                     {!isAdmin && (
@@ -401,13 +423,13 @@ export default function Navbar() {
                                     width: "42px",
                                     height: "42px",
                                     borderRadius: "50%",
-                                    border: openNotifications ? "1px solid #ffe0c2" : "1px solid #f1f5f9",
-                                    background: openNotifications ? "#fff5eb" : "#ffffff",
+                                    border: openNotifications ? `1px solid ${theme.primaryBg}` : `1px solid ${theme.borderSoft}`,
+                                    background: openNotifications ? theme.primaryBg : "#ffffff",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     cursor: "pointer",
-                                    color: openNotifications ? "#ff7a00" : "#64748b",
+                                    color: openNotifications ? theme.primary : theme.textMuted,
                                     transition: "all 0.2s ease",
                                 }}
                             >
@@ -422,7 +444,7 @@ export default function Navbar() {
                                             right: "3px",
                                             width: "10px",
                                             height: "10px",
-                                            backgroundColor: "#ef4444",
+                                            backgroundColor: theme.magenta, // ชมพูอมม่วง สื่อถึงความสดใสและสะดุดตา
                                             borderRadius: "50%",
                                             border: "2px solid #ffffff",
                                         }}
@@ -439,9 +461,9 @@ export default function Navbar() {
                                         right: 0,
                                         width: "360px",
                                         background: "#ffffff",
-                                        borderRadius: "16px",
-                                        boxShadow: "0 12px 32px -4px rgba(15, 23, 42, 0.12)",
-                                        border: "1px solid #f1f5f9",
+                                        borderRadius: "20px",
+                                        boxShadow: "0 12px 36px -4px rgba(100, 116, 139, 0.15)",
+                                        border: `1px solid ${theme.borderSoft}`,
                                         overflow: "hidden",
                                         zIndex: 1001,
                                     }}
@@ -449,23 +471,24 @@ export default function Navbar() {
                                     <div
                                         style={{
                                             padding: "16px 20px",
-                                            borderBottom: "1px solid #f1f5f9",
+                                            borderBottom: `1px solid ${theme.borderSoft}`,
                                             display: "flex",
                                             justifyContent: "space-between",
                                             alignItems: "center",
+                                            background: "#fafafa",
                                         }}
                                     >
-                                        <span style={{ fontWeight: "700", color: "#0f172a", fontSize: "1rem" }}>
+                                        <span style={{ fontWeight: "700", color: theme.textMain, fontSize: "0.95rem" }}>
                                             การแจ้งเตือน
                                         </span>
                                         {unreadCount > 0 && (
                                             <span
                                                 style={{
                                                     fontSize: "0.75rem",
-                                                    padding: "2px 8px",
+                                                    padding: "3px 10px",
                                                     borderRadius: "99px",
-                                                    background: "#fff7ed",
-                                                    color: "#ff7a00",
+                                                    background: theme.primaryBg,
+                                                    color: theme.primary,
                                                     fontWeight: "600",
                                                 }}
                                             >
@@ -476,10 +499,7 @@ export default function Navbar() {
 
                                     <div style={{ maxHeight: "380px", overflowY: "auto" }}>
                                         {loading ? (
-                                            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
-                                                {/* <span className="material-icons-outlined" style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>
-                                                    sync
-                                                </span> */}
+                                            <div style={{ padding: "32px", textAlign: "center", color: theme.textMuted }}>
                                                 <span style={{ fontSize: "0.88rem" }}>กำลังโหลดการแจ้งเตือน...</span>
                                             </div>
                                         ) : notifications.length > 0 ? (
@@ -493,26 +513,26 @@ export default function Navbar() {
                                                             display: "flex",
                                                             gap: "12px",
                                                             width: "100%",
-                                                            padding: "12px 16px",
+                                                            padding: "14px 16px",
                                                             border: "none",
-                                                            // background: !readStatus ? "rgba(255, 247, 237, 0.6)" : "transparent",
-                                                            background: "#ffff",
+                                                            background: !readStatus ? theme.primaryBg : "#ffffff", // ไฮไลท์ยังไม่อ่านด้วยสีม่วงอ่อนพาสเทล
                                                             textAlign: "left",
                                                             cursor: "pointer",
-                                                            borderBottom: "1px solid #e9e9e9",
+                                                            borderBottom: `1px solid ${theme.borderSoft}`,
                                                             transition: "background 0.2s ease",
                                                         }}
                                                     >
                                                         <div
                                                             style={{
-                                                                width: "36px",
-                                                                height: "36px",
-                                                                borderRadius: "10px",
-                                                                background: "#f1f5f9",
+                                                                width: "38px",
+                                                                height: "38px",
+                                                                borderRadius: "12px",
+                                                                background: "#ffffff",
                                                                 display: "flex",
                                                                 alignItems: "center",
                                                                 justifyContent: "center",
                                                                 flexShrink: 0,
+                                                                boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
                                                             }}
                                                         >
                                                             <img src={iconMap[n.type]} alt={n.type} style={{ width: "22px", height: "22px" }} />
@@ -523,13 +543,12 @@ export default function Navbar() {
                                                                     margin: 0,
                                                                     fontSize: "0.88rem",
                                                                     fontWeight: readStatus ? "500" : "700",
-                                                                    color: readStatus ? "#64748b" : "#328d7d",
-                                                                    // color: "#1e293b",
+                                                                    color: readStatus ? theme.textMuted : theme.primary,
                                                                 }}
                                                             >
                                                                 {headerMap[n.type]}
                                                             </p>
-                                                            <p style={{ margin: "3px 0", fontSize: "0.82rem", color: "#64748b", lineHeight: "1.4" }}>
+                                                            <p style={{ margin: "4px 0", fontSize: "0.82rem", color: theme.textMuted, lineHeight: "1.4" }}>
                                                                 {n.message}
                                                             </p>
                                                             <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
@@ -546,7 +565,7 @@ export default function Navbar() {
                                                 );
                                             })
                                         ) : (
-                                            <div style={{ padding: "40px 20px", textAlign: "center", color: "#94a3b8" }}>
+                                            <div style={{ padding: "40px 20px", textAlign: "center", color: theme.textMuted }}>
                                                 <span className="material-icons-outlined" style={{ fontSize: "36px", color: "#cbd5e1", display: "block", marginBottom: "8px" }}>
                                                     notifications_none
                                                 </span>
@@ -568,10 +587,10 @@ export default function Navbar() {
                                 alignItems: "center",
                                 gap: "10px",
                                 cursor: "pointer",
-                                padding: "4px 8px 4px 4px",
+                                padding: "4px 10px 4px 4px",
                                 borderRadius: "99px",
                                 transition: "background 0.2s ease",
-                                background: openDropdown ? "#f8fafc" : "transparent",
+                                background: openDropdown ? theme.bgLight : "transparent",
                             }}
                         >
                             {isLoggedIn ? (
@@ -583,8 +602,8 @@ export default function Navbar() {
                                         height: "38px",
                                         borderRadius: "50%",
                                         objectFit: "cover",
-                                        border: "2px solid #ffffff",
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                        border: `2px solid ${theme.primaryBg}`,
+                                        boxShadow: "0 2px 8px rgba(192, 132, 252, 0.2)",
                                     }}
                                 />
                             ) : (
@@ -603,7 +622,7 @@ export default function Navbar() {
                                     style={{
                                         fontWeight: "600",
                                         fontSize: "0.9rem",
-                                        color: "#334155",
+                                        color: theme.textMain,
                                         maxWidth: "110px",
                                         whiteSpace: "nowrap",
                                         overflow: "hidden",
@@ -625,8 +644,8 @@ export default function Navbar() {
                                     width: "180px",
                                     background: "#ffffff",
                                     borderRadius: "16px",
-                                    boxShadow: "0 12px 32px -4px rgba(15, 23, 42, 0.12)",
-                                    border: "1px solid #f1f5f9",
+                                    boxShadow: "0 12px 32px -4px rgba(100, 116, 139, 0.15)",
+                                    border: `1px solid ${theme.borderSoft}`,
                                     overflow: "hidden",
                                     zIndex: 1001,
                                 }}
@@ -642,15 +661,15 @@ export default function Navbar() {
                                                 gap: "10px",
                                                 padding: "10px 12px",
                                                 fontSize: "0.88rem",
-                                                color: "#334155",
+                                                color: theme.textMain,
                                                 textDecoration: "none",
-                                                borderRadius: "8px",
+                                                borderRadius: "10px",
                                                 transition: "background 0.15s ease",
                                             }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                                            onMouseEnter={(e) => (e.currentTarget.style.background = theme.bgLight)}
                                             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                                         >
-                                            <span className="material-icons-outlined" style={{ fontSize: "18px", color: "#64748b" }}>
+                                            <span className="material-icons-outlined" style={{ fontSize: "18px", color: theme.textMuted }}>
                                                 account_circle
                                             </span>
                                             โปรไฟล์ของฉัน
@@ -665,15 +684,15 @@ export default function Navbar() {
                                             width: "100%",
                                             padding: "10px 12px",
                                             fontSize: "0.88rem",
-                                            color: "#ef4444",
+                                            color: "#f43f5e",
                                             border: "none",
                                             background: "transparent",
                                             cursor: "pointer",
-                                            borderRadius: "8px",
+                                            borderRadius: "10px",
                                             textAlign: "left",
                                             transition: "background 0.15s ease",
                                         }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = "#fff1f2")}
                                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                                     >
                                         <span className="material-icons-outlined" style={{ fontSize: "18px" }}>
