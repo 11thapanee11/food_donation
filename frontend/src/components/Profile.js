@@ -58,8 +58,8 @@ export default function Profile() {
                 allowOutsideClick: false,
                 showConfirmButton: false,
                 customClass: {
-                    popup: 'rounded-2xl shadow-xl border border-emerald-100',
-                    title: 'text-gray-800 text-lg font-medium'
+                    popup: 'rounded-2xl shadow-xl border border-purple-100',
+                    title: 'text-slate-700 text-lg font-medium'
                 },
                 didOpen: () => {
                     Swal.showLoading();
@@ -98,10 +98,10 @@ export default function Profile() {
                     title: "ข้อผิดพลาด",
                     text: err.message,
                     confirmButtonText: "ตกลง",
-                    confirmButtonColor: "#328d7d",
+                    confirmButtonColor: "#c084fc",
                     customClass: {
                         popup: 'rounded-2xl shadow-xl border border-red-100',
-                        title: 'text-gray-800 font-bold',
+                        title: 'text-slate-800 font-bold',
                         confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
                     }
                 });
@@ -126,14 +126,13 @@ export default function Profile() {
     const handleSave = () => {
         if (!validateForm()) return;
 
-        // เพิ่ม Loading แจ้งเตือนขณะกำลังบันทึกข้อมูล
         Swal.fire({
             title: "กำลังบันทึกข้อมูล...",
             allowOutsideClick: false,
             showConfirmButton: false,
             customClass: {
-                popup: 'rounded-2xl shadow-xl border border-emerald-100',
-                title: 'text-gray-800 text-lg font-medium'
+                popup: 'rounded-2xl shadow-xl border border-purple-100',
+                title: 'text-slate-700 text-lg font-medium'
             },
             didOpen: () => {
                 Swal.showLoading();
@@ -165,7 +164,7 @@ export default function Profile() {
                         title: "บันทึกข้อมูลสำเร็จ",
                         text: response.message || "แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว",
                         confirmButtonText: "ตกลง",
-                        confirmButtonColor: "#328d7d",
+                        confirmButtonColor: "#c084fc",
                         customClass: {
                             popup: '!rounded-[28px] !p-6 shadow-2xl',
                             confirmButton: '!rounded-xl px-6 py-2.5 font-medium'
@@ -181,10 +180,10 @@ export default function Profile() {
                     title: "เกิดข้อผิดพลาด",
                     text: err.message || "มีบางอย่างผิดพลาด โปรดลองใหม่อีกครั้ง",
                     confirmButtonText: "ลองอีกครั้ง",
-                    confirmButtonColor: "#e74c3c",
+                    confirmButtonColor: "#f43f5e",
                     customClass: {
                         popup: 'rounded-2xl shadow-xl border border-red-100',
-                        title: 'text-gray-800 font-bold',
+                        title: 'text-slate-800 font-bold',
                         confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
                     }
                 });
@@ -208,7 +207,7 @@ export default function Profile() {
 
                 {/* Main Card Wrapper */}
                 <div style={styles.card}>
-                    {/* Banner Section */}
+                    {/* Banner Section (Lavender & Sky Blue Gradient) */}
                     <div style={styles.banner}>
                         <div style={styles.avatarGlow}>
                             <div style={styles.avatarWrapper}>
@@ -342,49 +341,26 @@ export default function Profile() {
                                     </div>
                                 </div>
 
-                                {!isEditing ? (
-                                    <div style={styles.buttonWrapper}>
-                                        <button
-                                            key="btn-edit"
-                                            type="button"
-                                            style={styles.primaryBtn}
-                                            onClick={() => {
-                                                setFormData({
-                                                    firstName: profile.firstName || "",
-                                                    lastName: profile.lastName || "",
-                                                    phoneNumber: profile.phoneNumber || ""
-                                                });
-                                                setIsEditing(true);
-                                            }}
-                                        >
-                                            <i className='material-icons' style={{ fontSize: '18px' }}>edit</i>
-                                            แก้ไขข้อมูล
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div style={{ ...styles.buttonWrapper, gap: "16px" }}>
-                                        <button
-                                            key="btn-cancel"
-                                            type="button"
-                                            style={styles.cancelBtn}
-                                            onClick={() => {
-                                                setIsEditing(false);
-                                                setErrors({});
-                                            }}
-                                        >
-                                            ยกเลิก
-                                        </button>
+                                <div style={{ ...styles.buttonWrapper, gap: "16px" }}>
+                                    <button
+                                        type="button"
+                                        style={styles.cancelBtn}
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            setErrors({});
+                                        }}
+                                    >
+                                        ยกเลิก
+                                    </button>
 
-                                        <button
-                                            key="btn-save"
-                                            type="button"
-                                            style={styles.primaryBtn}
-                                            onClick={handleSave}
-                                        >
-                                            บันทึกข้อมูล
-                                        </button>
-                                    </div>
-                                )}
+                                    <button
+                                        type="button"
+                                        style={styles.primaryBtn}
+                                        onClick={handleSave}
+                                    >
+                                        บันทึกข้อมูล
+                                    </button>
+                                </div>
                             </>
                         )}
                     </div>
@@ -396,44 +372,43 @@ export default function Profile() {
 
 const styles = {
     container: {
-        padding: '30px 20px 60px 20px',
+        padding: '40px 20px 60px 20px',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-start',
         minHeight: '100vh',
-        background: "linear-gradient(135deg, #ffff 0%, #fffefc 100%)",
+        background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)", // พื้นหลังไล่เฉดม่วง-ฟ้า-เขียวพาสเทลจางๆ
         fontFamily: "'Prompt', sans-serif",
     },
     wrapper: {
         width: '100%',
         maxWidth: '760px',
-
     },
     headerBox: {
-        marginBottom: '18px',
+        marginBottom: '20px',
         textAlign: 'left',
     },
     title: {
-        color: '#1e293b',
+        color: '#334155', // Slate Grey เข้ม
         fontSize: '26px',
         fontWeight: '700',
         margin: '0 0 6px 0',
         letterSpacing: '-0.3px',
     },
     subtitle: {
-        color: '#64748b',
+        color: '#64748b', // Slate Grey กลาง
         fontSize: '14px',
         margin: 0,
     },
     card: {
         backgroundColor: '#ffffff',
         borderRadius: '24px',
-        boxShadow: "0 20px 40px rgba(255, 246, 229, 0.25), 0 8px 16px rgba(180, 180, 180, 0.42)",
+        boxShadow: "0 20px 40px rgba(192, 132, 252, 0.08), 0 8px 16px rgba(148, 163, 184, 0.08)",
         overflow: 'hidden',
-        border: '1px solid rgba(226, 232, 240, 0.8)',
+        border: '1px solid rgba(241, 245, 249, 0.9)',
     },
     banner: {
-        background: 'linear-gradient(135deg, #328d7d 0%, #277265 100%)',
+        background: 'linear-gradient(135deg, #c084fc 0%, #38bdf8 100%)', // Banner ม่วงลาเวนเดอร์ -> ฟ้าพาสเทล
         padding: '36px 20px 30px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -443,7 +418,7 @@ const styles = {
     avatarGlow: {
         padding: '6px',
         borderRadius: '50%',
-        background: 'rgba(255, 255, 255, 0.2)',
+        background: 'rgba(255, 255, 255, 0.3)',
         backdropFilter: 'blur(8px)',
         marginBottom: '12px',
     },
@@ -453,7 +428,7 @@ const styles = {
         borderRadius: '50%',
         overflow: 'hidden',
         border: '3px solid #ffffff',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
     },
     avatarImg: {
         width: '100%',
@@ -466,15 +441,17 @@ const styles = {
         fontWeight: '600',
         margin: '0 0 6px 0',
         letterSpacing: '0.2px',
+        textShadow: '0 1px 2px rgba(0,0,0,0.1)',
     },
     userRoleTag: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
         color: '#ffffff',
-        padding: '4px 14px',
+        padding: '4px 16px',
         borderRadius: '20px',
         fontSize: '12px',
-        fontWeight: '500',
+        fontWeight: '600',
         backdropFilter: 'blur(4px)',
+        letterSpacing: '0.5px',
     },
     contentBody: {
         padding: '36px 32px',
@@ -492,23 +469,23 @@ const styles = {
     label: {
         fontSize: '14px',
         fontWeight: '600',
-        color: '#475569',
+        color: '#334155',
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
     },
     fieldIcon: {
         fontSize: '18px',
-        color: '#328d7d',
+        color: '#c084fc', // ไอคอนหน้าฟิลด์สีม่วงพาสเทล
     },
     displayBox: {
         backgroundColor: '#f8fafc',
         padding: '12px 16px',
-        borderRadius: '12px',
-        color: '#1e293b',
+        borderRadius: '14px',
+        color: '#334155',
         fontSize: '15px',
         fontWeight: '500',
-        border: '1px solid #e2e8f0',
+        border: '1px solid #f1f5f9',
         minHeight: '22px',
         display: 'flex',
         alignItems: 'center',
@@ -521,8 +498,8 @@ const styles = {
     inputBox: {
         backgroundColor: '#ffffff',
         padding: '12px 16px',
-        borderRadius: '12px',
-        color: '#1e293b',
+        borderRadius: '14px',
+        color: '#334155',
         fontSize: '15px',
         border: '1.5px solid #cbd5e1',
         outline: 'none',
@@ -533,10 +510,10 @@ const styles = {
     inputError: {
         backgroundColor: '#fff5f5',
         padding: '12px 16px',
-        borderRadius: '12px',
-        color: '#1e293b',
+        borderRadius: '14px',
+        color: '#334155',
         fontSize: '15px',
-        border: '1.5px solid #ef4444',
+        border: '1.5px solid #f43f5e',
         outline: 'none',
         boxSizing: 'border-box',
         width: '100%',
@@ -547,11 +524,11 @@ const styles = {
         marginTop: '32px',
     },
     primaryBtn: {
-        backgroundColor: '#ff7b00',
+        backgroundColor: '#c084fc', // ปุ่มหลักม่วงลาเวนเดอร์พาสเทล
         color: '#ffffff',
         border: 'none',
         padding: '12px 28px',
-        borderRadius: '12px',
+        borderRadius: '14px',
         fontSize: '15px',
         fontWeight: '600',
         cursor: 'pointer',
@@ -560,14 +537,14 @@ const styles = {
         justifyContent: 'center',
         gap: '8px',
         transition: 'all 0.2s ease',
-        boxShadow: '0 4px 12px rgba(255, 145, 0, 0.25)',
+        boxShadow: '0 4px 14px rgba(192, 132, 252, 0.35)',
     },
     cancelBtn: {
         backgroundColor: '#ffffff',
         color: '#64748b',
         border: '1.5px solid #cbd5e1',
         padding: '12px 24px',
-        borderRadius: '12px',
+        borderRadius: '14px',
         fontSize: '15px',
         fontWeight: '600',
         cursor: 'pointer',
@@ -576,12 +553,12 @@ const styles = {
     loading: {
         textAlign: "center",
         padding: "100px",
-        color: "#328d7d",
+        color: "#c084fc",
         fontSize: "18px",
         fontWeight: "500"
     },
     errorText: {
-        color: "#ef4444",
+        color: "#f43f5e",
         fontSize: "13px",
         marginTop: "2px",
         marginBottom: "0px",
