@@ -18,12 +18,14 @@ div {
 }
 
 input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
-  -webkit-text-fill-color: #1f1f1f !important;
-  transition: background-color 5000s ease-in-out 0s;
+    /* ซ้อนทับด้วยสีโปร่งใส */
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    
+    /* ชะลอการเปลี่ยนสีพื้นหลังเพื่อไม่ให้สีเดิมของเบราว์เซอร์โผล่มา */
+    transition: background-color 99999s ease-in-out 0s;
 }
 
 

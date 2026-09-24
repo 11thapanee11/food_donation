@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
 import { useNavigate, Link } from "react-router-dom";
 import { decodeToken } from '../utils/jwt.js';
 
@@ -10,6 +9,9 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [focusedInput, setFocusedInput] = useState("");
+
+    // State สำหรับควบคุม Custom Popup กลางจอ
+    const [popup, setPopup] = useState({ show: false, type: '', title: '', message: '' });
 
     const navigate = useNavigate();
 
@@ -84,55 +86,62 @@ export default function Login() {
             if (resData.success) {
                 localStorage.setItem("accessToken", resData.data.accessToken);
 
-                Swal.fire({
-                    icon: 'success',
+                // แสดง Popup สำเร็จ
+                setPopup({
+                    show: true,
+                    type: 'success',
                     title: 'เข้าสู่ระบบสำเร็จ',
-                    confirmButtonColor: '#328d7d',
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => {
+                    message: 'กำลังพาคุณไปยังหน้าหลัก...'
+                });
+
+                setTimeout(() => {
                     if (resData.data.isAdmin) {
                         navigate('/admin-dashboard');
                     } else {
                         navigate('/');
                     }
-                });
+                }, 1500);
             } else {
-                Swal.fire({
-                    icon: 'error',
+                // แสดง Popup เมื่อข้อมูลไม่ถูกต้อง
+                setPopup({
+                    show: true,
+                    type: 'error',
                     title: 'เข้าสู่ระบบไม่สำเร็จ',
-                    text: resData.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-                    confirmButtonColor: '#e74c3c'
+                    message: resData.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
                 });
             }
         } catch (error) {
             console.error("Login Error:", error);
-            Swal.fire({
-                icon: 'error',
+            setPopup({
+                show: true,
+                type: 'error',
                 title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
-                confirmButtonColor: '#e74c3c'
+                message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
             });
         } finally {
             setIsLoading(false);
         }
     };
 
+    const closePopup = () => {
+        setPopup(prev => ({ ...prev, show: false }));
+    };
+
     const getInputBoxStyle = (fieldName) => {
         const isError = Boolean(errors[fieldName]);
         const isFocused = focusedInput === fieldName;
 
-        let borderColor = "#eaeaea";
-        let bgColor = "#ffff";
+        let borderColor = "#E2E8F0";
+        let bgColor = "#FAFAFA";
         let boxShadow = "none";
 
         if (isError) {
-            borderColor = "#ff4d4f";
-            bgColor = "#fff1f0";
+            borderColor = "#FCA5A5";
+            bgColor = "#FEF2F2";
         } else if (isFocused) {
-            borderColor = "#ff8c00";
-            bgColor = "#ffffff";
-            boxShadow = "0 0 0 4px rgba(255, 140, 0, 0.12)";
+            borderColor = "#93C5FD";
+            bgColor = "#FFFFFF";
+            boxShadow = "0 0 0 4px rgba(147, 197, 253, 0.25)";
         }
 
         return {
@@ -145,8 +154,19 @@ export default function Login() {
 
     return (
         <div style={styles.pageBackground}>
+            {/* แทรก Style ป้องกันสี AutoFill ซ้อนทับให้โปร่งใส */}
+            <style>{`
+                input:-webkit-autofill,
+                input:-webkit-autofill:hover, 
+                input:-webkit-autofill:focus, 
+                input:-webkit-autofill:active {
+                    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+                    transition: background-color 99999s ease-in-out 0s;
+                    -webkit-text-fill-color: #334155 !important;
+                }
+            `}</style>
+
             <div style={styles.card}>
-                {/* Modern Brand Badge */}
                 <div style={styles.iconWrapper}>
                     <i className="material-icons-outlined" style={styles.icon}>volunteer_activism</i>
                 </div>
@@ -161,7 +181,7 @@ export default function Login() {
                         <div style={getInputBoxStyle("email")}>
                             <i className="material-icons" style={{
                                 ...styles.inputIcon,
-                                color: errors.email ? "#ff4d4f" : (focusedInput === "email" ? "#ff8c00" : "#94a3b8")
+                                color: errors.email ? "#F87171" : (focusedInput === "email" ? "#60A5FA" : "#94A3B8")
                             }}>mail_outline</i>
                             <input
                                 type="email"
@@ -188,7 +208,7 @@ export default function Login() {
                         <div style={getInputBoxStyle("password")}>
                             <i className="material-icons" style={{
                                 ...styles.inputIcon,
-                                color: errors.password ? "#ff4d4f" : (focusedInput === "password" ? "#ff8c00" : "#94a3b8")
+                                color: errors.password ? "#F87171" : (focusedInput === "password" ? "#60A5FA" : "#94A3B8")
                             }}>lock_open</i>
                             <input
                                 type={showPassword ? "text" : "password"}
@@ -204,7 +224,7 @@ export default function Login() {
                                 onClick={toggleShowPassword}
                                 style={{
                                     ...styles.eyeIcon,
-                                    color: errors.password ? "#ff4d4f" : "#94a3b8"
+                                    color: errors.password ? "#F87171" : "#94A3B8"
                                 }}
                             >
                                 {showPassword ? "visibility" : "visibility_off"}
@@ -217,7 +237,7 @@ export default function Login() {
                         )}
                     </div>
 
-                    {/* Modern Submit Button */}
+                    {/* Submit Button */}
                     <button
                         type="submit"
                         disabled={isLoading}
@@ -246,6 +266,39 @@ export default function Login() {
                     ยังไม่มีบัญชีสมาชิก? <Link to="/register" style={styles.registerLink}>สร้างบัญชีใหม่</Link>
                 </p>
             </div>
+
+            {/* Custom Pastel Popup Modal กลางจอ */}
+            {popup.show && (
+                <div style={styles.overlay}>
+                    <div style={styles.popupCard}>
+                        <div style={{
+                            ...styles.popupIconWrapper,
+                            backgroundColor: popup.type === 'success' ? '#ECFDF5' : '#FEF2F2',
+                            color: popup.type === 'success' ? '#10B981' : '#F87171'
+                        }}>
+                            <i className="material-icons" style={{ fontSize: '36px' }}>
+                                {popup.type === 'success' ? 'check_circle_outline' : 'error_outline'}
+                            </i>
+                        </div>
+
+                        <h3 style={styles.popupTitle}>{popup.title}</h3>
+                        <p style={styles.popupMessage}>{popup.message}</p>
+
+                        {popup.type !== 'success' && (
+                            <button
+                                onClick={closePopup}
+                                style={{
+                                    ...styles.popupButton,
+                                    backgroundColor: '#FECDD3',
+                                    color: '#991B1B'
+                                }}
+                            >
+                                ตกลง
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -256,55 +309,55 @@ const styles = {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #ffff 0%, #fffefc 100%)",
-        padding: "16px", 
+        background: "linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #F3E8FF 100%)",
+        padding: "16px",
         boxSizing: "border-box",
     },
     card: {
         width: "100%",
         maxWidth: "400px",
         backgroundColor: "rgba(255, 255, 255, 0.85)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderRadius: "20px",
-        padding: "28px 32px", // ลดระยะ padding จาก 44px เหลือ 28px
-        border: "1px solid rgba(255, 255, 255, 0.6)",
-        boxShadow: "0 20px 40px rgba(255, 246, 229, 0.25), 0 8px 16px rgba(180, 180, 180, 0.42)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderRadius: "24px",
+        padding: "32px 32px",
+        border: "1px solid rgba(255, 255, 255, 0.8)",
+        boxShadow: "0 20px 40px rgba(199, 210, 254, 0.35)",
         textAlign: "center"
     },
     iconWrapper: {
-        width: "68px",
-        height: "68px",
+        width: "64px",
+        height: "64px",
         borderRadius: "20px",
-        background: "linear-gradient(135deg, #fff0df 0%, #ffe4c4 100%)",
+        background: "linear-gradient(135deg, #E0F2FE 0%, #DDD6FE 100%)",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: "20px",
-        boxShadow: "0 8px 16px -4px rgba(255, 140, 0, 0.15)"
+        marginBottom: "18px",
+        boxShadow: "0 8px 16px -4px rgba(167, 139, 250, 0.25)"
     },
     icon: {
-        fontSize: "36px",
-        color: "#ff7a00"
+        fontSize: "32px",
+        color: "#818CF8"
     },
     title: {
-        color: "#1e293b",
-        fontSize: "28px",
+        color: "#334155",
+        fontSize: "26px",
         fontWeight: "700",
-        margin: "0 0 8px 0",
-        letterSpacing: "-0.5px"
+        margin: "0 0 6px 0",
+        letterSpacing: "-0.3px"
     },
     subtitle: {
-        color: "#64748b",
+        color: "#64748B",
         fontSize: "14px",
-        margin: "0 0 32px 0",
+        margin: "0 0 28px 0",
         fontWeight: "400"
     },
     form: {
         textAlign: "left"
     },
     fieldGroup: {
-        marginBottom: "20px"
+        marginBottom: "18px"
     },
     labelRow: {
         display: "flex",
@@ -314,16 +367,16 @@ const styles = {
     label: {
         fontSize: "13px",
         fontWeight: "600",
-        color: "#334155",
+        color: "#475569",
         display: "block",
-        marginBottom: "8px",
+        marginBottom: "6px",
         letterSpacing: "0.2px"
     },
     inputBox: {
         display: "flex",
         alignItems: "center",
         borderRadius: "14px",
-        padding: "13px 16px",
+        padding: "12px 16px",
         transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
     },
     inputIcon: {
@@ -349,7 +402,7 @@ const styles = {
         width: "100%",
         fontFamily: "inherit",
         fontSize: "14px",
-        color: "#0f172a",
+        color: "#334155",
         padding: 0,
         fontWeight: "400"
     },
@@ -358,22 +411,22 @@ const styles = {
         paddingLeft: "4px"
     },
     errorText: {
-        color: "#ff4d4f",
+        color: "#F87171",
         fontSize: "12px",
         fontWeight: "500"
     },
     button: {
         width: "100%",
-        padding: "14px",
-        marginTop: "10px",
-        background: "linear-gradient(135deg, #ff8c00 0%, #ff7a00 100%)",
-        color: "#ffffff",
+        padding: "13px",
+        marginTop: "8px",
+        background: "linear-gradient(135deg, #93C5FD 0%, #A5B4FC 100%)",
+        color: "#FFFFFF",
         border: "none",
         borderRadius: "14px",
         fontSize: "15px",
         fontWeight: "600",
         transition: "all 0.25s ease",
-        boxShadow: "0 8px 20px -4px rgba(255, 140, 0, 0.35)",
+        boxShadow: "0 8px 20px -4px rgba(165, 180, 252, 0.5)",
         letterSpacing: "0.3px"
     },
     loadingFlex: {
@@ -383,30 +436,86 @@ const styles = {
         gap: "8px"
     },
     divider: {
-        margin: "28px 0 20px 0",
+        margin: "24px 0 18px 0",
         position: "relative",
-        borderTop: "1px solid #e2e8f0"
+        borderTop: "1px solid #E2E8F0"
     },
     dividerText: {
         position: "absolute",
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#FFFFFF",
         padding: "0 12px",
-        color: "#94a3b8",
+        color: "#94A3B8",
         fontSize: "12px"
     },
     registerText: {
         textAlign: "center",
         fontSize: "14px",
-        color: "#64748b",
+        color: "#64748B",
         margin: 0
     },
     registerLink: {
-        color: "#328d7d",
+        color: "#818CF8",
         textDecoration: "none",
         fontWeight: "600",
         marginLeft: "4px"
+    },
+    // Styles สำหรับ Custom Modal Popup
+    overlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.35)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+    },
+    popupCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: '24px',
+        padding: '32px 28px',
+        width: '90%',
+        maxWidth: '320px',
+        textAlign: 'center',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+    },
+    popupIconWrapper: {
+        width: '64px',
+        height: '64px',
+        borderRadius: '50%',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '16px'
+    },
+    popupTitle: {
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#334155',
+        margin: '0 0 8px 0'
+    },
+    popupMessage: {
+        fontSize: '14px',
+        color: '#64748B',
+        margin: '0 0 20px 0',
+        lineHeight: '1.5'
+    },
+    popupButton: {
+        width: '100%',
+        padding: '10px 16px',
+        border: 'none',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease'
     }
 };

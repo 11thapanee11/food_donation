@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Swal from 'sweetalert2';
 import profileMember from '../assets/images/member_profile.jpg';
 
 export default function Profile() {
@@ -15,6 +14,9 @@ export default function Profile() {
 
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
+
+    // State สำหรับควบคุม Custom Popup Modal กลางจอ
+    const [popup, setPopup] = useState({ show: false, type: '', title: '', message: '', showBtn: true });
 
     const validateForm = () => {
         const newErrors = {};
@@ -53,17 +55,13 @@ export default function Profile() {
         const fetchProfile = async () => {
             setLoading(true);
 
-            Swal.fire({
-                title: "กำลังโหลดข้อมูลสมาชิก...",
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                customClass: {
-                    popup: 'rounded-2xl shadow-xl border border-purple-100',
-                    title: 'text-slate-700 text-lg font-medium'
-                },
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+            // แสดง Popup กำลังโหลด
+            setPopup({
+                show: true,
+                type: 'loading',
+                title: 'กำลังโหลดข้อมูล...',
+                message: 'กรุณารอสักครู่',
+                showBtn: false
             });
 
             try {
@@ -87,23 +85,19 @@ export default function Profile() {
                         lastName: result.data.lastName || "",
                         phoneNumber: result.data.phoneNumber || ""
                     });
-                    Swal.close();
+                    // ปิด Popup เมื่อโหลดเสร็จ
+                    setPopup(prev => ({ ...prev, show: false }));
                 } else {
                     throw new Error(result.message || "เกิดข้อผิดพลาดในการดึงข้อมูล");
                 }
             } catch (err) {
                 console.error("Fetch Error:", err);
-                Swal.fire({
-                    icon: "error",
-                    title: "ข้อผิดพลาด",
-                    text: err.message,
-                    confirmButtonText: "ตกลง",
-                    confirmButtonColor: "#c084fc",
-                    customClass: {
-                        popup: 'rounded-2xl shadow-xl border border-red-100',
-                        title: 'text-slate-800 font-bold',
-                        confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
-                    }
+                setPopup({
+                    show: true,
+                    type: 'error',
+                    title: 'ข้อผิดพลาด',
+                    message: err.message,
+                    showBtn: true
                 });
             } finally {
                 setLoading(false);
@@ -126,17 +120,13 @@ export default function Profile() {
     const handleSave = () => {
         if (!validateForm()) return;
 
-        Swal.fire({
-            title: "กำลังบันทึกข้อมูล...",
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            customClass: {
-                popup: 'rounded-2xl shadow-xl border border-purple-100',
-                title: 'text-slate-700 text-lg font-medium'
-            },
-            didOpen: () => {
-                Swal.showLoading();
-            }
+        // แสดง Popup กำลังบันทึก
+        setPopup({
+            show: true,
+            type: 'loading',
+            title: 'กำลังบันทึกข้อมูล...',
+            message: 'กรุณารอสักครู่ระบบกำลังอัปเดตข้อมูล',
+            showBtn: false
         });
 
         fetch("http://localhost:8082/profile", {
@@ -159,35 +149,31 @@ export default function Profile() {
                     });
                     setIsEditing(false);
 
-                    Swal.fire({
-                        icon: "success",
-                        title: "บันทึกข้อมูลสำเร็จ",
-                        text: response.message || "แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว",
-                        confirmButtonText: "ตกลง",
-                        confirmButtonColor: "#c084fc",
-                        customClass: {
-                            popup: '!rounded-[28px] !p-6 shadow-2xl',
-                            confirmButton: '!rounded-xl px-6 py-2.5 font-medium'
-                        }
+                    // แสดง Popup สำเร็จ
+                    setPopup({
+                        show: true,
+                        type: 'success',
+                        title: 'บันทึกข้อมูลสำเร็จ',
+                        message: response.message || "แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว",
+                        showBtn: true
                     });
                 } else {
                     throw new Error(response.message || "ไม่สามารถแก้ไขข้อมูลได้");
                 }
             })
             .catch(err => {
-                Swal.fire({
-                    icon: "error",
-                    title: "เกิดข้อผิดพลาด",
-                    text: err.message || "มีบางอย่างผิดพลาด โปรดลองใหม่อีกครั้ง",
-                    confirmButtonText: "ลองอีกครั้ง",
-                    confirmButtonColor: "#f43f5e",
-                    customClass: {
-                        popup: 'rounded-2xl shadow-xl border border-red-100',
-                        title: 'text-slate-800 font-bold',
-                        confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
-                    }
+                setPopup({
+                    show: true,
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: err.message || "มีบางอย่างผิดพลาด โปรดลองใหม่อีกครั้ง",
+                    showBtn: true
                 });
             });
+    };
+
+    const closePopup = () => {
+        setPopup(prev => ({ ...prev, show: false }));
     };
 
     if (loading) return null;
@@ -207,7 +193,7 @@ export default function Profile() {
 
                 {/* Main Card Wrapper */}
                 <div style={styles.card}>
-                    {/* Banner Section (Lavender & Sky Blue Gradient) */}
+                    {/* Banner Section */}
                     <div style={styles.banner}>
                         <div style={styles.avatarGlow}>
                             <div style={styles.avatarWrapper}>
@@ -366,6 +352,45 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
+
+            {/* Custom Pastel Popup Modal กลางจอ */}
+            {popup.show && (
+                <div style={styles.overlay}>
+                    <div style={styles.popupCard}>
+                        {popup.type === 'loading' ? (
+                            <div style={styles.loadingSpinnerWrapper}>
+                                <div style={styles.spinner}></div>
+                            </div>
+                        ) : (
+                            <div style={{
+                                ...styles.popupIconWrapper,
+                                backgroundColor: popup.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+                                color: popup.type === 'success' ? '#10B981' : '#F87171'
+                            }}>
+                                <i className="material-icons" style={{ fontSize: '36px' }}>
+                                    {popup.type === 'success' ? 'check_circle_outline' : 'error_outline'}
+                                </i>
+                            </div>
+                        )}
+
+                        <h3 style={styles.popupTitle}>{popup.title}</h3>
+                        <p style={styles.popupMessage}>{popup.message}</p>
+
+                        {popup.showBtn && (
+                            <button
+                                onClick={closePopup}
+                                style={{
+                                    ...styles.popupButton,
+                                    backgroundColor: popup.type === 'success' ? '#C084FC' : '#FECDD3',
+                                    color: popup.type === 'success' ? '#FFFFFF' : '#991B1B'
+                                }}
+                            >
+                                ตกลง
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -377,7 +402,7 @@ const styles = {
         justifyContent: 'center',
         alignItems: 'flex-start',
         minHeight: '100vh',
-        background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)", // พื้นหลังไล่เฉดม่วง-ฟ้า-เขียวพาสเทลจางๆ
+        background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)",
         fontFamily: "'Prompt', sans-serif",
     },
     wrapper: {
@@ -389,14 +414,14 @@ const styles = {
         textAlign: 'left',
     },
     title: {
-        color: '#334155', // Slate Grey เข้ม
+        color: '#334155',
         fontSize: '26px',
         fontWeight: '700',
         margin: '0 0 6px 0',
         letterSpacing: '-0.3px',
     },
     subtitle: {
-        color: '#64748b', // Slate Grey กลาง
+        color: '#64748b',
         fontSize: '14px',
         margin: 0,
     },
@@ -408,7 +433,7 @@ const styles = {
         border: '1px solid rgba(241, 245, 249, 0.9)',
     },
     banner: {
-        background: 'linear-gradient(135deg, #c084fc 0%, #38bdf8 100%)', // Banner ม่วงลาเวนเดอร์ -> ฟ้าพาสเทล
+        background: 'linear-gradient(135deg, #c084fc 0%, #38bdf8 100%)',
         padding: '36px 20px 30px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -476,7 +501,7 @@ const styles = {
     },
     fieldIcon: {
         fontSize: '18px',
-        color: '#c084fc', // ไอคอนหน้าฟิลด์สีม่วงพาสเทล
+        color: '#c084fc',
     },
     displayBox: {
         backgroundColor: '#f8fafc',
@@ -524,7 +549,7 @@ const styles = {
         marginTop: '32px',
     },
     primaryBtn: {
-        backgroundColor: '#c084fc', // ปุ่มหลักม่วงลาเวนเดอร์พาสเทล
+        backgroundColor: '#c084fc',
         color: '#ffffff',
         border: 'none',
         padding: '12px 28px',
@@ -564,4 +589,73 @@ const styles = {
         marginBottom: "0px",
         textAlign: "left"
     },
+    // Styles สำหรับ Custom Modal Popup
+    overlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.35)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+    },
+    popupCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: '24px',
+        padding: '32px 28px',
+        width: '90%',
+        maxWidth: '320px',
+        textAlign: 'center',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+    },
+    popupIconWrapper: {
+        width: '64px',
+        height: '64px',
+        borderRadius: '50%',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '16px'
+    },
+    popupTitle: {
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#334155',
+        margin: '0 0 8px 0'
+    },
+    popupMessage: {
+        fontSize: '14px',
+        color: '#64748B',
+        margin: '0 0 20px 0',
+        lineHeight: '1.5'
+    },
+    popupButton: {
+        width: '100%',
+        padding: '10px 16px',
+        border: 'none',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease'
+    },
+    loadingSpinnerWrapper: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '16px'
+    },
+    spinner: {
+        width: '40px',
+        height: '40px',
+        border: '4px solid #F3E8FF',
+        borderTop: '4px solid #C084FC',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    }
 };

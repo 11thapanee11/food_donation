@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import registerImg from "../assets/images/image_side.jpg";
 
 function Register() {
     const navigate = useNavigate();
@@ -22,6 +20,9 @@ function Register() {
     // State สำหรับเปิด-ปิดการมองเห็นรหัสผ่าน
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // State สำหรับควบคุม Custom Popup Modal กลางจอ
+    const [popup, setPopup] = useState({ show: false, type: '', title: '', message: '', showBtn: true });
 
     // ---------------- Helper Functions ----------------
     const validateName = (value, fieldName) => {
@@ -112,6 +113,15 @@ function Register() {
 
         setIsLoading(true);
 
+        // แสดง Popup กำลังลงทะเบียน
+        setPopup({
+            show: true,
+            type: 'loading',
+            title: 'กำลังลงทะเบียน...',
+            message: 'กรุณารอสักครู่ระบบกำลังสร้างบัญชีของคุณ',
+            showBtn: false
+        });
+
         try {
             const response = await fetch("http://localhost:8082/register", {
                 method: "POST",
@@ -122,32 +132,41 @@ function Register() {
             const result = await response.json();
 
             if (result.success) {
-                Swal.fire({
-                    icon: "success",
-                    title: result.message || "สมัครสมาชิกเรียบร้อยแล้ว",
-                    confirmButtonColor: "#328d7d",
-                    timer: 2000,
-                    showConfirmButton: false,
-                }).then(() => navigate("/login"));
+                setPopup({
+                    show: true,
+                    type: 'success',
+                    title: 'สมัครสมาชิกสำเร็จ',
+                    message: result.message || "สร้างบัญชีเรียบร้อยแล้ว กำลังนำคุณไปยังหน้าเข้าสู่ระบบ",
+                    showBtn: true
+                });
+                setTimeout(() => {
+                    navigate("/login");
+                }, 2000);
             } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "สมัครสมาชิกไม่สำเร็จ",
-                    text: result.message || "เกิดข้อผิดพลาดภายในระบบ",
-                    confirmButtonColor: "#d63031",
+                setPopup({
+                    show: true,
+                    type: 'error',
+                    title: 'สมัครสมาชิกไม่สำเร็จ',
+                    message: result.message || "เกิดข้อผิดพลาดภายในระบบ",
+                    showBtn: true
                 });
             }
         } catch (error) {
             console.error("Error:", error);
-            Swal.fire({
-                icon: "error",
-                title: "เกิดข้อผิดพลาด",
-                text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง",
-                confirmButtonColor: "#d63031",
+            setPopup({
+                show: true,
+                type: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง",
+                showBtn: true
             });
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const closePopup = () => {
+        setPopup(prev => ({ ...prev, show: false }));
     };
 
     const passStrength = getPasswordStrength(formData.password);
@@ -223,10 +242,10 @@ function Register() {
                                             width: `${(passStrength / 4) * 100}%`,
                                             backgroundColor:
                                                 passStrength <= 1
-                                                    ? "#ff4d4f"
+                                                    ? "#f43f5e"
                                                     : passStrength <= 3
-                                                        ? "#faad14"
-                                                        : "#52c41a",
+                                                        ? "#fbbf24"
+                                                        : "#34d399",
                                         }}
                                     />
                                 </div>
@@ -256,11 +275,7 @@ function Register() {
                             onMouseLeave={() => setIsBtnHovered(false)}
                             style={{
                                 ...styles.button,
-                                backgroundColor: isBtnHovered && !isLoading ? "#ff8c00" : "#ff8c00",
                                 transform: isBtnHovered && !isLoading ? "translateY(-2px)" : "translateY(0)",
-                                boxShadow: isBtnHovered && !isLoading
-                                    ? "0 8px 20px rgba(255, 140, 0, 0.35)"
-                                    : "0 4px 12px rgba(255, 140, 0, 0.25)",
                                 opacity: isLoading ? 0.7 : 1,
                                 cursor: isLoading ? "not-allowed" : "pointer",
                             }}
@@ -277,16 +292,58 @@ function Register() {
                     </p>
                 </div>
 
-                <div style={styles.imageSection}>
-                    <div style={styles.imageWrapper}>
-                        <img src={registerImg} alt="register visual" style={styles.image} />
-                        <div style={styles.imageOverlayText}>
-                            <h3 style={styles.imageOverlayTitle}>ยินดีต้อนรับสู่สังคมอาหารคุณภาพ</h3>
-                            <p style={styles.imageOverlaySubtitle}>จัดการและเข้าถึงเมนูที่คุณชื่นชอบได้ทันที</p>
+                <div style={styles.pastelGraphicsSection}>
+                    <div style={styles.decorCircle1}></div>
+                    <div style={styles.decorCircle2}></div>
+                    <div style={styles.graphicsCardContent}>
+                        <div style={styles.iconGroup}>
+                            <i className="material-icons" style={{ fontSize: '48px', color: '#ffffff' }}>restaurant</i>
+                            <i className="material-icons" style={{ fontSize: '32px', color: 'rgba(255,255,255,0.8)' }}>favorite</i>
                         </div>
+                        <h3 style={styles.graphicsTitle}>ยินดีต้อนรับสู่สังคมอาหารคุณภาพ</h3>
+                        <p style={styles.graphicsSubtitle}>จัดการและเข้าถึงเมนูที่คุณชื่นชอบ พร้อมแบ่งปันความสุขได้ทันที</p>
                     </div>
                 </div>
             </div>
+
+            {/* Custom Pastel Popup Modal กลางจอ */}
+            {popup.show && (
+                <div style={styles.overlay}>
+                    <div style={styles.popupCard}>
+                        {popup.type === 'loading' ? (
+                            <div style={styles.loadingSpinnerWrapper}>
+                                <div style={styles.spinner}></div>
+                            </div>
+                        ) : (
+                            <div style={{
+                                ...styles.popupIconWrapper,
+                                backgroundColor: popup.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                                color: popup.type === 'success' ? '#10b981' : '#f87171'
+                            }}>
+                                <i className="material-icons" style={{ fontSize: '36px' }}>
+                                    {popup.type === 'success' ? 'check_circle_outline' : 'error_outline'}
+                                </i>
+                            </div>
+                        )}
+
+                        <h3 style={styles.popupTitle}>{popup.title}</h3>
+                        <p style={styles.popupMessage}>{popup.message}</p>
+
+                        {popup.showBtn && (
+                            <button
+                                onClick={closePopup}
+                                style={{
+                                    ...styles.popupButton,
+                                    backgroundColor: popup.type === 'success' ? '#c084fc' : '#fecdd3',
+                                    color: popup.type === 'success' ? '#ffffff' : '#991b1b'
+                                }}
+                            >
+                                ตกลง
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -299,7 +356,7 @@ const InputField = ({
     value,
     onChange,
     error,
-    required = false, // เพิ่ม prop ตัวนี้
+    required = false,
     isPassword = false,
     showPassword = false,
     onTogglePassword,
@@ -316,13 +373,13 @@ const InputField = ({
                 style={{
                     ...styles.inputBox,
                     border: error
-                        ? "1.5px solid #ff4d4f"
+                        ? "1.5px solid #f43f5e"
                         : isFocused
-                            ? "1.5px solid #328d7d"
-                            : "1.5px solid #eaeaea",
-                    backgroundColor: error ? "#fff2f0" : "#ffffff",
+                            ? "1.5px solid #c084fc"
+                            : "1.5px solid #e2e8f0",
+                    backgroundColor: error ? "#fff5f5" : "#ffffff",
                     boxShadow: isFocused && !error
-                        ? "0 0 0 4px rgba(50, 141, 125, 0.12)"
+                        ? "0 0 0 4px rgba(192, 132, 252, 0.15)"
                         : "none",
                 }}
             >
@@ -342,7 +399,7 @@ const InputField = ({
                         onClick={onTogglePassword}
                         style={{
                             ...styles.eyeIcon,
-                            color: error ? "#ff4d4f" : "#8c8c8c",
+                            color: error ? "#f43f5e" : "#94a3b8",
                         }}
                     >
                         {showPassword ? "visibility" : "visibility_off"}
@@ -356,46 +413,49 @@ const InputField = ({
 
 export default Register;
 
-// ---------------- Inline Styles Object ----------------
+// ---------------- Inline Styles Object (Pastel Theme) ----------------
 const styles = {
     pageWrapper: {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        padding: "20px",
-        fontFamily: "'Prompt', 'Noto Sans Thai', sans-serif",
-        background: "linear-gradient(135deg, #ffff 0%, #fffefc 100%)",
+        padding: "40px 20px",
+        fontFamily: "'Prompt', sans-serif",
+        background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)",
         boxSizing: "border-box",
     },
     card: {
         display: "flex",
         backgroundColor: "#ffffff",
-        borderRadius: "20px",
-        padding: "25px 40px",
-        gap: "48px",
-        width: "1200px",
+        borderRadius: "24px",
+        padding: "36px 40px",
+        gap: "40px",
+        width: "100%",
+        maxWidth: "1100px",
         boxSizing: "border-box",
-        boxShadow: "0 20px 40px rgba(255, 246, 229, 0.25), 0 8px 16px rgba(180, 180, 180, 0.42)",
+        boxShadow: "0 20px 40px rgba(192, 132, 252, 0.08), 0 8px 16px rgba(148, 163, 184, 0.08)",
+        border: "1px solid rgba(241, 245, 249, 0.9)",
     },
     formSection: {
-        flex: 1,
+        flex: 1.1,
         width: "100%",
     },
     headerGroup: {
-        marginBottom: "24px",
+        marginBottom: "20px",
+        textAlign: "left",
     },
     title: {
-        color: "#328d7d",
+        color: "#334155",
         fontWeight: "700",
         margin: "0 0 6px 0",
-        fontSize: "28px",
-        letterSpacing: "-0.5px",
+        fontSize: "26px",
+        letterSpacing: "-0.3px",
     },
     subtitle: {
         margin: 0,
         fontSize: "14px",
-        color: "#666666",
+        color: "#64748b",
     },
     row: {
         display: "flex",
@@ -409,17 +469,17 @@ const styles = {
     },
     label: {
         fontSize: "14px",
-        fontWeight: "500",
+        fontWeight: "600",
         display: "block",
         marginBottom: "6px",
-        color: "#262626",
+        color: "#334155",
         textAlign: "left",
     },
     inputBox: {
         display: "flex",
         alignItems: "center",
-        borderRadius: "10px",
-        padding: "12px 14px",
+        borderRadius: "14px",
+        padding: "12px 16px",
         boxSizing: "border-box",
         transition: "all 0.2s ease-in-out",
     },
@@ -430,7 +490,7 @@ const styles = {
         width: "100%",
         fontFamily: "inherit",
         fontSize: "14px",
-        color: "#1f1f1f",
+        color: "#334155",
         padding: 0,
     },
     eyeIcon: {
@@ -443,7 +503,7 @@ const styles = {
         flexShrink: 0,
     },
     errorText: {
-        color: "#ff4d4f",
+        color: "#f43f5e",
         fontSize: "12px",
         marginTop: "4px",
         display: "block",
@@ -453,13 +513,13 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: "10px",
-        marginTop: "-10px",
-        marginBottom: "16px",
+        marginTop: "-6px",
+        marginBottom: "14px",
     },
     strengthBarBg: {
         flex: 1,
-        height: "5px",
-        backgroundColor: "#f0f0f0",
+        height: "6px",
+        backgroundColor: "#f1f5f9",
         borderRadius: "3px",
         overflow: "hidden",
     },
@@ -469,42 +529,46 @@ const styles = {
     },
     strengthText: {
         fontSize: "12px",
-        color: "#8c8c8c",
-        width: "70px",
+        color: "#64748b",
+        width: "75px",
         textAlign: "right",
+        fontWeight: "500",
     },
     button: {
         width: "100%",
-        padding: "14px",
-        color: "white",
+        padding: "13px",
+        backgroundColor: "#c084fc",
+        color: "#ffffff",
         border: "none",
-        borderRadius: "10px",
-        fontSize: "16px",
+        borderRadius: "14px",
+        fontSize: "15px",
         fontWeight: "600",
-        marginTop: "12px",
-        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        marginTop: "10px",
+        transition: "all 0.2s ease",
+        boxShadow: "0 4px 14px rgba(192, 132, 252, 0.35)",
     },
     loginPrompt: {
         textAlign: "center",
-        marginTop: "20px",
+        marginTop: "18px",
         fontSize: "14px",
-        color: "#666666",
+        color: "#64748b",
     },
     loginLink: {
-        color: "#328d7d",
+        color: "#c084fc",
         fontWeight: "600",
         cursor: "pointer",
-        textDecoration: "underline",
+        textDecoration: "none",
+        marginLeft: "4px",
     },
     imageSection: {
-        flex: 1,
+        flex: 0.9,
         display: "flex",
         alignItems: "stretch",
     },
     imageWrapper: {
         position: "relative",
         width: "100%",
-        borderRadius: "16px",
+        borderRadius: "20px",
         overflow: "hidden",
     },
     image: {
@@ -517,8 +581,8 @@ const styles = {
         bottom: 0,
         left: 0,
         right: 0,
-        padding: "24px",
-        background: "linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent)",
+        padding: "28px",
+        background: "linear-gradient(to top, rgba(15, 23, 42, 0.75), transparent)",
         color: "#ffffff",
         textAlign: "left",
     },
@@ -533,8 +597,133 @@ const styles = {
         opacity: 0.9,
     },
     requiredMark: {
-        color: "#ff4d4f",
+        color: "#f43f5e",
         marginLeft: "4px",
         fontWeight: "bold",
+    },
+    // Modal / Popup Styles
+    overlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.35)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+    },
+    popupCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: '24px',
+        padding: '32px 28px',
+        width: '90%',
+        maxWidth: '320px',
+        textAlign: 'center',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+    },
+    popupIconWrapper: {
+        width: '64px',
+        height: '64px',
+        borderRadius: '50%',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '16px'
+    },
+    popupTitle: {
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#334155',
+        margin: '0 0 8px 0'
+    },
+    popupMessage: {
+        fontSize: '14px',
+        color: '#64748b',
+        margin: '0 0 20px 0',
+        lineHeight: '1.5'
+    },
+    popupButton: {
+        width: '100%',
+        padding: '10px 16px',
+        border: 'none',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease'
+    },
+    loadingSpinnerWrapper: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '16px'
+    },
+    spinner: {
+        width: '40px',
+        height: '40px',
+        border: '4px solid #f3e8ff',
+        borderTop: '4px solid #c084fc',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+    pastelGraphicsSection: {
+        flex: 0.9,
+        background: "linear-gradient(135deg, #c084fc 0%, #38bdf8 100%)",
+        borderRadius: "20px",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 30px",
+        boxSizing: "border-box",
+    },
+    decorCircle1: {
+        position: "absolute",
+        width: "200px",
+        height: "200px",
+        borderRadius: "50%",
+        background: "rgba(255, 255, 255, 0.15)",
+        top: "-50px",
+        right: "-50px",
+        backdropFilter: "blur(10px)",
+    },
+    decorCircle2: {
+        position: "absolute",
+        width: "150px",
+        height: "150px",
+        borderRadius: "50%",
+        background: "rgba(255, 255, 255, 0.12)",
+        bottom: "-30px",
+        left: "-30px",
+    },
+    graphicsCardContent: {
+        position: "relative",
+        zIndex: 2,
+        textAlign: "center",
+        color: "#ffffff",
+    },
+    iconGroup: {
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "12px",
+        marginBottom: "20px",
+    },
+    graphicsTitle: {
+        fontSize: "22px",
+        fontWeight: "700",
+        margin: "0 0 10px 0",
+        letterSpacing: "-0.3px",
+    },
+    graphicsSubtitle: {
+        fontSize: "14px",
+        opacity: 0.9,
+        margin: 0,
+        lineHeight: "1.6",
     },
 };

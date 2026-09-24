@@ -138,8 +138,12 @@ export default function FoodDetailEdgeToEdge() {
                 title: 'กรุณาเข้าสู่ระบบ',
                 text: 'คุณต้องเข้าสู่ระบบก่อนจึงจะสามารถจองรายการอาหารได้',
                 icon: 'warning',
-                confirmButtonColor: '#ff9100',
+                confirmButtonColor: '#c084fc',
                 confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                customClass: {
+                    popup: 'rounded-2xl shadow-xl border border-purple-100',
+                    confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
+                }
             }).then((res) => { if (res.isConfirmed) navigate('/login'); });
             return;
         }
@@ -166,21 +170,41 @@ export default function FoodDetailEdgeToEdge() {
                         title: 'จองสำเร็จ!',
                         text: 'สามารถรับอาหารได้ตามสถานที่ที่ระบุไว้',
                         icon: 'success',
-                        confirmButtonColor: '#328d7d',
-                        confirmButtonText: 'ดูรายการจองของฉัน'
+                        confirmButtonColor: '#c084fc',
+                        confirmButtonText: 'ดูรายการจองของฉัน',
+                        customClass: {
+                            popup: '!rounded-[28px] !p-6 shadow-2xl',
+                            confirmButton: '!rounded-xl px-6 py-2.5 font-medium shadow-md'
+                        }
                     }).then(() => navigate('/receive'));
                 } else {
-                    Swal.fire('เกิดข้อผิดพลาด', resData.message || 'ไม่สามารถทำรายการได้', 'error');
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด',
+                        text: resData.message || 'ไม่สามารถทำรายการได้',
+                        icon: 'error',
+                        confirmButtonColor: '#f43f5e',
+                        customClass: {
+                            popup: 'rounded-2xl shadow-xl border border-red-100'
+                        }
+                    });
                 }
             })
             .catch(() => {
                 setShowReserveModal(false);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                    icon: 'error',
+                    confirmButtonColor: '#f43f5e',
+                    customClass: {
+                        popup: 'rounded-2xl shadow-xl border border-red-100'
+                    }
+                });
             })
             .finally(() => setSubmitting(false));
     };
 
-    if (loading || !food) return <div style={{ textAlign: "center", padding: "50px", fontFamily: "'Prompt', sans-serif" }}>กำลังโหลดข้อมูล...</div>;
+    if (loading || !food) return <div style={styleOne.loading}>กำลังโหลดข้อมูล...</div>;
 
     const googleMapEmbedUrl = food?.latitude && food?.longitude
         ? `https://maps.google.com/maps?q=${food.latitude},${food.longitude}&z=16&output=embed`
@@ -207,7 +231,7 @@ export default function FoodDetailEdgeToEdge() {
                     backgroundImage: `url(${BASE_URL}${food.foodImage})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    filter: "blur(28px) brightness(0.7) opacity(0.5)"
+                    filter: "blur(28px) brightness(0.85) opacity(0.6)"
                 }} />
 
                 <img
@@ -216,24 +240,25 @@ export default function FoodDetailEdgeToEdge() {
                     style={{
                         position: "relative", zIndex: 1,
                         maxHeight: "90%", maxWidth: "90%",
-                        objectFit: "contain", borderRadius: "16px",
-                        boxShadow: "0 8px 20px rgba(0,0,0,0.08)"
+                        objectFit: "contain", borderRadius: "20px",
+                        boxShadow: "0 12px 28px rgba(192, 132, 252, 0.15)"
                     }}
                     onError={(e) => { e.target.src = "https://placehold.co/800x500?text=No+Image"; }}
                 />
 
                 <button style={{ ...styleOne.floatingBackBtn, zIndex: 2 }} onClick={() => navigate(-1)}>
-                    <i className="material-icons-outlined">arrow_back</i>
+                    <i className="material-icons-outlined" style={{ color: "#334155" }}>arrow_back</i>
                 </button>
 
                 <div style={{
                     position: "absolute", bottom: "16px", right: "16px", zIndex: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    color: "#0f172a", padding: "6px 12px", borderRadius: "14px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    color: "#334155", padding: "6px 14px", borderRadius: "16px",
                     display: "flex", alignItems: "center", gap: "6px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)", backdropFilter: "blur(6px)"
+                    boxShadow: "0 4px 14px rgba(192, 132, 252, 0.12)", backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255, 255, 255, 0.8)"
                 }}>
-                    <span style={{ color: "#ffb800", fontSize: "16px", lineHeight: "1" }}>★</span>
+                    <span style={{ color: "#fbbf24", fontSize: "16px", lineHeight: "1" }}>★</span>
                     <span style={{ fontWeight: "700", fontSize: "14px" }}>{averageRating}</span>
                     <span style={{ fontSize: "12px", color: "#64748b" }}>({totalReviews} รีวิว)</span>
                 </div>
@@ -248,8 +273,9 @@ export default function FoodDetailEdgeToEdge() {
                     </div>
                     <span style={{
                         ...styleOne.statusPill,
-                        backgroundColor: food.remainingUnit > 0 ? "#e6f4f1" : "#fef2f2",
-                        color: food.remainingUnit > 0 ? "#277265" : "#ef4444"
+                        backgroundColor: food.remainingUnit > 0 ? "#ecfdf5" : "#fff1f2",
+                        color: food.remainingUnit > 0 ? "#10b981" : "#f43f5e",
+                        border: food.remainingUnit > 0 ? "1px solid #a7f3d0" : "1px solid #fecdd3"
                     }}>
                         {food.remainingUnit > 0 ? `เหลือในระบบ ${food.remainingUnit} ชิ้น` : "หมดแล้ว"}
                     </span>
@@ -260,25 +286,25 @@ export default function FoodDetailEdgeToEdge() {
                 {/* Donor Quick Info Row */}
                 <div style={styleOne.donorBox}>
                     <div style={styleOne.donorAvatar}>
-                        <i className="material-icons-outlined" style={{ color: "#328d7d" }}>person</i>
+                        <i className="material-icons-outlined" style={{ color: "#c084fc" }}>person</i>
                     </div>
                     <div>
                         <div style={{ fontSize: "11px", color: "#64748b" }}>แบ่งปันโดย</div>
-                        <div style={{ fontWeight: "600", color: "#1e293b", fontSize: "14px" }}>{food.donorName || "ผู้บริจาคใจดี"}</div>
+                        <div style={{ fontWeight: "600", color: "#334155", fontSize: "14px" }}>{food.donorName || "ผู้บริจาคใจดี"}</div>
                     </div>
                 </div>
 
                 {/* Key Specifications Grid */}
                 <div style={styleOne.specGrid}>
                     <div style={styleOne.specItem}>
-                        <i className="material-icons-outlined" style={{ color: "#ff9100" }}>schedule</i>
+                        <i className="material-icons-outlined" style={{ color: "#f472b6" }}>schedule</i>
                         <div>
                             <span style={styleOne.specLabel}>หมดอายุ</span>
                             <span style={styleOne.specValue}>{formatExpiryDate(food.expiryDate)}</span>
                         </div>
                     </div>
                     <div style={styleOne.specItem}>
-                        <i className="material-icons-outlined" style={{ color: "#328d7d" }}>scale</i>
+                        <i className="material-icons-outlined" style={{ color: "#38bdf8" }}>scale</i>
                         <div>
                             <span style={styleOne.specLabel}>น้ำหนัก/หน่วย</span>
                             <span style={styleOne.specValue}>{food.unitWeightKg || "0.00"} Kg</span>
@@ -289,7 +315,7 @@ export default function FoodDetailEdgeToEdge() {
                 {/* Location Section */}
                 <div style={styleOne.sectionCard}>
                     <h3 style={styleOne.sectionTitle}>
-                        <i className="material-icons-outlined" style={{ color: "#328d7d" }}>location_on</i>
+                        <i className="material-icons-outlined" style={{ color: "#38bdf8" }}>location_on</i>
                         สถานที่รับอาหาร
                     </h3>
                     <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 12px 0" }}>{food.address || "ไม่ระบุที่อยู่"}</p>
@@ -298,7 +324,7 @@ export default function FoodDetailEdgeToEdge() {
                             title="food-map"
                             width="100%"
                             height="180"
-                            style={{ border: 0, borderRadius: "12px" }}
+                            style={{ border: 0, borderRadius: "14px", border: "1px solid #f1f5f9" }}
                             src={googleMapEmbedUrl}
                         ></iframe>
                     )}
@@ -307,16 +333,16 @@ export default function FoodDetailEdgeToEdge() {
                 {/* Overall Reviews */}
                 <div style={styleOne.sectionCard}>
                     <h3 style={styleOne.sectionTitle}>
-                        <i className="material-icons-outlined" style={{ color: "#ffb800" }}>star</i>
+                        <i className="material-icons-outlined" style={{ color: "#fbbf24" }}>star</i>
                         การประเมินและรีวิวรวม
                     </h3>
 
                     <div style={styleOne.overallReviewContainer}>
                         <div style={styleOne.ratingScoreBig}>
-                            <div style={{ fontSize: "36px", fontWeight: "800", color: "#0f172a", lineHeight: "1" }}>{averageRating}</div>
+                            <div style={{ fontSize: "36px", fontWeight: "800", color: "#334155", lineHeight: "1" }}>{averageRating}</div>
                             <div style={{ display: "flex", gap: "2px", margin: "6px 0" }}>
                                 {[1, 2, 3, 4, 5].map(s => (
-                                    <span key={s} style={{ color: s <= Math.round(Number(averageRating)) ? "#ffb800" : "#cbd5e1", fontSize: "14px" }}>★</span>
+                                    <span key={s} style={{ color: s <= Math.round(Number(averageRating)) ? "#fbbf24" : "#e2e8f0", fontSize: "14px" }}>★</span>
                                 ))}
                             </div>
                             <div style={{ fontSize: "12px", color: "#64748b" }}>จาก {totalReviews} รีวิว</div>
@@ -344,10 +370,10 @@ export default function FoodDetailEdgeToEdge() {
                             reviews.map((item, idx) => (
                                 <div key={idx} style={styleOne.reviewBubble}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                                        <span style={{ fontWeight: "600", fontSize: "13px", color: "#1e293b" }}>{item.reviewerName || "ผู้รับบริการ"}</span>
+                                        <span style={{ fontWeight: "600", fontSize: "13px", color: "#334155" }}>{item.reviewerName || "ผู้รับบริการ"}</span>
                                         <span style={{ color: "#94a3b8", fontSize: "11px" }}>{new Date(item.reviewDate).toLocaleDateString('th-TH')}</span>
                                     </div>
-                                    <div style={{ color: "#ffb800", fontSize: "12px", marginBottom: "4px" }}>
+                                    <div style={{ color: "#fbbf24", fontSize: "12px", marginBottom: "4px" }}>
                                         {"★".repeat(item.ratingScore)}{"☆".repeat(5 - item.ratingScore)}
                                     </div>
                                     <p style={{ margin: 0, fontSize: "13px", color: "#475569" }}>{item.reviewComment}</p>
@@ -366,7 +392,8 @@ export default function FoodDetailEdgeToEdge() {
                         disabled={food?.isCurrentByUserBooked || food.remainingUnit <= 0}
                         style={{
                             ...styleOne.mainCtaBtn,
-                            backgroundColor: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "#cbd5e1" : "#ff9100",
+                            backgroundColor: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "#cbd5e1" : "#c084fc",
+                            boxShadow: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "none" : "0 4px 14px rgba(192, 132, 252, 0.35)",
                             cursor: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "not-allowed" : "pointer"
                         }}
                     >
@@ -383,9 +410,9 @@ export default function FoodDetailEdgeToEdge() {
                         {/* Header & Icon */}
                         <div style={{ textAlign: "center", marginBottom: "16px" }}>
                             <div style={styleOne.modalHeaderIcon}>
-                                <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#ff9100" }}>shopping_basket</i>
+                                <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#c084fc" }}>shopping_basket</i>
                             </div>
-                            <h3 style={{ margin: "12px 0 4px 0", fontSize: "20px", color: "#0f172a", fontWeight: "700" }}>
+                            <h3 style={{ margin: "12px 0 4px 0", fontSize: "20px", color: "#334155", fontWeight: "700" }}>
                                 ยืนยันรับอาหารบริจาค
                             </h3>
                             <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -395,12 +422,12 @@ export default function FoodDetailEdgeToEdge() {
 
                         {/* Banner แสดงจำนวนชิ้นคงเหลือที่จองได้ */}
                         <div style={styleOne.stockAlertBanner}>
-                            <i className="material-icons-outlined" style={{ fontSize: "20px", color: "#328d7d" }}>info</i>
+                            <i className="material-icons-outlined" style={{ fontSize: "20px", color: "#38bdf8" }}>info</i>
                             <div style={{ textAlign: "left" }}>
-                                <div style={{ fontSize: "12px", color: "#277265", fontWeight: "600" }}>
-                                    สามารถจองได้สูงสุด <span style={{ fontSize: "15px", fontWeight: "800", color: "#115e59" }}>{maxLimit}</span> ชิ้น
+                                <div style={{ fontSize: "12px", color: "#0284c7", fontWeight: "600" }}>
+                                    สามารถจองได้สูงสุด <span style={{ fontSize: "15px", fontWeight: "800", color: "#0369a1" }}>{maxLimit}</span> ชิ้น
                                 </div>
-                                <div style={{ fontSize: "11px", color: "#0aa089" }}>
+                                <div style={{ fontSize: "11px", color: "#38bdf8" }}>
                                     (คงเหลือในระบบ {food.remainingUnit} ชิ้น • จำกัด {food.limitPerPerson || 1} ชิ้น/คน)
                                 </div>
                             </div>
@@ -424,7 +451,7 @@ export default function FoodDetailEdgeToEdge() {
                                 >
                                     -
                                 </button>
-                                <span style={{ fontSize: "24px", fontWeight: "800", width: "48px", textAlign: "center", color: "#0f172a" }}>
+                                <span style={{ fontSize: "24px", fontWeight: "800", width: "48px", textAlign: "center", color: "#334155" }}>
                                     {reserveQuantity}
                                 </span>
                                 <button
@@ -448,10 +475,10 @@ export default function FoodDetailEdgeToEdge() {
                                             onClick={() => setReserveQuantity(qty)}
                                             style={{
                                                 ...styleOne.quickQtyChip,
-                                                backgroundColor: reserveQuantity === qty ? "#ff9100" : "#f1f5f9",
+                                                backgroundColor: reserveQuantity === qty ? "#c084fc" : "#f8fafc",
                                                 color: reserveQuantity === qty ? "#ffffff" : "#475569",
                                                 fontWeight: reserveQuantity === qty ? "700" : "500",
-                                                border: reserveQuantity === qty ? "1px solid #ff9100" : "1px solid #e2e8f0"
+                                                border: reserveQuantity === qty ? "1px solid #c084fc" : "1px solid #e2e8f0"
                                             }}
                                         >
                                             {qty} ชิ้น
@@ -485,84 +512,99 @@ export default function FoodDetailEdgeToEdge() {
 }
 
 const styleOne = {
-    pageBg: { backgroundColor: "#f8fafc", minHeight: "100vh", fontFamily: "'Prompt', sans-serif", paddingBottom: "40px" },
+    pageBg: {
+        background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)",
+        minHeight: "100vh",
+        fontFamily: "'Prompt', sans-serif",
+        paddingBottom: "40px"
+    },
+    loading: {
+        textAlign: "center",
+        padding: "100px 20px",
+        fontFamily: "'Prompt', sans-serif",
+        color: "#c084fc",
+        fontSize: "18px",
+        fontWeight: "500"
+    },
     floatingBackBtn: {
         position: "absolute", top: "16px", left: "16px", zIndex: 10,
         width: "40px", height: "40px", borderRadius: "50%",
         backgroundColor: "rgba(255, 255, 255, 0.9)", border: "none",
         display: "flex", alignItems: "center", justifyContent: "center",
-        cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+        cursor: "pointer", boxShadow: "0 4px 12px rgba(192, 132, 252, 0.2)"
     },
     contentSheet: {
         maxWidth: "680px", margin: "-24px auto 0 auto", position: "relative", zIndex: 5,
-        backgroundColor: "#ffffff", borderRadius: "24px 24px 0 0", padding: "24px 20px",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.05)"
+        backgroundColor: "#ffffff", borderRadius: "24px 24px 0 0", padding: "28px 24px",
+        boxShadow: "0 -8px 24px rgba(192, 132, 252, 0.08)",
+        border: "1px solid rgba(241, 245, 249, 0.9)"
     },
-    sheetHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "10px" },
-    categoryChip: { fontSize: "11px", fontWeight: "600", color: "#328d7d", backgroundColor: "#e6f4f1", padding: "2px 8px", borderRadius: "6px" },
-    foodTitle: { margin: "4px 0 0 0", fontWeight: "700", color: "#0f172a" },
-    statusPill: { padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "600" },
-    descriptionText: { color: "#64748b", fontSize: "14px", lineHeight: "1.5", margin: "0 0 16px 0" },
-    donorBox: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", backgroundColor: "#f8fafc", borderRadius: "12px", marginBottom: "16px" },
-    donorAvatar: { width: "34px", height: "34px", borderRadius: "50%", backgroundColor: "#e6f4f1", display: "flex", alignItems: "center", justifyContent: "center" },
-    specGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" },
-    specItem: { display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#f8fafc", padding: "10px 12px", borderRadius: "12px" },
+    sheetHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "12px" },
+    categoryChip: { fontSize: "11px", fontWeight: "600", color: "#c084fc", backgroundColor: "#faf5ff", padding: "4px 10px", borderRadius: "8px", border: "1px solid #f3e8ff" },
+    foodTitle: { margin: "6px 0 0 0", fontWeight: "700", color: "#334155" },
+    statusPill: { padding: "4px 12px", borderRadius: "14px", fontSize: "12px", fontWeight: "600" },
+    descriptionText: { color: "#64748b", fontSize: "14px", lineHeight: "1.6", margin: "0 0 20px 0" },
+    donorBox: { display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", backgroundColor: "#faf5ff", borderRadius: "16px", marginBottom: "20px", border: "1px solid #f3e8ff" },
+    donorAvatar: { width: "38px", height: "38px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(192, 132, 252, 0.15)" },
+    specGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" },
+    specItem: { display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#f8fafc", padding: "12px 14px", borderRadius: "16px", border: "1px solid #f1f5f9" },
     specLabel: { fontSize: "11px", color: "#64748b", display: "block" },
-    specValue: { fontSize: "12px", fontWeight: "600", color: "#1e293b" },
-    sectionCard: { backgroundColor: "#ffffff", borderRadius: "16px", padding: "16px", border: "1px solid #f1f5f9", marginBottom: "16px" },
-    sectionTitle: { margin: "0 0 12px 0", fontSize: "15px", fontWeight: "700", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" },
-    overallReviewContainer: { display: "flex", gap: "20px", alignItems: "center", backgroundColor: "#f8fafc", padding: "16px", borderRadius: "14px" },
-    ratingScoreBig: { textAlign: "center", paddingRight: "16px", borderRight: "1px solid #e2e8f0" },
-    ratingBarsList: { flex: 1, display: "flex", flexDirection: "column", gap: "4px" },
+    specValue: { fontSize: "12px", fontWeight: "600", color: "#334155" },
+    sectionCard: { backgroundColor: "#ffffff", borderRadius: "20px", padding: "20px", border: "1px solid #f1f5f9", marginBottom: "20px", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" },
+    sectionTitle: { margin: "0 0 14px 0", fontSize: "15px", fontWeight: "700", color: "#334155", display: "flex", alignItems: "center", gap: "6px" },
+    overallReviewContainer: { display: "flex", gap: "20px", alignItems: "center", backgroundColor: "#f8fafc", padding: "18px", borderRadius: "16px", border: "1px solid #f1f5f9" },
+    ratingScoreBig: { textAlign: "center", paddingRight: "18px", borderRight: "1px solid #e2e8f0" },
+    ratingBarsList: { flex: 1, display: "flex", flexDirection: "column", gap: "6px" },
     barRow: { display: "flex", alignItems: "center", gap: "8px" },
     barTrack: { flex: 1, height: "6px", backgroundColor: "#e2e8f0", borderRadius: "3px", overflow: "hidden" },
-    barFill: { height: "100%", backgroundColor: "#ffb800" },
-    reviewBubble: { backgroundColor: "#f8fafc", padding: "10px 12px", borderRadius: "10px", marginTop: "8px" },
-    mainCtaBtn: { width: "100%", padding: "14px", borderRadius: "14px", backgroundColor: "#ff9100", color: "#fff", border: "none", fontSize: "16px", fontWeight: "700", cursor: "pointer", marginTop: "10px" },
+    barFill: { height: "100%", backgroundColor: "#fbbf24", borderRadius: "3px" },
+    reviewBubble: { backgroundColor: "#f8fafc", padding: "12px 14px", borderRadius: "14px", marginTop: "10px", border: "1px solid #f1f5f9" },
+    mainCtaBtn: { width: "100%", padding: "14px", borderRadius: "16px", backgroundColor: "#c084fc", color: "#fff", border: "none", fontSize: "16px", fontWeight: "700", cursor: "pointer", marginTop: "12px", transition: "all 0.2s ease" },
 
     // Alert Modal ลอยกลางหน้า
     centerModalBackdrop: {
         position: "fixed", inset: 0, zIndex: 999,
-        backgroundColor: "rgba(15, 23, 42, 0.5)", backdropFilter: "blur(4px)",
+        backgroundColor: "rgba(51, 65, 85, 0.4)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "16px"
     },
     centerModalCard: {
-        width: "100%", maxWidth: "400px", backgroundColor: "#ffffff",
-        borderRadius: "20px", padding: "24px",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
-        animation: "scaleUp 0.15s ease-out"
+        width: "100%", maxWidth: "420px", backgroundColor: "#ffffff",
+        borderRadius: "24px", padding: "28px",
+        boxShadow: "0 20px 40px rgba(192, 132, 252, 0.15)",
+        border: "1px solid rgba(241, 245, 249, 0.9)"
     },
     modalHeaderIcon: {
         width: "56px", height: "56px", borderRadius: "50%",
-        backgroundColor: "#fff7ed", display: "inline-flex",
-        alignItems: "center", justifyContent: "center"
+        backgroundColor: "#faf5ff", display: "inline-flex",
+        alignItems: "center", justifyContent: "center",
+        boxShadow: "0 4px 12px rgba(192, 132, 252, 0.15)"
     },
     stockAlertBanner: {
-        backgroundColor: "#e6f4f1", border: "1px solid #b2dfdb",
-        borderRadius: "12px", padding: "10px 12px",
+        backgroundColor: "#f0f9ff", border: "1px solid #bae6fd",
+        borderRadius: "14px", padding: "12px 14px",
         display: "flex", alignItems: "center", gap: "10px"
     },
     qtyStepperBtn: {
-        width: "42px", height: "42px", borderRadius: "12px",
-        border: "1px solid #cbd5e1", backgroundColor: "#f8fafc",
+        width: "44px", height: "44px", borderRadius: "14px",
+        border: "1px solid #cbd5e1", backgroundColor: "#ffffff",
         fontSize: "20px", fontWeight: "600", cursor: "pointer",
         display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+        color: "#334155", boxShadow: "0 2px 4px rgba(0,0,0,0.03)"
     },
     quickQtyChip: {
-        padding: "6px 14px", borderRadius: "18px",
+        padding: "8px 16px", borderRadius: "14px",
         fontSize: "13px", cursor: "pointer", transition: "all 0.15s ease"
     },
     cancelBtn: {
-        flex: 1, padding: "12px", borderRadius: "12px",
-        border: "1px solid #cbd5e1", backgroundColor: "#ffffff",
-        color: "#475569", fontWeight: "600", cursor: "pointer"
+        flex: 1, padding: "12px", borderRadius: "14px",
+        border: "1.5px solid #cbd5e1", backgroundColor: "#ffffff",
+        color: "#64748b", fontWeight: "600", cursor: "pointer"
     },
     confirmBtn: {
-        flex: 1.5, padding: "12px", borderRadius: "12px",
-        border: "none", backgroundColor: "#ff9100",
+        flex: 1.5, padding: "12px", borderRadius: "14px",
+        border: "none", backgroundColor: "#c084fc",
         color: "#ffffff", fontWeight: "700", cursor: "pointer",
-        boxShadow: "0 4px 12px rgba(255, 145, 0, 0.25)"
+        boxShadow: "0 4px 14px rgba(192, 132, 252, 0.35)"
     }
 };
