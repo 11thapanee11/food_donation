@@ -11,8 +11,8 @@ export default function Home() {
     const [userLocation, setUserLocation] = useState(null);
 
     // State สำหรับตัวกรองระยะทางและวันหมดอายุ
-    const [maxDistance, setMaxDistance] = useState("all"); // ระยะทางสูงสุด (กม.)
-    const [maxExpiryDays, setMaxExpiryDays] = useState("all"); // จำนวนวันหมดอายุสูงสุด (วัน)
+    const [maxDistance, setMaxDistance] = useState("all");
+    const [maxExpiryDays, setMaxExpiryDays] = useState("all");
 
     const navigate = useNavigate();
     const BASE_URL = "http://localhost:8082";
@@ -90,7 +90,7 @@ export default function Home() {
 
     }, [selectedCategory, categories]);
 
-    // ฟังก์ชันคำนวณระยะทางแบบ Haversine Formula (กิโลเมตร)
+    // คำนวณระยะทางแบบ Haversine Formula
     const getDistanceKm = (lat1, lon1, lat2, lon2) => {
         if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
         const R = 6371;
@@ -135,27 +135,23 @@ export default function Home() {
         }
     };
 
-    // 3. กรองข้อมูล + เรียงลำดับตามวันหมดอายุ (หมดอายุเร็วกว่าอยู่หน้าสุด)
+    // 3. กรองข้อมูล + เรียงลำดับตามวันหมดอายุ
     const filteredFoods = foods
         .filter(f => {
-            // กรองคำค้นหา
             const matchesSearch = f.foodName.toLowerCase().includes(search.toLowerCase());
             if (!matchesSearch) return false;
 
             const daysInfo = getDaysRemaining(f.expiryDate);
 
-            // ❌ หากหมดอายุแล้ว ให้ตัดออกทันที ไม่แสดงผล
             if (!daysInfo || daysInfo.isExpired || daysInfo.days < 0) {
                 return false;
             }
 
-            // กรองตามระยะทางสูงสุดที่เลือก
             if (maxDistance !== "all" && userLocation && f.latitude && f.longitude) {
                 const dist = getDistanceKm(userLocation.lat, userLocation.lng, f.latitude, f.longitude);
                 if (dist > parseFloat(maxDistance)) return false;
             }
 
-            // กรองตามช่วงวันหมดอายุที่เลือก
             if (maxExpiryDays !== "all") {
                 const limitDays = parseInt(maxExpiryDays, 10);
                 if (daysInfo.days > limitDays) return false;
@@ -164,7 +160,6 @@ export default function Home() {
             return true;
         })
         .sort((a, b) => {
-            // ⏰ เรียงจากวันหมดอายุใกล้ที่สุด -> ไกลที่สุด
             const dateA = new Date(a.expiryDate).getTime();
             const dateB = new Date(b.expiryDate).getTime();
             return dateA - dateB;
@@ -253,7 +248,7 @@ export default function Home() {
                 {/* Category Header */}
                 <div style={styles.categoryHeader}>
                     <h2 style={styles.sectionTitle}>
-                        <i className="material-icons-outlined" style={{ color: '#328d7d' }}>grid_view</i>
+                        <i className="material-icons-outlined" style={{ color: '#0284c7' }}>grid_view</i>
                         หมวดหมู่รายการ
                     </h2>
                     <span style={styles.itemCount}>พบ {filteredFoods.length} รายการ</span>
@@ -275,11 +270,11 @@ export default function Home() {
                     ))}
                 </div>
 
-                {/* Filter Control Bar (กรองระยะทาง & ช่วงวันหมดอายุ) */}
+                {/* Filter Control Bar */}
                 <div style={styles.filterControlBar}>
                     <div style={styles.filterGroup}>
                         <span style={styles.filterLabel}>
-                            <i className="material-icons-outlined" style={{ fontSize: '18px' }}>filter_list</i>
+                            <i className="material-icons-outlined" style={{ fontSize: '18px', color: '#8b5cf6' }}>filter_list</i>
                             ตัวกรองข้อมูล:
                         </span>
 
@@ -473,7 +468,6 @@ const styles = {
         paddingBottom: "80px",
     },
     heroBanner: {
-        // ปรับเป็น Gradient ม่วงพาสเทล -> ฟ้าพาสเทล นุ่มนวล
         background: "linear-gradient(135deg, #f3e8ff 0%, #e0f2fe 100%)",
         padding: "50px 20px 60px 20px",
         color: "#334155",
@@ -491,7 +485,6 @@ const styles = {
         alignItems: "center",
     },
     heroBadge: {
-        // ใช้ม่วงพาสเทล (Soft Lavender)
         backgroundColor: "#f3e8ff",
         color: "#8b5cf6",
         padding: "6px 16px",
@@ -525,7 +518,6 @@ const styles = {
         flexWrap: "wrap",
     },
     donateBtn: {
-        // ปรับเป็นม่วงพาสเทลหลัก (#C084FC / #a855f7)
         backgroundColor: "#a855f7",
         color: "#ffffff",
         border: "none",
@@ -540,7 +532,6 @@ const styles = {
         boxShadow: "0 4px 14px rgba(168, 85, 247, 0.3)",
     },
     requestBtn: {
-        // ปุ่มรองใช้ขอบม่วงพาสเทล
         backgroundColor: "#ffffff",
         color: "#a855f7",
         border: "2px solid #a855f7",
@@ -644,7 +635,6 @@ const styles = {
         outline: "none",
     },
     categoryBtnActive: {
-        // ปุ่มหมวดหมู่ที่เลือก เปลี่ยนเป็นสีฟ้าเข้มสดใส (Sky Blue Accent)
         backgroundColor: "#0284c7",
         borderColor: "#0284c7",
         color: "#ffffff",
@@ -753,8 +743,7 @@ const styles = {
         gap: "5px",
     },
     badgeUrgent: {
-        // สถานะเร่งด่วนใช้สีส้มเตือนความสนใจ
-        backgroundColor: "#f97316",
+        backgroundColor: "#ff8c42",
     },
     bookedBadge: {
         position: "absolute",
@@ -795,7 +784,6 @@ const styles = {
         gap: "10px",
     },
     iconStyle: {
-        // ไอคอนการ์ดใช้สีเขียวมิ้นต์ (Emerald Mint) สื่อถึง Eco & Waste Saving
         color: "#10b981",
         fontSize: "20px",
     },
@@ -815,7 +803,6 @@ const styles = {
         fontWeight: "600",
     },
     highlightBadge: {
-        // ไฮไลต์เขียวมิ้นต์อ่อน
         backgroundColor: "#d1fae5",
         color: "#047857",
         padding: "2px 8px",
@@ -824,7 +811,6 @@ const styles = {
         fontSize: "12px",
     },
     distanceBadge: {
-        // แท็กระยะทางใช้สีฟ้าพาสเทลอ่อน
         backgroundColor: "#e0f2fe",
         color: "#0369a1",
         padding: "2px 8px",
@@ -838,7 +824,6 @@ const styles = {
         padding: "12px 16px",
         borderRadius: "12px",
         border: "none",
-        // ปุ่มกระทำหลักใช้สีม่วงพาสเทล
         backgroundColor: "#a855f7",
         color: "#ffffff",
         fontWeight: "600",
