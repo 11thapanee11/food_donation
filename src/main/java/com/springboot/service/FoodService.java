@@ -8,6 +8,11 @@ import com.springboot.repository.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +24,8 @@ public class FoodService {
     private final UserRepository userRepository;
     private final FoodCategoryRepository foodCategoryRepository;
     private final NotificationService notificationService;
+
+    private static final String UPLOAD_DIR = "D:/Project/food_donation/uploads/food/";
 
     public FoodService(FoodRepository foodRepository, UserRepository userRepository,
             FoodCategoryRepository foodCategoryRepository, NotificationService notificationService) {
@@ -191,11 +198,36 @@ public class FoodService {
     }
 
     // ลบอาหาร
+    @Transactional
     public void deleteFood(Integer id) {
-        if (!foodRepository.existsById(id)) {
-            throw new ApplicationException("ไม่พบข้อมูลอาหาร", HttpStatus.NOT_FOUND);
+        // 1. ค้นหาข้อมูลอาหารก่อนลบ
+        Food food = foodRepository.findById(id)
+                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลอาหารที่ต้องการลบ", HttpStatus.NOT_FOUND));
+
+        // 2. ดึง Path รูปภาพเดิมออกมาเก็บไว้ก่อนลบใน DB
+        String imagePath = food.getFoodImage();
+
+        // 3. ลบข้อมูลออกจากฐานข้อมูล
+        foodRepository.delete(food);
+
+        // 4. ลบไฟล์รูปภาพออกจากโฟลเดอร์บน Disk
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            deletePhysicalFile(imagePath);
         }
-        foodRepository.deleteById(id);
+    }
+
+    // Helper Method สำหรับแปลง URL รูปภาพกลับมาเป็น Path บน Disk แล้วทำการลบ
+    private void deletePhysicalFile(String imagePath) {
+        try {
+            // ดึงเฉพาะชื่อไฟล์ออกมาจาก Path เช่น "/images/food/abc.jpg" -> "abc.jpg"
+            String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+
+            Path path = Paths.get(UPLOAD_DIR + fileName);
+            Files.deleteIfExists(path);
+        } catch (Exception e) {
+            // ไม่ควร throw exception ขัดขวางกระบวนการลบ DB ที่สำเร็จไปแล้ว
+            System.err.println("ไม่สามารถลบไฟล์รูปภาพได้: " + e.getMessage());
+        }
     }
 
     public List<Food> findFoodsByDonorId(Integer id) {

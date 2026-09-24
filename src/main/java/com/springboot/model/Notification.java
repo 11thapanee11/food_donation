@@ -13,15 +13,16 @@ import org.hibernate.annotations.OnDeleteAction;
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "notification_id")
     private Integer notificationId;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "notification_message", nullable = false, length = 100)
     private String notificationMessage;
 
-    @Column(nullable = false)
+    @Column(name = "notification_date", nullable = false)
     private LocalDateTime notificationDate;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "notification_type", nullable = false, length = 20)
     private String notificationType;
 
     @ManyToOne

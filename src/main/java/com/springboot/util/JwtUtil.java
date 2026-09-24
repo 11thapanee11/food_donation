@@ -35,9 +35,10 @@ public class JwtUtil {
     //             .compact();
     // }
     // ใช้ userId เป็น subject
-    public String generateToken(String userId, boolean isAdmin, long expirationMillis) {
+    public String generateToken(String userId,String displayName, boolean isAdmin, long expirationMillis) {
         return Jwts.builder()
                 .setSubject(userId)
+                .claim("displayName", displayName)
                 .claim("isAdmin", isAdmin) // ฝังสถานะแอดมินลงใน Payload ของ Token
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))

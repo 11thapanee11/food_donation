@@ -10,34 +10,20 @@ import java.util.List;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
-    // List<Notification> findByRecipientIdAndIsReadFalse(Long userId);
 
-    // 6371 = รัศมีโลก (กิโลเมตร)
-    // ใช้ acos + cos + sin → Haversine formula
-    // :latitude, :longitude = พิกัดของ Food
-    // :radiusKm = ระยะทางที่ต้องการค้นหา (เช่น 5.0 กม.)
-    // @Query(value = "SELECT u.* FROM user u " +
-    // "WHERE (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) " +
-    // "* cos(radians(u.longitude) - radians(:longitude)) + sin(radians(:latitude))
-    // " +
-    // "* sin(radians(u.latitude)))) <= :radiusKm", nativeQuery = true)
-    // List<User> findUsersNearby(@Param("latitude") Double latitude,
-    // @Param("longitude") Double longitude,
-    // @Param("radiusKm") double radiusKm);
+    // ดึงเฉพาะแจ้งเตือนตามประเภท และเรียงจากใหม่ไปเก่า
+    List<Notification> findByNotificationTypeOrderByNotificationDateDesc(String notificationType);
 
-    // ดึงเฉพาะแจ้งเตือนอาหารใหม่ (สำหรับผู้รับอาหาร)
-    List<Notification> findByNotificationTypeOrderByNotificationDateDesc(String type);
-
+    // ดึงเฉพาะแจ้งเตือนตามประเภท
     List<Notification> findByNotificationType(String notificationType);
 
-    // ดึงเฉพาะแจ้งเตือนการจอง (สำหรับผู้บริจาค)
-    // List<Notification>
-    // findByNotificationTypeInOrderByNotificationDateDesc(List<String> types);
+    // ดึงเฉพาะแจ้งเตือนการจอง (สำหรับผู้บริจาค) เรียงจากใหม่ไปเก่า
     @Query("""
-                SELECT n FROM Notification n
-                JOIN n.food f
-                WHERE f.donor.userId = :userId
-                AND n.notificationType IN :types
+            SELECT n FROM Notification n
+            JOIN n.food f
+            WHERE f.donor.userId = :userId
+            AND n.notificationType IN :types
+            ORDER BY n.notificationDate DESC
             """)
     List<Notification> findBookingsByDonorIdAndTypes(
             @Param("userId") Integer userId,

@@ -7,7 +7,6 @@
 body {
   margin: 0;
   font-family: "Noto Sans Thai", sans-serif;
-  background-color: #fffcf8;
 }
 
 body,
@@ -18,12 +17,13 @@ div {
   font-family: "Noto Sans Thai", sans-serif;
 }
 
-input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0px 1000px #fff0df inset;
-  /* ใส่สีพื้นหลังที่คุณต้องการ */
-  box-shadow: 0 0 0px 1000px #fff0df inset;
-  -webkit-text-fill-color: #000;
-  /* ให้ตัวหนังสือเป็นสีดำ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+  -webkit-text-fill-color: #1f1f1f !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 

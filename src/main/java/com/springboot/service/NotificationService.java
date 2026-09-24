@@ -56,6 +56,7 @@ public class NotificationService {
             throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้ เนื่องจากข้อมูลไม่ถูกต้อง",
                     HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ApplicationException("ไม่สามารถบันทึกการแจ้งเตือนได้", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

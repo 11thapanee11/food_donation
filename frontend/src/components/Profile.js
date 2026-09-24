@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Swal from 'sweetalert2';
-import profileMember from '../assets/images/member_profile.jpg'
+import profileMember from '../assets/images/member_profile.jpg';
 
 export default function Profile() {
     const token = localStorage.getItem("accessToken");
@@ -14,12 +14,11 @@ export default function Profile() {
     });
 
     const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(true); // state สำหรับโหลด
+    const [loading, setLoading] = useState(true);
 
     const validateForm = () => {
         const newErrors = {};
 
-        // Helper function สำหรับเช็คชื่อ-นามสกุล
         const validateName = (value, fieldName) => {
             if (!value.trim()) return `กรุณากรอก${fieldName}`;
             if (value.length < 2 || value.length > 155) return `${fieldName}ต้องมี 2-155 ตัวอักษร`;
@@ -27,14 +26,12 @@ export default function Profile() {
             return null;
         };
 
-        // ชื่อ & นามสกุล
         const fNameErr = validateName(formData.firstName, "ชื่อ");
         if (fNameErr) newErrors.firstName = fNameErr;
 
         const lNameErr = validateName(formData.lastName, "นามสกุล");
         if (lNameErr) newErrors.lastName = lNameErr;
 
-        // เบอร์โทรศัพท์
         if (!formData.phoneNumber.trim()) {
             newErrors.phoneNumber = "กรุณากรอกเบอร์โทรศัพท์";
         } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
@@ -56,11 +53,17 @@ export default function Profile() {
         const fetchProfile = async () => {
             setLoading(true);
 
-            // แสดง Loading Popup
             Swal.fire({
                 title: "กำลังโหลดข้อมูลสมาชิก...",
                 allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'rounded-2xl shadow-xl border border-emerald-100',
+                    title: 'text-gray-800 text-lg font-medium'
+                },
+                didOpen: () => {
+                    Swal.showLoading();
+                }
             });
 
             try {
@@ -93,7 +96,14 @@ export default function Profile() {
                 Swal.fire({
                     icon: "error",
                     title: "ข้อผิดพลาด",
-                    text: err.message
+                    text: err.message,
+                    confirmButtonText: "ตกลง",
+                    confirmButtonColor: "#328d7d",
+                    customClass: {
+                        popup: 'rounded-2xl shadow-xl border border-red-100',
+                        title: 'text-gray-800 font-bold',
+                        confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
+                    }
                 });
             } finally {
                 setLoading(false);
@@ -108,10 +118,27 @@ export default function Profile() {
             ...formData,
             [e.target.name]: e.target.value
         });
+        if (errors[e.target.name]) {
+            setErrors({ ...errors, [e.target.name]: null });
+        }
     };
 
     const handleSave = () => {
         if (!validateForm()) return;
+
+        // เพิ่ม Loading แจ้งเตือนขณะกำลังบันทึกข้อมูล
+        Swal.fire({
+            title: "กำลังบันทึกข้อมูล...",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'rounded-2xl shadow-xl border border-emerald-100',
+                title: 'text-gray-800 text-lg font-medium'
+            },
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
 
         fetch("http://localhost:8082/profile", {
             method: "PUT",
@@ -122,7 +149,6 @@ export default function Profile() {
             body: JSON.stringify(formData)
         })
             .then(res => {
-                // เช็คสถานะ HTTP ปกติ
                 if (!res.ok) throw new Error("ไม่สามารถเชื่อมต่อกับ Server ได้");
                 return res.json();
             })
@@ -137,8 +163,13 @@ export default function Profile() {
                     Swal.fire({
                         icon: "success",
                         title: "บันทึกข้อมูลสำเร็จ",
-                        text: response.message || "แก้ไขข้อมูลสำเร็จ",
-                        confirmButtonColor: "#2ecc71"
+                        text: response.message || "แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว",
+                        confirmButtonText: "ตกลง",
+                        confirmButtonColor: "#328d7d",
+                        customClass: {
+                            popup: '!rounded-[28px] !p-6 shadow-2xl',
+                            confirmButton: '!rounded-xl px-6 py-2.5 font-medium'
+                        }
                     });
                 } else {
                     throw new Error(response.message || "ไม่สามารถแก้ไขข้อมูลได้");
@@ -149,15 +180,18 @@ export default function Profile() {
                     icon: "error",
                     title: "เกิดข้อผิดพลาด",
                     text: err.message || "มีบางอย่างผิดพลาด โปรดลองใหม่อีกครั้ง",
-                    confirmButtonColor: "#e74c3c"
+                    confirmButtonText: "ลองอีกครั้ง",
+                    confirmButtonColor: "#e74c3c",
+                    customClass: {
+                        popup: 'rounded-2xl shadow-xl border border-red-100',
+                        title: 'text-gray-800 font-bold',
+                        confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
+                    }
                 });
             });
     };
 
-    if (loading) {
-        // ไม่ render อะไรเลยตอนโหลด ให้ SweetAlert2 จัดการ
-        return null;
-    }
+    if (loading) return null;
 
     if (!profile) {
         return <div style={styles.loading}>ไม่พบข้อมูลสมาชิก</div>;
@@ -166,172 +200,260 @@ export default function Profile() {
     return (
         <div style={styles.container}>
             <div style={styles.wrapper}>
-                <h1 style={styles.title}>ข้อมูลส่วนตัวสมาชิก</h1>
-
-                {/* ส่วนแบนเนอร์สีเขียว */}
-                <div style={styles.banner}>
-                    <div style={styles.avatarWrapper}>
-                        <img
-                            src={profileMember}
-                            alt="Profile"
-                            style={styles.avatarImg}
-                        />
-                    </div>
-                    <h2 style={styles.userName}>{profile.firstName} {profile.lastName}</h2>
+                {/* Header */}
+                <div style={styles.headerBox}>
+                    <h1 style={styles.title}>โปรไฟล์ของฉัน</h1>
+                    <p style={styles.subtitle}>จัดการข้อมูลส่วนตัวและรายละเอียดบัญชีผู้ใช้</p>
                 </div>
 
-                {!isEditing ? (
-                    <>
-                        {/* ส่วนฟอร์มข้อมูล */}
-                        <div style={styles.formGrid}>
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>ชื่อ</p>
-                                <div style={styles.inputBox}>{profile.firstName}</div>
-                            </div>
-
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>นามสกุล</p>
-                                <div style={styles.inputBox}>{profile.lastName}</div>
-                            </div>
-
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>อีเมล</p>
-                                <div style={styles.inputBox}>{profile.email}</div>
-                            </div>
-
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>เบอร์โทรศัพท์</p>
-                                <div style={styles.inputBox}>{profile.phoneNumber}</div>
-                            </div>
-                        </div>
-
-                        {/* ปุ่มแก้ไขข้อมูล */}
-                        <div style={styles.buttonWrapper}>
-                            <button
-                                style={styles.editBtn}
-                                onClick={() => {
-                                    setFormData({
-                                        firstName: profile.firstName || "",
-                                        lastName: profile.lastName || "",
-                                        phoneNumber: profile.phoneNumber || ""
-                                    });
-                                    setIsEditing(true);
-                                }}
-                            >
-                                <i className='material-icons'>edit</i>แก้ไขข้อมูล
-                            </button>
-                        </div>
-                    </>) : (
-                    <>
-                        <div style={styles.formGrid}>
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>ชื่อ</p>
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    value={formData.firstName}
-                                    style={{ ...styles.inputBox, color: "#000" }}
-                                    onFocus={(e) => { e.target.style.outline = "none"; }}
-                                    onChange={handleChange}
+                {/* Main Card Wrapper */}
+                <div style={styles.card}>
+                    {/* Banner Section */}
+                    <div style={styles.banner}>
+                        <div style={styles.avatarGlow}>
+                            <div style={styles.avatarWrapper}>
+                                <img
+                                    src={profileMember}
+                                    alt="Profile"
+                                    style={styles.avatarImg}
                                 />
-                                {errors.firstName && <p style={styles.errorText}>{errors.firstName}</p>}
-                            </div>
-
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>นามสกุล</p>
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    value={formData.lastName}
-                                    style={{ ...styles.inputBox, color: "#000" }}
-                                    onFocus={(e) => { e.target.style.outline = "none"; }}
-                                    onChange={handleChange}
-                                />
-                                {errors.lastName && <p style={styles.errorText}>{errors.lastName}</p>}
-                            </div>
-
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>อีเมล</p>
-                                <div style={styles.inputBox}>{profile.email}</div>
-                            </div>
-
-                            <div style={styles.fieldGroup}>
-                                <p style={styles.p}>เบอร์โทรศัพท์</p>
-                                <input
-                                    type="text"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber}
-                                    style={{ ...styles.inputBox, color: "#000" }}
-                                    onFocus={(e) => { e.target.style.outline = "none"; }}
-                                    onChange={handleChange}
-                                />
-                                {errors.phoneNumber && <p style={styles.errorText}>{errors.phoneNumber}</p>}
                             </div>
                         </div>
+                        <h2 style={styles.userName}>{profile.firstName} {profile.lastName}</h2>
+                        <span style={styles.userRoleTag}>สมาชิก</span>
+                    </div>
 
-                        <div style={{ ...styles.buttonWrapper, gap: "20px" }}>
-                            <button
-                                style={{
-                                    ...styles.editBtn,
-                                    backgroundColor: "#fffcf8",
-                                    color: "#328d7d",
-                                    border: "2px solid #328d7d"
-                                }}
-                                onClick={() => setIsEditing(false)}
-                            >
-                                ยกเลิก
-                            </button>
+                    {/* Form Section */}
+                    <div style={styles.contentBody}>
+                        {!isEditing ? (
+                            <>
+                                <div style={styles.formGrid}>
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>person</i>
+                                            ชื่อ
+                                        </label>
+                                        <div style={styles.displayBox}>{profile.firstName}</div>
+                                    </div>
 
-                            <button
-                                style={styles.editBtn}
-                                onClick={handleSave}
-                            >
-                                บันทึกข้อมูล
-                            </button>
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>person_outline</i>
+                                            นามสกุล
+                                        </label>
+                                        <div style={styles.displayBox}>{profile.lastName}</div>
+                                    </div>
 
-                        </div>
-                    </>
-                )}
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>email</i>
+                                            อีเมล
+                                        </label>
+                                        <div style={{ ...styles.displayBox, ...styles.disabledBox }}>
+                                            {profile.email}
+                                        </div>
+                                    </div>
 
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>phone</i>
+                                            เบอร์โทรศัพท์
+                                        </label>
+                                        <div style={styles.displayBox}>{profile.phoneNumber}</div>
+                                    </div>
+                                </div>
 
+                                <div style={styles.buttonWrapper}>
+                                    <button
+                                        style={styles.primaryBtn}
+                                        onClick={() => {
+                                            setFormData({
+                                                firstName: profile.firstName || "",
+                                                lastName: profile.lastName || "",
+                                                phoneNumber: profile.phoneNumber || ""
+                                            });
+                                            setIsEditing(true);
+                                        }}
+                                    >
+                                        <i className='material-icons' style={{ fontSize: '18px' }}>edit</i>
+                                        แก้ไขข้อมูล
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div style={styles.formGrid}>
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>person</i>
+                                            ชื่อ
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="firstName"
+                                            value={formData.firstName}
+                                            style={errors.firstName ? styles.inputError : styles.inputBox}
+                                            onChange={handleChange}
+                                            placeholder="กรอกชื่อ"
+                                        />
+                                        {errors.firstName && <p style={styles.errorText}>{errors.firstName}</p>}
+                                    </div>
+
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>person_outline</i>
+                                            นามสกุล
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="lastName"
+                                            value={formData.lastName}
+                                            style={errors.lastName ? styles.inputError : styles.inputBox}
+                                            onChange={handleChange}
+                                            placeholder="กรอกนามสกุล"
+                                        />
+                                        {errors.lastName && <p style={styles.errorText}>{errors.lastName}</p>}
+                                    </div>
+
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>email</i>
+                                            อีเมล (ไม่สามารถแก้ไขได้)
+                                        </label>
+                                        <div style={{ ...styles.displayBox, ...styles.disabledBox }}>
+                                            {profile.email}
+                                        </div>
+                                    </div>
+
+                                    <div style={styles.fieldGroup}>
+                                        <label style={styles.label}>
+                                            <i className="material-icons" style={styles.fieldIcon}>phone</i>
+                                            เบอร์โทรศัพท์
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="phoneNumber"
+                                            value={formData.phoneNumber}
+                                            style={errors.phoneNumber ? styles.inputError : styles.inputBox}
+                                            onChange={handleChange}
+                                            placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก"
+                                        />
+                                        {errors.phoneNumber && <p style={styles.errorText}>{errors.phoneNumber}</p>}
+                                    </div>
+                                </div>
+
+                                {!isEditing ? (
+                                    <div style={styles.buttonWrapper}>
+                                        <button
+                                            key="btn-edit"
+                                            type="button"
+                                            style={styles.primaryBtn}
+                                            onClick={() => {
+                                                setFormData({
+                                                    firstName: profile.firstName || "",
+                                                    lastName: profile.lastName || "",
+                                                    phoneNumber: profile.phoneNumber || ""
+                                                });
+                                                setIsEditing(true);
+                                            }}
+                                        >
+                                            <i className='material-icons' style={{ fontSize: '18px' }}>edit</i>
+                                            แก้ไขข้อมูล
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ ...styles.buttonWrapper, gap: "16px" }}>
+                                        <button
+                                            key="btn-cancel"
+                                            type="button"
+                                            style={styles.cancelBtn}
+                                            onClick={() => {
+                                                setIsEditing(false);
+                                                setErrors({});
+                                            }}
+                                        >
+                                            ยกเลิก
+                                        </button>
+
+                                        <button
+                                            key="btn-save"
+                                            type="button"
+                                            style={styles.primaryBtn}
+                                            onClick={handleSave}
+                                        >
+                                            บันทึกข้อมูล
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
-};
+}
 
 const styles = {
     container: {
-        // minHeight: '100vh',
-        padding: '20px 20px',
+        padding: '30px 20px 60px 20px',
         display: 'flex',
         justifyContent: 'center',
+        alignItems: 'flex-start',
+        minHeight: '100vh',
+        background: "linear-gradient(135deg, #ffff 0%, #fffefc 100%)",
+        fontFamily: "'Prompt', sans-serif",
     },
     wrapper: {
         width: '100%',
-        maxWidth: '800px',
+        maxWidth: '760px',
+
+    },
+    headerBox: {
+        marginBottom: '18px',
+        textAlign: 'left',
     },
     title: {
-        color: '#328d7d',
-        fontSize: '24px',
-        fontWeight: 'bold',
-        marginBottom: '20px',
-        marginTop: '20px'
+        color: '#1e293b',
+        fontSize: '26px',
+        fontWeight: '700',
+        margin: '0 0 6px 0',
+        letterSpacing: '-0.3px',
+    },
+    subtitle: {
+        color: '#64748b',
+        fontSize: '14px',
+        margin: 0,
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: '24px',
+        boxShadow: "0 20px 40px rgba(255, 246, 229, 0.25), 0 8px 16px rgba(180, 180, 180, 0.42)",
+        overflow: 'hidden',
+        border: '1px solid rgba(226, 232, 240, 0.8)',
     },
     banner: {
-        backgroundColor: '#328d7d',
-        borderRadius: '15px',
-        padding: '30px',
+        background: 'linear-gradient(135deg, #328d7d 0%, #277265 100%)',
+        padding: '36px 20px 30px 20px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        marginBottom: '30px',
+        position: 'relative',
+    },
+    avatarGlow: {
+        padding: '6px',
+        borderRadius: '50%',
+        background: 'rgba(255, 255, 255, 0.2)',
+        backdropFilter: 'blur(8px)',
+        marginBottom: '12px',
     },
     avatarWrapper: {
-        width: '120px',
-        height: '120px',
+        width: '104px',
+        height: '104px',
         borderRadius: '50%',
         overflow: 'hidden',
-        marginBottom: '15px',
+        border: '3px solid #ffffff',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     },
     avatarImg: {
         width: '100%',
@@ -339,68 +461,130 @@ const styles = {
         objectFit: 'cover',
     },
     userName: {
-        color: '#fffcf8',
+        color: '#ffffff',
         fontSize: '22px',
-        fontWeight: 'bold',
-        margin: 0,
+        fontWeight: '600',
+        margin: '0 0 6px 0',
+        letterSpacing: '0.2px',
+    },
+    userRoleTag: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        color: '#ffffff',
+        padding: '4px 14px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: '500',
+        backdropFilter: 'blur(4px)',
+    },
+    contentBody: {
+        padding: '36px 32px',
     },
     formGrid: {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '20px 40px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '24px 28px',
     },
     fieldGroup: {
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
     },
-    p: {
-        fontSize: '16px',
+    label: {
+        fontSize: '14px',
+        fontWeight: '600',
+        color: '#475569',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+    },
+    fieldIcon: {
+        fontSize: '18px',
+        color: '#328d7d',
+    },
+    displayBox: {
+        backgroundColor: '#f8fafc',
+        padding: '12px 16px',
+        borderRadius: '12px',
+        color: '#1e293b',
+        fontSize: '15px',
         fontWeight: '500',
-        color: '#333',
-        margin: 0,
+        border: '1px solid #e2e8f0',
+        minHeight: '22px',
+        display: 'flex',
+        alignItems: 'center',
+    },
+    disabledBox: {
+        backgroundColor: '#f1f5f9',
+        color: '#94a3b8',
+        borderColor: '#e2e8f0',
     },
     inputBox: {
-        backgroundColor: '#ffe8cc',
-        padding: '15px',
-        borderRadius: '15px',
-        color: '#737373',
-        fontSize: '14px',
-        border: 'none'
+        backgroundColor: '#ffffff',
+        padding: '12px 16px',
+        borderRadius: '12px',
+        color: '#1e293b',
+        fontSize: '15px',
+        border: '1.5px solid #cbd5e1',
+        outline: 'none',
+        transition: 'all 0.2s ease',
+        boxSizing: 'border-box',
+        width: '100%',
+    },
+    inputError: {
+        backgroundColor: '#fff5f5',
+        padding: '12px 16px',
+        borderRadius: '12px',
+        color: '#1e293b',
+        fontSize: '15px',
+        border: '1.5px solid #ef4444',
+        outline: 'none',
+        boxSizing: 'border-box',
+        width: '100%',
     },
     buttonWrapper: {
         display: 'flex',
-        justifyContent: 'center',
-        marginTop: '40px',
+        justifyContent: 'flex-end',
+        marginTop: '32px',
     },
-    editBtn: {
-        backgroundColor: '#ff9100',
-        color: '#fff',
+    primaryBtn: {
+        backgroundColor: '#ff7b00',
+        color: '#ffffff',
         border: 'none',
-        padding: '12px 30px',
+        padding: '12px 28px',
         borderRadius: '12px',
-        fontSize: '16px',
-        fontWeight: 'bold',
+        fontSize: '15px',
+        fontWeight: '600',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '10px',
-        width: '180px'
-        // boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        gap: '8px',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 4px 12px rgba(255, 145, 0, 0.25)',
+    },
+    cancelBtn: {
+        backgroundColor: '#ffffff',
+        color: '#64748b',
+        border: '1.5px solid #cbd5e1',
+        padding: '12px 24px',
+        borderRadius: '12px',
+        fontSize: '15px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
     },
     loading: {
         textAlign: "center",
         padding: "100px",
-        color: "#ff8c00",
-        fontSize: "20px"
+        color: "#328d7d",
+        fontSize: "18px",
+        fontWeight: "500"
     },
     errorText: {
-        color: "red",
-        fontSize: "14px",
-        marginTop: "5px",
+        color: "#ef4444",
+        fontSize: "13px",
+        marginTop: "2px",
         marginBottom: "0px",
-        display: "block",
         textAlign: "left"
     },
 };

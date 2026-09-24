@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import registerImg from '../assets/images/register_image.png';
+import registerImg from "../assets/images/image_side.jpg";
 
 function Register() {
     const navigate = useNavigate();
@@ -12,10 +12,12 @@ function Register() {
         email: "",
         phoneNumber: "",
         password: "",
-        confirmPassword: ""
+        confirmPassword: "",
     });
 
     const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [isBtnHovered, setIsBtnHovered] = useState(false);
 
     // State สำหรับเปิด-ปิดการมองเห็นรหัสผ่าน
     const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +29,16 @@ function Register() {
         if (value.length < 2 || value.length > 155) return `${fieldName}ต้องมี 2-155 ตัวอักษร`;
         if (!/^[ก-๙a-zA-Z]+$/.test(value)) return `${fieldName}ต้องเป็นภาษาไทยหรืออังกฤษเท่านั้น`;
         return null;
+    };
+
+    const getPasswordStrength = (pass) => {
+        if (!pass) return 0;
+        let score = 0;
+        if (pass.length >= 8) score++;
+        if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score++;
+        if (/[0-9]/.test(pass)) score++;
+        if (/[!#_.]/.test(pass)) score++;
+        return score;
     };
 
     const validateForm = () => {
@@ -83,13 +95,13 @@ function Register() {
 
         setFormData((prevData) => ({
             ...prevData,
-            [name]: value
+            [name]: value,
         }));
 
-        if (value.trim() !== "") {
+        if (errors[name]) {
             setErrors((prevErrors) => ({
                 ...prevErrors,
-                [name]: null
+                [name]: null,
             }));
         }
     };
@@ -98,11 +110,13 @@ function Register() {
         e.preventDefault();
         if (!validateForm()) return;
 
+        setIsLoading(true);
+
         try {
             const response = await fetch("http://localhost:8082/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
             });
 
             const result = await response.json();
@@ -111,14 +125,16 @@ function Register() {
                 Swal.fire({
                     icon: "success",
                     title: result.message || "สมัครสมาชิกเรียบร้อยแล้ว",
-                    confirmButtonColor: "#2ecc71"
+                    confirmButtonColor: "#328d7d",
+                    timer: 2000,
+                    showConfirmButton: false,
                 }).then(() => navigate("/login"));
             } else {
                 Swal.fire({
                     icon: "error",
                     title: "สมัครสมาชิกไม่สำเร็จ",
                     text: result.message || "เกิดข้อผิดพลาดภายในระบบ",
-                    confirmButtonColor: "#d63031"
+                    confirmButtonColor: "#d63031",
                 });
             }
         } catch (error) {
@@ -127,114 +143,149 @@ function Register() {
                 icon: "error",
                 title: "เกิดข้อผิดพลาด",
                 text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง",
-                confirmButtonColor: "#d63031"
+                confirmButtonColor: "#d63031",
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // ---------------- Render ----------------
+    const passStrength = getPasswordStrength(formData.password);
+
     return (
-        <div style={styles.container} className="register-container">
-            <style>{`
-                @media (max-width: 868px) {
-                    .register-container {
-                        flex-direction: column !important;
-                        gap: 10px !important;
-                        padding: 30px !important;
-                    }
-                    .register-form-section {
-                        width: 100% !important;
-                        max-width: 100% !important;
-                    }
-                    .register-image-section {
-                        display: none !important;
-                    }
-                }
-
-                @media (max-width: 480px) {
-                    .register-row {
-                        flex-direction: column !important;
-                        gap: 0px !important;
-                    }
-                    .register-title {
-                        font-size: 24px !important;
-                        text-align: center;
-                    }
-                    .register-button {
-                        width: 100% !important;
-                    }
-                }
-            `}</style>
-
-            <div style={styles.formSection} className="register-form-section">
-                <h2 style={styles.title} className="register-title">สร้างบัญชีใหม่</h2>
-                <form onSubmit={handleSubmit} noValidate autoComplete="off">
-                    <div style={styles.row} className="register-row">
-                        <InputField
-                            label="ชื่อ"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            error={errors.firstName}
-                        />
-                        <InputField
-                            label="นามสกุล"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            error={errors.lastName}
-                        />
+        <div style={styles.pageWrapper}>
+            <div style={styles.card}>
+                <div style={styles.formSection}>
+                    <div style={styles.headerGroup}>
+                        <h2 style={styles.title}>สร้างบัญชีใหม่</h2>
+                        <p style={styles.subtitle}>กรอกข้อมูลด้านล่างเพื่อเริ่มใช้งานแพลตฟอร์ม</p>
                     </div>
 
-                    <InputField
-                        label="อีเมล"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        error={errors.email}
-                    />
+                    <form onSubmit={handleSubmit} noValidate autoComplete="off">
+                        <div style={styles.row}>
+                            <InputField
+                                label="ชื่อ"
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                error={errors.firstName}
+                                required={true}
+                            />
+                            <InputField
+                                label="นามสกุล"
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                error={errors.lastName}
+                                required={true}
+                            />
+                        </div>
 
-                    <InputField
-                        label="เบอร์โทรศัพท์"
-                        name="phoneNumber"
-                        value={formData.phoneNumber}
-                        onChange={handleChange}
-                        error={errors.phoneNumber}
-                    />
+                        <InputField
+                            label="อีเมล"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            error={errors.email}
+                            required={true}
+                        />
 
-                    <InputField
-                        label="รหัสผ่าน"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleChange}
-                        error={errors.password}
-                        isPassword={true}
-                        showPassword={showPassword}
-                        onTogglePassword={() => setShowPassword(prev => !prev)}
-                    />
+                        <InputField
+                            label="เบอร์โทรศัพท์"
+                            name="phoneNumber"
+                            value={formData.phoneNumber}
+                            onChange={handleChange}
+                            error={errors.phoneNumber}
+                            required={true}
+                        />
 
-                    <InputField
-                        label="ยืนยันรหัสผ่าน"
-                        name="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        error={errors.confirmPassword}
-                        isPassword={true}
-                        showPassword={showConfirmPassword}
-                        onTogglePassword={() => setShowConfirmPassword(prev => !prev)}
-                    />
+                        <InputField
+                            label="รหัสผ่าน"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.password}
+                            onChange={handleChange}
+                            error={errors.password}
+                            required={true}
+                            isPassword={true}
+                            showPassword={showPassword}
+                            onTogglePassword={() => setShowPassword((prev) => !prev)}
+                        />
 
-                    <button type="submit" style={styles.button} className="register-button">
-                        สมัครสมาชิก
-                    </button>
-                </form>
-            </div>
+                        {/* Password Strength Indicator */}
+                        {formData.password.length > 0 && (
+                            <div style={styles.strengthContainer}>
+                                <div style={styles.strengthBarBg}>
+                                    <div
+                                        style={{
+                                            ...styles.strengthBarFill,
+                                            width: `${(passStrength / 4) * 100}%`,
+                                            backgroundColor:
+                                                passStrength <= 1
+                                                    ? "#ff4d4f"
+                                                    : passStrength <= 3
+                                                        ? "#faad14"
+                                                        : "#52c41a",
+                                        }}
+                                    />
+                                </div>
+                                <span style={styles.strengthText}>
+                                    {passStrength <= 1 ? "อ่อน" : passStrength <= 3 ? "ปานกลาง" : "ปลอดภัยสูง"}
+                                </span>
+                            </div>
+                        )}
 
-            <div style={styles.imageSection} className="register-image-section">
-                <img src={registerImg} alt="food" style={styles.image} />
+                        <InputField
+                            label="ยืนยันรหัสผ่าน"
+                            name="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            error={errors.confirmPassword}
+                            required={true}
+                            isPassword={true}
+                            showPassword={showConfirmPassword}
+                            onTogglePassword={() => setShowConfirmPassword((prev) => !prev)}
+                        />
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            onMouseEnter={() => setIsBtnHovered(true)}
+                            onMouseLeave={() => setIsBtnHovered(false)}
+                            style={{
+                                ...styles.button,
+                                backgroundColor: isBtnHovered && !isLoading ? "#ff8c00" : "#ff8c00",
+                                transform: isBtnHovered && !isLoading ? "translateY(-2px)" : "translateY(0)",
+                                boxShadow: isBtnHovered && !isLoading
+                                    ? "0 8px 20px rgba(255, 140, 0, 0.35)"
+                                    : "0 4px 12px rgba(255, 140, 0, 0.25)",
+                                opacity: isLoading ? 0.7 : 1,
+                                cursor: isLoading ? "not-allowed" : "pointer",
+                            }}
+                        >
+                            {isLoading ? "กำลังลงทะเบียน..." : "สมัครสมาชิก"}
+                        </button>
+                    </form>
+
+                    <p style={styles.loginPrompt}>
+                        มีบัญชีอยู่แล้ว?{" "}
+                        <span style={styles.loginLink} onClick={() => navigate("/login")}>
+                            เข้าสู่ระบบ
+                        </span>
+                    </p>
+                </div>
+
+                <div style={styles.imageSection}>
+                    <div style={styles.imageWrapper}>
+                        <img src={registerImg} alt="register visual" style={styles.image} />
+                        <div style={styles.imageOverlayText}>
+                            <h3 style={styles.imageOverlayTitle}>ยินดีต้อนรับสู่สังคมอาหารคุณภาพ</h3>
+                            <p style={styles.imageOverlaySubtitle}>จัดการและเข้าถึงเมนูที่คุณชื่นชอบได้ทันที</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -248,101 +299,129 @@ const InputField = ({
     value,
     onChange,
     error,
+    required = false, // เพิ่ม prop ตัวนี้
     isPassword = false,
     showPassword = false,
-    onTogglePassword
-}) => (
-    <div style={styles.fieldGroup}>
-        <p style={styles.label}>{label}</p>
-        <div style={{
-            ...styles.inputBox,
-            border: error ? "1.5px solid #ff4d4f" : "1.5px solid transparent",
-            backgroundColor: error ? "#fff1f0" : "#fff0df"
-        }}>
-            <input
-                type={type}
-                name={name}
-                placeholder={`กรุณากรอก${label}`}
-                value={value}
-                onChange={onChange}
-                autoComplete={isPassword ? "new-password" : "off"}
-                style={styles.input}
-            />
-            {isPassword && (
-                <i
-                    className="material-icons"
-                    onClick={onTogglePassword}
-                    style={{
-                        ...styles.eyeIcon,
-                        color: error ? "#ff4d4f" : "#888"
-                    }}
-                >
-                    {showPassword ? "visibility" : "visibility_off"}
-                </i>
-            )}
-        </div>
-        {error && (
-            <div style={styles.errorContainer}>
-                <span style={styles.errorText}>{error}</span>
+    onTogglePassword,
+}) => {
+    const [isFocused, setIsFocused] = useState(false);
+
+    return (
+        <div style={styles.fieldGroup}>
+            <label style={styles.label}>
+                {label}
+                {required && <span style={styles.requiredMark}> *</span>}
+            </label>
+            <div
+                style={{
+                    ...styles.inputBox,
+                    border: error
+                        ? "1.5px solid #ff4d4f"
+                        : isFocused
+                            ? "1.5px solid #328d7d"
+                            : "1.5px solid #eaeaea",
+                    backgroundColor: error ? "#fff2f0" : "#ffffff",
+                    boxShadow: isFocused && !error
+                        ? "0 0 0 4px rgba(50, 141, 125, 0.12)"
+                        : "none",
+                }}
+            >
+                <input
+                    type={type}
+                    name={name}
+                    placeholder={`กรุณากรอก${label}`}
+                    value={value}
+                    onChange={onChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    autoComplete={isPassword ? "new-password" : "off"}
+                    style={styles.input}
+                />
+                {isPassword && (
+                    <i
+                        onClick={onTogglePassword}
+                        style={{
+                            ...styles.eyeIcon,
+                            color: error ? "#ff4d4f" : "#8c8c8c",
+                        }}
+                    >
+                        {showPassword ? "visibility" : "visibility_off"}
+                    </i>
+                )}
             </div>
-        )}
-    </div>
-);
+            {error && <span style={styles.errorText}>{error}</span>}
+        </div>
+    );
+};
 
 export default Register;
 
-// ---------------- Styles ----------------
+// ---------------- Inline Styles Object ----------------
 const styles = {
-    container: {
+    pageWrapper: {
         display: "flex",
         justifyContent: "center",
-        padding: "30px",
-        gap: "40px", // เพิ่มระยะห่างระหว่างฟอร์มกับรูปภาพ
-        fontFamily: "'Noto Sans Thai', sans-serif",
-        backgroundColor: "#fffcf8",
-        minHeight: "auto",
-        boxSizing: "border-box"
+        alignItems: "center",
+        minHeight: "100vh",
+        padding: "20px",
+        fontFamily: "'Prompt', 'Noto Sans Thai', sans-serif",
+        background: "linear-gradient(135deg, #ffff 0%, #fffefc 100%)",
+        boxSizing: "border-box",
+    },
+    card: {
+        display: "flex",
+        backgroundColor: "#ffffff",
+        borderRadius: "20px",
+        padding: "25px 40px",
+        gap: "48px",
+        width: "1200px",
+        boxSizing: "border-box",
+        boxShadow: "0 20px 40px rgba(255, 246, 229, 0.25), 0 8px 16px rgba(180, 180, 180, 0.42)",
     },
     formSection: {
-        alignItems: "flex-start",
+        flex: 1,
         width: "100%",
-        maxWidth: "450px"
+    },
+    headerGroup: {
+        marginBottom: "24px",
     },
     title: {
         color: "#328d7d",
-        fontWeight: "bold",
-        marginTop: "0px",
-        marginBottom: "25px", // เพิ่มระยะห่างใต้หัวข้อ
-        fontSize: "30px"
+        fontWeight: "700",
+        margin: "0 0 6px 0",
+        fontSize: "28px",
+        letterSpacing: "-0.5px",
+    },
+    subtitle: {
+        margin: 0,
+        fontSize: "14px",
+        color: "#666666",
     },
     row: {
         display: "flex",
-        gap: "15px",
-        width: "100%"
+        gap: "16px",
+        width: "100%",
     },
     fieldGroup: {
         flex: 1,
         width: "100%",
-        marginBottom: "20px", // เพิ่มระยะห่างระหว่างแต่ละอินพุตให้โปร่งขึ้น
-        position: "relative"
+        marginBottom: "14px",
     },
     label: {
-        fontSize: "16px",
+        fontSize: "14px",
+        fontWeight: "500",
         display: "block",
-        marginTop: 0,
-        marginBottom: "8px",
-        lineHeight: "1.2",
-        color: "#333",
-        textAlign: "left"
+        marginBottom: "6px",
+        color: "#262626",
+        textAlign: "left",
     },
     inputBox: {
         display: "flex",
         alignItems: "center",
-        background: "#fff0df",
-        borderRadius: "8px",
-        padding: "10px 14px",
+        borderRadius: "10px",
+        padding: "12px 14px",
         boxSizing: "border-box",
-        transition: "all 0.2s ease-in-out"
+        transition: "all 0.2s ease-in-out",
     },
     input: {
         border: "none",
@@ -351,7 +430,8 @@ const styles = {
         width: "100%",
         fontFamily: "inherit",
         fontSize: "14px",
-        padding: 0
+        color: "#1f1f1f",
+        padding: 0,
     },
     eyeIcon: {
         cursor: "pointer",
@@ -361,42 +441,100 @@ const styles = {
         lineHeight: 1,
         fontFamily: "'Material Icons'",
         flexShrink: 0,
-        display: "flex",
-        alignItems: "center"
-    },
-    errorContainer: {
-        textAlign: "left",
-        marginTop: "2px",
-        position: "absolute", // จัดให้ข้อความ error ไม่ดันความสูงกล่อง
-        left: "4px"
     },
     errorText: {
         color: "#ff4d4f",
-        fontSize: "13px",
-        display: "block"
+        fontSize: "12px",
+        marginTop: "4px",
+        display: "block",
+        textAlign: "left",
+    },
+    strengthContainer: {
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        marginTop: "-10px",
+        marginBottom: "16px",
+    },
+    strengthBarBg: {
+        flex: 1,
+        height: "5px",
+        backgroundColor: "#f0f0f0",
+        borderRadius: "3px",
+        overflow: "hidden",
+    },
+    strengthBarFill: {
+        height: "100%",
+        transition: "width 0.3s ease, background-color 0.3s ease",
+    },
+    strengthText: {
+        fontSize: "12px",
+        color: "#8c8c8c",
+        width: "70px",
+        textAlign: "right",
     },
     button: {
-        width: "250px",
-        display: "block",
-        margin: "35px auto 0 auto",
-        padding: "12px",
-        backgroundColor: "#ff8c00",
+        width: "100%",
+        padding: "14px",
         color: "white",
         border: "none",
         borderRadius: "10px",
         fontSize: "16px",
+        fontWeight: "600",
+        marginTop: "12px",
+        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+    },
+    loginPrompt: {
+        textAlign: "center",
+        marginTop: "20px",
+        fontSize: "14px",
+        color: "#666666",
+    },
+    loginLink: {
+        color: "#328d7d",
+        fontWeight: "600",
         cursor: "pointer",
-        transition: "0.3s"
+        textDecoration: "underline",
     },
     imageSection: {
+        flex: 1,
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center"
+        alignItems: "stretch",
+    },
+    imageWrapper: {
+        position: "relative",
+        width: "100%",
+        borderRadius: "16px",
+        overflow: "hidden",
     },
     image: {
         width: "100%",
-        maxWidth: "380px",
-        borderRadius: "15px",
-        objectFit: "cover"
-    }
+        height: "100%",
+        objectFit: "cover",
+    },
+    imageOverlayText: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: "24px",
+        background: "linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent)",
+        color: "#ffffff",
+        textAlign: "left",
+    },
+    imageOverlayTitle: {
+        margin: "0 0 4px 0",
+        fontSize: "18px",
+        fontWeight: "600",
+    },
+    imageOverlaySubtitle: {
+        margin: 0,
+        fontSize: "13px",
+        opacity: 0.9,
+    },
+    requiredMark: {
+        color: "#ff4d4f",
+        marginLeft: "4px",
+        fontWeight: "bold",
+    },
 };

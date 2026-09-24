@@ -42,9 +42,11 @@ public class LoginController {
 
         User user = userService.getUserByEmail(loginDto.getEmail());
         boolean isAdmin = adminService.isAdmin(user.getUserId());
-
+        String username = user.getFirstName() + " " + user.getLastName();
+        String displayName = user.getFirstName() + " " + user.getLastName();
         String accessToken = jwtUtil.generateToken(
                 String.valueOf(user.getUserId()),
+                username,
                 isAdmin,
                 24 * 60 * 60 * 1000 // อายุ 24 ชั่วโมง
         );
@@ -52,6 +54,7 @@ public class LoginController {
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("accessToken", accessToken);
         responseData.put("userId", user.getUserId());
+        responseData.put("username", displayName);
         responseData.put("isAdmin", isAdmin);
 
         return ResponseEntity.ok(ApiResponse.success("เข้าสู่ระบบสำเร็จ", responseData));
