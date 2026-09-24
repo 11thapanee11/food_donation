@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from 'jwt-decode';
 import Swal from 'sweetalert2';
 
-export default function MyFoods() {
+export default function MyFoodsGridStyle() {
     const navigate = useNavigate();
 
     const [userId, setUserId] = useState(null);
     const [myFoods, setMyFoods] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("all");
 
     const [isMobile, setIsMobile] = useState(
         typeof window !== 'undefined' ? window.innerWidth <= 768 : false
@@ -37,7 +38,7 @@ export default function MyFoods() {
             setUserId(null);
         }
 
-        fetch("http://localhost:8082/foods/my-donations", {
+        fetch(`${BASE_URL}/foods/my-donations`, {
             headers: {
                 "Authorization": `Bearer ${token}`
             }
@@ -63,7 +64,7 @@ export default function MyFoods() {
 
         const formattedDate = date.toLocaleDateString("th-TH", {
             day: "numeric",
-            month: "long",
+            month: "short",
             year: "numeric"
         });
 
@@ -73,7 +74,7 @@ export default function MyFoods() {
             hour12: false
         });
 
-        return `${formattedDate} เวลา ${formattedTime}`;
+        return `${formattedDate} (${formattedTime} น.)`;
     };
 
     const formatPickupDate = (dateString) => {
@@ -84,8 +85,7 @@ export default function MyFoods() {
 
         return date.toLocaleDateString("th-TH", {
             day: "numeric",
-            month: "short",
-            year: "numeric"
+            month: "short"
         });
     };
 
@@ -95,29 +95,29 @@ export default function MyFoods() {
     };
 
     const STATUS_CONFIG = {
-        // available: { text: "เปิดให้รับบริจาค", color: "#2e7d32", bgColor: "#e8f5e9" },
-        // closed: { text: "ปิดให้รับบริจาค", color: "#707070", bgColor: "#f0f0f0" },
-        // disable: { text: "ถูกระงับ", color: "#c41414", bgColor: "#ffc8c8" },
-        // expired: { text: "หมดอายุ", color: "#f9630c", bgColor: "#fff7f2" }
         available: {
-            text: "เปิดให้รับบริจาค",
-            color: "#51862e",
-            bgColor: "#e8f5e9"
+            text: "เปิดรับบริจาค",
+            color: "#047857",
+            bgColor: "#ECFDF5",
+            borderColor: "#A7F3D0"
         },
         closed: {
-            text: "ปิดให้รับบริจาค",
-            color: "#707070",
-            bgColor: "#f0f0f0"
+            text: "ปิดการรับบริจาค",
+            color: "#475569",
+            bgColor: "#F8FAFC",
+            borderColor: "#E2E8F0"
         },
         disable: {
-            text: "ถูกปิดการแสดงผล",
-            color: "#d32f2f",
-            bgColor: "#ffebee"
+            text: "ซ่อนการแสดงผล",
+            color: "#B91C1C",
+            bgColor: "#FEF2F2",
+            borderColor: "#FECACA"
         },
         expired: {
             text: "หมดอายุ",
-            color: "#f08000",
-            bgColor: "#fff6ec"
+            color: "#B45309",
+            bgColor: "#FFFBEB",
+            borderColor: "#FDE68A"
         }
     };
 
@@ -145,7 +145,7 @@ export default function MyFoods() {
                     icon: 'error',
                     title: 'ไม่สามารถสร้างบริจาคได้',
                     text: resData.message || 'บัญชีของคุณไม่สามารถทำการบริจาคได้ในขณะนี้',
-                    confirmButtonColor: '#e74c3c'
+                    confirmButtonColor: '#C084FC'
                 });
                 return;
             }
@@ -157,110 +157,91 @@ export default function MyFoods() {
         }
     };
 
+    const filteredFoods = myFoods.filter((food) => {
+        if (activeTab === "all") return true;
+        return food.foodStatus === activeTab;
+    });
+
     const renderContent = () => {
         if (loading) return <p style={styles.emptyText}>กำลังโหลดข้อมูล...</p>;
-        if (!myFoods || myFoods.length === 0) return <p style={styles.emptyText}>ไม่พบข้อมูลอาหารบริจาค</p>;
+        if (!myFoods || myFoods.length === 0) return (
+            <div style={styles.emptyCard}>
+                <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "#C084FC" }}>
+                    inventory_2
+                </span>
+                <p style={styles.emptyText}>ยังไม่มีรายการอาหารที่คุณลงบริจาค</p>
+                <button style={styles.emptyBtn} onClick={handleCreateClick}>+ สร้างการบริจาคแรกของคุณ</button>
+            </div>
+        );
+
+        if (filteredFoods.length === 0) {
+            return <p style={styles.emptyText}>ไม่พบรายการในหมวดหมู่นี้</p>;
+        }
 
         return (
-            <div style={styles.list}>
-                {[...myFoods].reverse().map((food) => {
+            <div style={styles.gridContainer}>
+                {[...filteredFoods].reverse().map((food) => {
+                    const status = STATUS_CONFIG[food.foodStatus] || {
+                        text: "ไม่ระบุสถานะ",
+                        color: "#475569",
+                        bgColor: "#F1F5F9",
+                        borderColor: "#CBD5E1"
+                    };
+
                     return (
-                        <div
-                            key={food.foodId}
-                            style={{
-                                ...styles.card,
-                                flexDirection: isMobile ? "column" : "row",
-                                alignItems: isMobile ? "stretch" : "stretch"
-                            }}
-                        >
-                            <div
-                                style={{
-                                    ...styles.imageWrapper,
-                                    width: isMobile ? "100%" : "220px",
-                                    height: isMobile ? "200px" : "220px"
-                                }}
-                            >
+                        <div key={food.foodId} style={styles.gridCard}>
+                            {/* ส่วนรูปภาพ + Badge ลอยบนภาพ */}
+                            <div style={styles.cardImageContainer}>
                                 <img
                                     src={`${BASE_URL}${food.foodImage}`}
                                     alt={food.foodName}
-                                    style={styles.image}
+                                    style={styles.cardImage}
                                 />
+                                <span
+                                    style={{
+                                        ...styles.statusBadgeOverlay,
+                                        backgroundColor: status.bgColor,
+                                        color: status.color,
+                                        border: `1px solid ${status.borderColor}`
+                                    }}
+                                >
+                                    {status.text}
+                                </span>
                             </div>
 
-                            <div
-                                style={{
-                                    ...styles.details,
-                                    paddingLeft: isMobile ? "0px" : "25px",
-                                    marginTop: isMobile ? "15px" : "0px"
-                                }}
-                            >
-                                <div style={styles.rowBetween}>
-                                    <h3 style={{ ...styles.foodName, fontSize: isMobile ? "20px" : "24px" }}>
-                                        {food.foodName}
-                                    </h3>
-                                    <span
-                                        style={{
-                                            ...styles.statusBadge,
-                                            backgroundColor: food.foodStatus && STATUS_CONFIG[food.foodStatus]
-                                                ? STATUS_CONFIG[food.foodStatus].bgColor
-                                                : "#eceff1",
-                                            color: food.foodStatus && STATUS_CONFIG[food.foodStatus]
-                                                ? STATUS_CONFIG[food.foodStatus].color
-                                                : "#37474f",
-                                            whiteSpace: "nowrap"
-                                        }}
-                                    >
-                                        {STATUS_CONFIG[food.foodStatus]?.text || "ไม่ระบุสถานะ"}
-                                    </span>
-                                </div>
+                            {/* รายละเอียดในการ์ด */}
+                            <div style={styles.cardContent}>
+                                <h3 style={styles.foodNameGrid}>{food.foodName}</h3>
 
-                                <div style={styles.infoContainer}>
-                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
-                                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                                            <span className="material-symbols-outlined" style={styles.icon}>
-                                                calendar_clock
-                                            </span>
-                                            <span style={styles.label}>วันหมดอายุ</span>
-                                        </div>
-                                        <span style={{ ...styles.value, marginLeft: isMobile ? "32px" : "0", whiteSpace: "nowrap" }}>
-                                            {formatExpiryDate(food.expiryDate)} น.
+                                <div style={styles.infoList}>
+                                    <div style={styles.infoItem}>
+                                        <span className="material-symbols-outlined" style={styles.iconStyle}>inventory</span>
+                                        <span style={styles.infoText}>
+                                            คงเหลือ <strong style={{ color: "#C084FC" }}>{food.remainingUnit}</strong> / ทั้งหมด {food.totalUnit} ชุด
                                         </span>
                                     </div>
 
-                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
-                                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                                            <span className="material-symbols-outlined" style={styles.icon}>
-                                                package_2
-                                            </span>
-                                            <span style={styles.label}>จำนวนที่บริจาค และ คงเหลือ</span>
-                                        </div>
-                                        <span style={{ ...styles.value, marginLeft: isMobile ? "32px" : "0", whiteSpace: "nowrap" }}>
-                                            {food.totalUnit} : {food.remainingUnit}
+                                    <div style={styles.infoItem}>
+                                        <span className="material-symbols-outlined" style={styles.iconStyle}>event</span>
+                                        <span style={styles.infoText}>
+                                            หมดอายุ: {formatExpiryDate(food.expiryDate)}
                                         </span>
                                     </div>
 
-                                    <div style={{ ...styles.infoRow, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center" }}>
-                                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                                            <span className="material-symbols-outlined" style={styles.icon}>
-                                                schedule
-                                            </span>
-                                            <span style={styles.label}>วันและเวลาที่สามารถรับได้</span>
-                                        </div>
-                                        <span style={{ ...styles.value, marginLeft: isMobile ? "32px" : "0", whiteSpace: "normal" }}>
-                                            {formatPickupDate(food.pickupDateStart)} - {formatPickupDate(food.pickupDateEnd)} &nbsp; {formatPickupTime(food.pickupStartTime)} น. - {formatPickupTime(food.pickupEndTime)} น.
+                                    <div style={styles.infoItem}>
+                                        <span className="material-symbols-outlined" style={styles.iconStyle}>schedule</span>
+                                        <span style={styles.infoText}>
+                                            รับได้: {formatPickupDate(food.pickupDateStart)} - {formatPickupDate(food.pickupDateEnd)} ({formatPickupTime(food.pickupStartTime)}-{formatPickupTime(food.pickupEndTime)} น.)
                                         </span>
                                     </div>
                                 </div>
 
                                 <button
-                                    style={{
-                                        ...styles.detailBtn,
-                                        width: isMobile ? "100%" : "fit-content",
-                                        textAlign: "center"
-                                    }}
+                                    style={styles.actionBtnGrid}
                                     onClick={() => navigate('/food-form', { state: { id: food.foodId } })}
                                 >
-                                    ดูรายละเอียด
+                                    <span>จัดการ / ดูรายละเอียด</span>
+                                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>chevron_right</span>
                                 </button>
                             </div>
                         </div>
@@ -271,149 +252,247 @@ export default function MyFoods() {
     };
 
     return (
-        <div style={styles.page}>
-            <div style={{ ...styles.container, padding: isMobile ? "15px" : "20px" }}>
+        <div style={styles.fullWidthWrapper}>
+            <div style={{ ...styles.container, padding: isMobile ? "20px 16px" : "36px 20px" }}>
+                
+                {/* Header */}
                 <div
                     style={{
                         ...styles.header,
                         flexDirection: isMobile ? "column" : "row",
                         alignItems: isMobile ? "flex-start" : "center",
-                        gap: isMobile ? "15px" : "0"
+                        gap: isMobile ? "16px" : "0"
                     }}
                 >
-                    <h1 style={{ ...styles.title, fontSize: isMobile ? "22px" : "30px", marginBottom: "0px" }}>
-                        รายการอาหารบริจาคของฉัน
-                    </h1>
+                    <div>
+                        <h1 style={{ ...styles.title, fontSize: isMobile ? "24px" : "28px" }}>
+                            รายการอาหารบริจาคของฉัน
+                        </h1>
+                        <p style={styles.subtitle}>จัดการรายการอาหารและติดตามสถานะการส่งมอบของคุณ</p>
+                    </div>
+
                     <button
                         style={{
                             ...styles.createBtn,
-                            width: isMobile ? "100%" : "auto",
-                            justifyContent: "center",
-                            padding: isMobile ? "10px 20px" : "8px 40px"
+                            width: isMobile ? "100%" : "auto"
                         }}
                         onClick={handleCreateClick}
                     >
-                        <span style={{ fontSize: "20px", marginRight: "8px" }}>+</span>
-                        สร้างบริจาค
+                        <span className="material-symbols-outlined" style={{ fontSize: "20px", marginRight: "6px" }}>add</span>
+                        สร้างการบริจาค
                     </button>
                 </div>
 
+                {/* Filter Tabs */}
+                <div style={styles.tabsContainer}>
+                    {[
+                        { key: "all", label: "ทั้งหมด" },
+                        { key: "available", label: "เปิดรับบริจาค" },
+                        { key: "closed", label: "ปิดการรับบริจาค" },
+                        { key: "expired", label: "หมดอายุ" }
+                    ].map((tab) => (
+                        <button
+                            key={tab.key}
+                            style={{
+                                ...styles.tabBtn,
+                                ...(activeTab === tab.key ? styles.activeTabBtn : {})
+                            }}
+                            onClick={() => setActiveTab(tab.key)}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Content */}
                 {renderContent()}
             </div>
         </div>
     );
 }
 
+// Inline Styles (Grid Gallery Pastel Theme)
 const styles = {
+    fullWidthWrapper: {
+        width: "100%",
+        backgroundColor: "#FAF5FF",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+    },
     container: {
-        maxWidth: "1100px",
-        margin: "0 auto",
+        maxWidth: "1080px",
+        width: "100%",
+        fontFamily: "'Prompt', 'Kanit', sans-serif",
+        color: "#334155",
+        boxSizing: "border-box",
     },
     header: {
         display: "flex",
         justifyContent: "space-between",
-        marginBottom: "30px",
+        marginBottom: "24px",
     },
     title: {
-        color: "#328d7d",
-        fontWeight: "bold",
+        color: "#334155",
+        fontWeight: "800",
+        margin: "0 0 4px 0",
+    },
+    subtitle: {
+        fontSize: "14px",
+        color: "#64748B",
+        margin: 0,
     },
     createBtn: {
-        backgroundColor: "#ff8c00",
-        color: "#fff",
+        backgroundColor: "#C084FC",
+        color: "#FFFFFF",
         border: "none",
         borderRadius: "12px",
-        fontSize: "17px",
+        padding: "10px 24px",
+        fontSize: "15px",
+        fontWeight: "600",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        outline: "none",
-        margin: "0px"
+        justifyContent: "center",
+        boxShadow: "0 4px 12px rgba(192, 132, 252, 0.25)",
     },
-    list: {
+    tabsContainer: {
         display: "flex",
-        flexDirection: "column",
+        gap: "8px",
+        marginBottom: "24px",
+        overflowX: "auto",
+        paddingBottom: "4px",
+    },
+    tabBtn: {
+        padding: "8px 18px",
+        borderRadius: "20px",
+        border: "1px solid #E9D5FF",
+        backgroundColor: "#FFFFFF",
+        color: "#64748B",
+        fontSize: "14px",
+        fontWeight: "500",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+    },
+    activeTabBtn: {
+        backgroundColor: "#C084FC",
+        color: "#FFFFFF",
+        borderColor: "#C084FC",
+        fontWeight: "600",
+    },
+    gridContainer: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))",
         gap: "20px",
     },
-    card: {
-        display: "flex",
-        backgroundColor: "#fff0df",
+    gridCard: {
+        backgroundColor: "#FFFFFF",
         borderRadius: "20px",
-        padding: "20px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
+        overflow: "hidden",
+        border: "1.5px solid #F3E8FF",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.02)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
     },
-    imageWrapper: {
-        flexShrink: 0,
+    cardImageContainer: {
+        position: "relative",
+        width: "100%",
+        height: "180px",
+        backgroundColor: "#FAF5FF",
     },
-    image: {
+    cardImage: {
         width: "100%",
         height: "100%",
         objectFit: "cover",
-        borderRadius: "16px",
     },
-    details: {
+    statusBadgeOverlay: {
+        position: "absolute",
+        top: "12px",
+        right: "12px",
+        padding: "4px 12px",
+        borderRadius: "20px",
+        fontSize: "12px",
+        fontWeight: "600",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+    },
+    cardContent: {
+        padding: "16px",
+        display: "flex",
+        flexDirection: "column",
         flex: 1,
-        display: "flex",
-        flexDirection: "column",
-    },
-    rowBetween: {
-        display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "12px",
     },
-    foodName: {
-        fontWeight: "bold",
-        color: "#000",
-        marginTop: "0px",
-        marginBottom: "0px",
+    foodNameGrid: {
+        fontSize: "18px",
+        fontWeight: "700",
+        color: "#1E293B",
+        margin: "0 0 12px 0",
     },
-    statusBadge: {
-        padding: "6px 14px",
-        borderRadius: "10px",
-        fontSize: "15px",
-    },
-    infoContainer: {
+    infoList: {
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
-        marginBottom: "15px"
+        gap: "8px",
+        marginBottom: "16px",
+        backgroundColor: "#FAF5FF",
+        padding: "12px",
+        borderRadius: "12px",
     },
-    infoRow: {
+    infoItem: {
         display: "flex",
-        fontSize: "15px",
-        flexWrap: "wrap"
+        alignItems: "center",
+        gap: "8px",
     },
-    icon: {
-        fontSize: "24px",
-        marginRight: "8px",
-        display: "inline-block",
-        color: "#ff8c00",
-        flexShrink: 0
+    iconStyle: {
+        fontSize: "16px",
+        color: "#C084FC",
     },
-    label: {
-        color: "#111",
-        marginRight: "15px",
+    infoText: {
+        fontSize: "12px",
+        color: "#475569",
         fontWeight: "500",
-        flexShrink: 0
     },
-    value: {
-        color: "#328d7d",
-    },
-    detailBtn: {
-        backgroundColor: "#ff8c00",
-        color: "#fff",
-        border: "none",
+    actionBtnGrid: {
+        width: "100%",
+        backgroundColor: "#FFFFFF",
+        color: "#C084FC",
+        border: "1px solid #E9D5FF",
         borderRadius: "10px",
-        padding: "8px 25px",
-        fontSize: "15px",
+        padding: "10px",
+        fontSize: "13px",
+        fontWeight: "600",
         cursor: "pointer",
-        marginTop: "5px"
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "4px",
+    },
+    emptyCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: "20px",
+        border: "1.5px solid #F3E8FF",
+        padding: "48px 20px",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "12px",
     },
     emptyText: {
         textAlign: "center",
-        marginTop: "50px",
-        color: "#999",
-        fontSize: "18px",
+        color: "#64748B",
+        fontSize: "15px",
+        margin: 0,
+    },
+    emptyBtn: {
+        backgroundColor: "#C084FC",
+        color: "#FFFFFF",
+        border: "none",
+        borderRadius: "12px",
+        padding: "10px 20px",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer",
+        marginTop: "8px",
     },
 };

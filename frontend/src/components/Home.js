@@ -248,7 +248,7 @@ export default function Home() {
                 {/* Category Header */}
                 <div style={styles.categoryHeader}>
                     <h2 style={styles.sectionTitle}>
-                        <i className="material-icons-outlined" style={{ color: '#0284c7' }}>grid_view</i>
+                        <i className="material-icons-outlined" style={{ color: '#c48ffd' }}>grid_view</i>
                         หมวดหมู่รายการ
                     </h2>
                     <span style={styles.itemCount}>พบ {filteredFoods.length} รายการ</span>
@@ -635,8 +635,8 @@ const styles = {
         outline: "none",
     },
     categoryBtnActive: {
-        backgroundColor: "#0284c7",
-        borderColor: "#0284c7",
+        backgroundColor: "#c48ffd",
+        borderColor: "#c48ffd",
         color: "#ffffff",
         boxShadow: "0 4px 10px rgba(2, 132, 199, 0.25)",
     },
@@ -743,7 +743,7 @@ const styles = {
         gap: "5px",
     },
     badgeUrgent: {
-        backgroundColor: "#ff8c42",
+        backgroundColor: "#ff6200",
     },
     bookedBadge: {
         position: "absolute",

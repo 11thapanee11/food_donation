@@ -333,13 +333,14 @@ export default function Navbar() {
                     <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
                         <span
                             style={{
-                                fontSize: "1.2rem",
-                                fontWeight: "800",
-                                letterSpacing: "-0.5px",
+                                fontFamily: "'Fredoka', sans-serif",
+                                fontSize: "1.4rem",
+                                fontWeight: "700",
+                                letterSpacing: "0.5px",
                                 background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.skyBlue} 50%, ${theme.mint} 100%)`,
                                 WebkitBackgroundClip: "text",
                                 WebkitTextFillColor: "transparent",
-                                lineHeight: "1.15",
+                                lineHeight: "1.2",
                             }}
                         >
                             Pan · Plate · Waste

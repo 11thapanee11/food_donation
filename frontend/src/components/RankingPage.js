@@ -1,296 +1,322 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
-export default function RankingPage() {
-    const [leaderboardData, setLeaderboardData] = useState([]);
-
-    useEffect(() => {
-        fetch('http://localhost:8082/donor/ranking')
-            .then(res => res.json())
-            .then(response => {
-                if (response.success) {
-                    setLeaderboardData(response.data);
-                }
-            })
-            .catch(err => console.error("Error fetching leaderboard:", err));
-    }, []);
-
-    if (leaderboardData.length === 0) return <div style={styles.loading}>กำลังโหลดข้อมูล...</div>;
-
-    const top1 = leaderboardData[0];
-    const top2 = leaderboardData[1];
-    const top3 = leaderboardData[2];
-    //ขอข้อมูลตั้งแต่ Index ที่ 3 เป็นต้นไป จนถึงตัวสุดท้าย
-    const remainingUsers = leaderboardData.slice(3);
+export default function CommunityImpactPage() {
+    const [impactData] = useState({
+        mealsServed: 52847,
+        foodSavedKg: 2156,
+        activeDonors: 2483,
+        pickupLocations: 156,
+        recentActivities: [
+            { id: 1, text: "ร้าน Green Valley ส่งมอบอาหารพร้อมทาน 25 มื้อ", location: "ย่านใจกลางเมือง", time: "2 นาทีที่แล้ว" },
+            { id: 2, text: "ร้าน Happy Bakery ช่วยเซฟขนมปังอบสด 10 กก.", location: "เขตเหนือ", time: "15 นาทีที่แล้ว" },
+            { id: 3, text: "คุณสมชาย ส่งมอบอาหารสดและวัตถุดิบ 15 ชุด", location: "ตลาดตะวันตก", time: "1 ชั่วโมงที่แล้ว" },
+            { id: 4, text: "ร้านกาแฟชิวชิว ส่งมอบเบเกอรี่เหลือประจำวัน 8 กก.", location: "โซน ม.เชียงใหม่", time: "2 ชั่วโมงที่แล้ว" },
+        ]
+    });
 
     return (
-        <div style={styles.container}>
-
-            {/* Header ส่วนหัว */}
-            <div style={styles.headerTag}>
-                <span className="material-symbols-outlined" style={{ color: "#328d7d" }}>
-                    military_tech
-                </span>
-                <span style={{ fontSize: '18px', color: "#328d7d" }}></span> IMPACT LEADERBOARD
-            </div>
-            <h1 style={styles.mainTitle}>อันดับผู้บริจาค</h1>
-
-            <div style={styles.podiumContainer}>
-
-                {/* --- อันดับ 2 --- */}
-                {top2 ? (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank2 }}>
-                        <div style={{ ...styles.badge, backgroundColor: '#aab4c2' }}>2</div>
-                        <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#9da3ad" }}>
-                                social_leaderboard
-                            </span>
-                            <h2 style={{ ...styles.podiumName }}>{top2.name}</h2>
-                        </div>
-                        <div style={{ ...styles.podiumResult, color: '#ff8c00', fontSize: '20px', fontWeight: '900' }}>
-                            <p style={styles.podiumSubText}>ผลรวมของก๊าซเรือนกระจกที่ช่วยลด</p>
-                            <div style={{ marginTop: '4px' }}>
-                                {top2.totalCo2.toFixed(1)} <span style={styles.unitText}>kgCO2e</span>
-                            </div>
-                        </div>
+        /* Outer Wrapper: ขยายพื้นหลังสีม่วงพาสเทลเต็มความกว้างหน้าจอ */
+        <div style={styles.fullWidthWrapper}>
+            {/* Inner Content Container: ล็อกความกว้างไว้ตรงกลางเท่าเดิม */}
+            <div style={styles.container}>
+                
+                {/* Header Section */}
+                <div style={styles.headerSection}>
+                    <div style={styles.headerBadge}>
+                        <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "#C084FC" }}>
+                            favorite
+                        </span>
+                        <span>พลังแห่งการส่งต่อของพวกเรา</span>
                     </div>
-                ) : (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank2, justifyContent: 'center', }}>
-                        {/* <p style={{ color: '#666' }}>ยังไม่มีข้อมูล</p> */}
-                        <div style={{ ...styles.badge, backgroundColor: '#aab4c2' }}>2</div>
-                        <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#aab4c2" }}>
-                                social_leaderboard
-                            </span>
-                        </div>
-                        
-                    </div>
-                )}
-
-                {/* --- อันดับ 1 --- */}
-                {top1 ? (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank1 }}>
-                        <div style={{ ...styles.badge, backgroundColor: '#ffdc40', width: '36px', height: '36px', marginTop: '-28px' }}>1</div>
-                        <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#ebb512" }}>
-                                social_leaderboard
-                            </span>
-                            <h2 style={{ ...styles.podiumName }}>{top1.name}</h2>
-                        </div>
-                        <div style={{ ...styles.podiumResult, color: '#ff8c00', fontSize: '20px', fontWeight: '900' }}>
-                            <p style={{ ...styles.podiumSubText }}>ผลรวมของก๊าซเรือนกระจกที่ช่วยลด</p>
-                            <div style={{ marginTop: '4px' }}>
-                                {top1.totalCo2.toFixed(1)} <span style={styles.unitText}>kgCO2e</span>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank1, justifyContent: 'center' }}>
-                        <div style={{ ...styles.badge, backgroundColor: '#ffdc40', width: '36px', height: '36px', marginTop: '-28px' }}>1</div>
-                        <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#ebb512" }}>
-                                social_leaderboard
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {/* --- อันดับ 3 --- */}
-                {top3 ? (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank3 }}>
-                        <div style={{ ...styles.badge, backgroundColor: '#a15b41' }}>3</div>
-                        <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#954b35" }}>
-                                social_leaderboard
-                            </span>
-                            <h2 style={{ ...styles.podiumName }}>{top3.name}</h2>
-                        </div>
-                        <div style={{ ...styles.podiumResult, color: '#ff8c00', fontSize: '20px', fontWeight: '900' }}>
-                            <p style={styles.podiumSubText}>ผลรวมของก๊าซเรือนกระจกที่ช่วยลด</p>
-                            <div style={{ marginTop: '4px' }}>
-                                {top3.totalCo2.toFixed(1)} <span style={styles.unitText}>kgCO2e</span>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div style={{ ...styles.podiumCard, ...styles.podiumRank3, justifyContent: 'center', }}>
-                        {/* <p style={{ color: '#666' }}>ยังไม่มีข้อมูล</p> */}
-                        <div style={{ ...styles.badge, backgroundColor: '#be6645' }}>3</div>
-                        <div style={styles.podiumContent}>
-                            <span className="material-symbols-outlined" style={{ ...styles.podiumEmoji, color: "#954b35" }}>
-                                social_leaderboard
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-            </div>
-
-            {/* ส่วนที่ 2: ตารางแสดงอันดับรองลงมา */}
-            <div style={styles.tableBox}>
-                {/* หัวตาราง */}
-                <div style={{ ...styles.tableHeaderRow }}>
-                    <div style={{ flex: 2, textAlign: 'center', }}>อันดับ</div>
-                    <div style={{ flex: 5 }}>ผู้บริจาค</div>
-                    <div style={{ flex: 5, textAlign: 'right', color: '#328d7d' }}>ผลรวมของก๊าซเรือนกระจกที่ช่วยลด</div>
+                    <h1 style={styles.mainTitle}>ผลลัพธ์การร่วมใจของชุมชน</h1>
+                    <p style={styles.subTitle}>
+                        ทุกการบริจาคของคุณช่วยเปลี่ยนอาหารที่เหลือให้เป็นมื้อที่มีคุณค่า ร่วมกันลดขยะอาหารและส่งต่อความสุขให้ผู้คนในสังคม
+                    </p>
                 </div>
 
-                {/* รายการอันดับย่อย */}
-                <div style={styles.tableBody}>
-                    {remainingUsers.map((user, index) => (
-                        <div key={user.id} style={styles.tableRow}>
-                            <div style={{ flex: 2, textAlign: 'center' }}>
-                                {index + 4}
+                {/* Stat Cards Grid (4 Cards โทนสีพาสเทลสบายตา) */}
+                <div style={styles.statsGrid}>
+                    
+                    {/* 1. มื้ออาหารที่ส่งมอบแล้ว (Pastel Lavender) */}
+                    <div style={{ ...styles.statCard, borderColor: "#E9D5FF" }}>
+                        <div style={styles.cardHeader}>
+                            <div style={{ ...styles.iconBadge, backgroundColor: "#FAF5FF", color: "#C084FC" }}>
+                                <span className="material-symbols-outlined">restaurant</span>
                             </div>
-                            <div style={{ flex: 5 }}>
-                                {user.name}
-                            </div>
-                            <div style={{ flex: 5, textAlign: 'right', color: '#ff8c00', fontWeight: 'bold', fontSize: '16px' }}>
-                                {user.totalCo2.toFixed(1)} <span style={{ fontSize: '16px', color: '#328d7d', fontWeight: 'normal' }}>kgCO2e</span>
-                            </div>
+                            <span style={{ ...styles.trendTag, color: "#C084FC" }}>↗ +15% เดือนนี้</span>
                         </div>
-                    ))}
-                </div>
-            </div>
+                        <div style={styles.cardBody}>
+                            <span style={styles.cardLabel}>มื้ออาหารที่ส่งมอบแล้ว</span>
+                            <h2 style={{ ...styles.cardValue, color: "#C084FC" }}>
+                                {impactData.mealsServed.toLocaleString()}
+                            </h2>
+                            <p style={styles.cardDescription}>มื้ออาหารแม้อิ่มที่ถูกส่งต่อถึงมือผู้รับ</p>
+                        </div>
+                    </div>
 
+                    {/* 2. อาหารที่ช่วยเซฟไว้ได้ (Pastel Mint Green) */}
+                    <div style={{ ...styles.statCard, borderColor: "#A7F3D0" }}>
+                        <div style={styles.cardHeader}>
+                            <div style={{ ...styles.iconBadge, backgroundColor: "#ECFDF5", color: "#34D399" }}>
+                                <span className="material-symbols-outlined">recycling</span>
+                            </div>
+                            <span style={{ ...styles.trendTag, color: "#34D399" }}>↗ +23% เดือนนี้</span>
+                        </div>
+                        <div style={styles.cardBody}>
+                            <span style={styles.cardLabel}>อาหารที่ช่วยเซฟไว้ได้</span>
+                            <h2 style={{ ...styles.cardValue, color: "#34D399" }}>
+                                {impactData.foodSavedKg.toLocaleString()}{" "}
+                                <span style={{ fontSize: "18px", fontWeight: "700" }}>กก.</span>
+                            </h2>
+                            <p style={styles.cardDescription}>ปริมาณขยะอาหารที่ถูกเปลี่ยนเป็นประโยชน์</p>
+                        </div>
+                    </div>
+
+                    {/* 3. ผู้ร่วมส่งต่อสายบุญ (เปลี่ยนโทนส้ม/แดง เป็น ชมพูพาสเทลละมุน #F472B6 / #DB2777) */}
+                    <div style={{ ...styles.statCard, borderColor: "#FBCFE8" }}>
+                        <div style={styles.cardHeader}>
+                            <div style={{ ...styles.iconBadge, backgroundColor: "#FDF2F8", color: "#F472B6" }}>
+                                <span className="material-symbols-outlined">group</span>
+                            </div>
+                            <span style={{ ...styles.trendTag, color: "#F472B6" }}>↗ +8% เดือนนี้</span>
+                        </div>
+                        <div style={styles.cardBody}>
+                            <span style={styles.cardLabel}>ผู้ร่วมส่งต่อสายบุญ</span>
+                            <h2 style={{ ...styles.cardValue, color: "#F472B6" }}>
+                                {impactData.activeDonors.toLocaleString()}
+                            </h2>
+                            <p style={styles.cardDescription}>ร้านค้าและบุคคลที่ร่วมบริจาคอาหาร</p>
+                        </div>
+                    </div>
+
+                    {/* 4. จุดรับ-ส่งมอบอาหาร (Pastel Sky Blue) */}
+                    <div style={{ ...styles.statCard, borderColor: "#BAE6FD" }}>
+                        <div style={styles.cardHeader}>
+                            <div style={{ ...styles.iconBadge, backgroundColor: "#F0F9FF", color: "#38BDF8" }}>
+                                <span className="material-symbols-outlined">location_on</span>
+                            </div>
+                            <span style={{ ...styles.trendTag, color: "#38BDF8" }}>↗ +12% เดือนนี้</span>
+                        </div>
+                        <div style={styles.cardBody}>
+                            <span style={styles.cardLabel}>จุดรับ-ส่งมอบอาหาร</span>
+                            <h2 style={{ ...styles.cardValue, color: "#38BDF8" }}>
+                                {impactData.pickupLocations.toLocaleString()}
+                            </h2>
+                            <p style={styles.cardDescription}>พื้นที่แบ่งปันอาหารกระจายทั่วเมือง</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Live Activity Feed */}
+                <div style={styles.sectionCard}>
+                    <div style={styles.sectionHeader}>
+                        <div style={styles.historyIconCircle}>
+                            <span className="material-symbols-outlined" style={{ color: "#C084FC", fontSize: "22px" }}>
+                                history
+                            </span>
+                        </div>
+                        <div>
+                            <h3 style={styles.sectionTitle}>การส่งต่อล่าสุดในระบบ (Live Feed)</h3>
+                            <p style={{ margin: 0, fontSize: "13px", color: "#94A3B8" }}>
+                                ความเคลื่อนไหวการบริจาคอาหารแบบเรียลไทม์
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style={styles.feedList}>
+                        {impactData.recentActivities.map((act) => (
+                            <div key={act.id} style={styles.feedItem}>
+                                <div style={styles.feedDot} />
+                                <div style={{ flex: 1 }}>
+                                    <p style={styles.feedText}>{act.text}</p>
+                                    <div style={styles.feedMeta}>
+                                        <span>📍 {act.location}</span>
+                                        <span>•</span>
+                                        <span>🕒 {act.time}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 }
 
+// Inline Styles
 const styles = {
-    container: {
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: "20px 20px"
+    // พื้นหลังสีม่วงพาสเทลแผ่เต็มหน้าจอ
+    fullWidthWrapper: {
+        width: "100%",
+        backgroundColor: "#FAF5FF", // สีม่วงลาเวนเดอร์พาสเทลจางๆ
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
     },
-    headerTag: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        color: '#328d7d',
-        fontWeight: 'bold',
-        fontSize: '14px',
-        letterSpacing: '0.05em',
-        marginBottom: '4px',
+    // คอนเทนเนอร์เนื้อหากลางหน้าจอ (ความกว้างตามเดิม)
+    container: {
+        maxWidth: "1080px",
+        width: "100%",
+        padding: "36px 20px",
+        fontFamily: "'Prompt', 'Kanit', sans-serif",
+        color: "#334155",
+        boxSizing: "border-box",
+    },
+    headerSection: {
+        textAlign: "center",
+        marginBottom: "40px",
+    },
+    headerBadge: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #F3E8FF",
+        color: "#C084FC",
+        padding: "6px 18px",
+        borderRadius: "30px",
+        fontSize: "13px",
+        fontWeight: "600",
+        marginBottom: "14px",
+        boxShadow: "0 2px 8px rgba(192, 132, 252, 0.08)",
     },
     mainTitle: {
-        fontSize: '24px',
-        fontWeight: 'bold',
-        color: '#328d7d',
-        marginTop: '0',
-        marginBottom: '32px',
+        fontSize: "32px",
+        fontWeight: "800",
+        color: "#334155",
+        margin: "0 0 12px 0",
+        letterSpacing: "-0.02em",
     },
-    podiumContainer: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-        gap: '16px',
-        maxWidth: '700px',
-        margin: '0 auto 32px auto',
+    subTitle: {
+        fontSize: "15px",
+        color: "#64748B",
+        maxWidth: "640px",
+        margin: "0 auto",
+        lineHeight: "1.6",
     },
-    podiumCard: {
-        flex: 1,
-        borderRadius: '16px 16px 0 0',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+    statsGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+        gap: "20px",
+        marginBottom: "32px",
     },
-    podiumRank1: {
-        backgroundColor: '#fff8db',
-        borderBottom: '8px solid #ffdc40',
-        height: '280px',
-        zIndex: 2,
-        transform: 'scale(1.03)',
+    statCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: "24px",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.03)",
+        border: "1.5px solid",
+        transition: "all 0.25s ease",
     },
-    podiumRank2: {
-        backgroundColor: '#f3f3f3',
-        borderBottom: '8px solid #a7b2c2',
-        height: '240px',
+    cardHeader: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "20px",
     },
-    podiumRank3: {
-        backgroundColor: '#f7e7e2',
-        borderBottom: '8px solid #be6645',
-        height: '220px',
+    iconBadge: {
+        width: "44px",
+        height: "44px",
+        borderRadius: "16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
     },
-    badge: {
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: 'bold',
-        fontSize: '18px',
-        marginTop: '-24px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    trendTag: {
+        fontSize: "12px",
+        fontWeight: "700",
     },
-    podiumContent: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        margin: 'auto 0',
-        textAlign: 'center',
+    cardBody: {
+        display: "flex",
+        flexDirection: "column",
     },
-    podiumEmoji: {
-        fontSize: '70px',
-        marginBottom: '15px',
-        marginTop: "5px"
+    cardLabel: {
+        fontSize: "13px",
+        fontWeight: "600",
+        color: "#64748B",
+        marginBottom: "6px",
     },
-    podiumName: {
-        fontSize: '22px',
-        fontWeight: 'bold',
-        color: '#1f2937',
-        margin: '0',
+    cardValue: {
+        fontSize: "32px",
+        fontWeight: "800",
+        margin: "0 0 6px 0",
+        lineHeight: "1",
+        letterSpacing: "-0.02em",
     },
-    podiumSubText: {
-        fontSize: '12px',
-        color: '#328d7d',
-        margin: '4px 0 0 0',
-        fontWeight: '500'
+    cardDescription: {
+        fontSize: "12px",
+        color: "#94A3B8",
+        margin: 0,
+        lineHeight: "1.4",
     },
-    podiumResult: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        margin: 'auto 0',
-        textAlign: 'center',
-        fontSize: '18px',
-        fontWeight: 'bold',
+    sectionCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: "24px",
+        border: "1.5px solid #F3E8FF",
+        padding: "28px",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.03)",
     },
-    unitText: {
-        fontSize: '20px',
-        fontWeight: '900',
-        color: "#328d7d"
+    sectionHeader: {
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+        marginBottom: "24px",
+        paddingBottom: "16px",
+        borderBottom: "1px solid #F8FAFC",
     },
-    tableBox: {
-        backgroundColor: 'none',
-        borderRadius: '16px',
-        border: '4px solid #e4ece9',
-        padding: '24px',
+    historyIconCircle: {
+        width: "42px",
+        height: "42px",
+        borderRadius: "14px",
+        backgroundColor: "#FAF5FF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
     },
-    tableHeaderRow: {
-        display: 'flex',
-        paddingBottom: '12px',
-        // borderBottom: '1px solid #cbdad5',
-        fontSize: '16px',
-        color: '#ff8c00',
+    sectionTitle: {
+        fontSize: "18px",
+        fontWeight: "700",
+        color: "#334155",
+        margin: 0,
     },
-    tableBody: {
-        marginTop: '4px',
+    feedList: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
     },
-    tableRow: {
-        display: 'flex',
-        alignItems: 'center',
-        padding: '14px 4px',
-        fontSize: '16px',
+    feedItem: {
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "14px",
+        backgroundColor: "#FAF5FF",
+        padding: "16px 20px",
+        borderRadius: "18px",
+        border: "1px solid #F3E8FF",
     },
-    loading: {
-        textAlign: "center",
-        padding: "100px",
-        color: "#ff8c00",
-        fontSize: "20px"
+    feedDot: {
+        width: "8px",
+        height: "8px",
+        borderRadius: "50%",
+        backgroundColor: "#C084FC",
+        marginTop: "7px",
+    },
+    feedText: {
+        margin: 0,
+        fontSize: "14px",
+        fontWeight: "600",
+        color: "#334155",
+    },
+    feedMeta: {
+        display: "flex",
+        gap: "8px",
+        fontSize: "12px",
+        color: "#94A3B8",
+        marginTop: "4px",
     },
 };

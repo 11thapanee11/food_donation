@@ -17,6 +17,7 @@ import ListFood from './components/ListFood';
 import ManageUsers from './components/ManageUser';
 import ListReport from './components/ListReport';
 import ReportDetail from './components/ReportDetail';
+import BookingDetail from "./components/BookingDetail";
 import { decodeToken } from './utils/jwt';
 
 const AdminRoute = () => {
@@ -111,6 +112,7 @@ function App() {
           <Route path='/food-detail' element={<FoodDetail />} />
           <Route path='/receive' element={<FoodReceive />} />
           <Route path='/impact-dashboard' element={<ImpactDashboard />} />
+          <Route path='/booking-detail' element={<BookingDetail />} />
         </Route>
 
         {/* กลุ่มหน้าสำหรับ แอดมินเท่านั้น (ยูสเซอร์ทั่วไปแอบพิมพ์มาจะโดนดีดไปหน้าแรก) */}

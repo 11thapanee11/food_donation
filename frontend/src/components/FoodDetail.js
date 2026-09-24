@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Swal from "sweetalert2";
 import { jwtDecode } from 'jwt-decode';
 
 export default function FoodDetailEdgeToEdge() {
@@ -19,6 +18,17 @@ export default function FoodDetailEdgeToEdge() {
     const [reserveQuantity, setReserveQuantity] = useState(1);
     const [submitting, setSubmitting] = useState(false);
 
+    // State สำหรับการแสดงผล Alert Custom Popup (ใช้แทน SweetAlert2)
+    const [alertModal, setAlertModal] = useState({
+        show: false,
+        title: "",
+        message: "",
+        type: "info", // "info" | "success" | "error"
+        confirmText: "ตกลง",
+        cancelText: null,
+        onConfirm: null
+    });
+
     const [isMobile, setIsMobile] = useState(
         typeof window !== 'undefined' ? window.innerWidth <= 768 : false
     );
@@ -28,7 +38,6 @@ export default function FoodDetailEdgeToEdge() {
 
     const isFromReceive = fromPage === "/receive";
     const isFromManage = fromPage === "/manage-foods";
-    const isBookingCompleted = bookingStatus === "completed";
 
     const [reviews, setReviews] = useState([]);
 
@@ -131,20 +140,19 @@ export default function FoodDetailEdgeToEdge() {
         return `${date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })} (${date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.)`;
     };
 
+    // เปิดการจองหรือแสดง Alert ให้ Login
     const handleOpenReserveModal = () => {
         const token = localStorage.getItem("accessToken");
         if (!token) {
-            Swal.fire({
-                title: 'กรุณาเข้าสู่ระบบ',
-                text: 'คุณต้องเข้าสู่ระบบก่อนจึงจะสามารถจองรายการอาหารได้',
-                icon: 'warning',
-                confirmButtonColor: '#c084fc',
-                confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-                customClass: {
-                    popup: 'rounded-2xl shadow-xl border border-purple-100',
-                    confirmButton: 'px-5 py-2.5 rounded-xl font-medium shadow-md'
-                }
-            }).then((res) => { if (res.isConfirmed) navigate('/login'); });
+            setAlertModal({
+                show: true,
+                title: "กรุณาเข้าสู่ระบบ",
+                message: "คุณต้องเข้าสู่ระบบก่อนจึงจะสามารถจองรายการอาหารได้",
+                type: "info",
+                confirmText: "ไปหน้าเข้าสู่ระบบ",
+                cancelText: "ยกเลิก",
+                onConfirm: () => navigate('/login')
+            });
             return;
         }
 
@@ -152,6 +160,7 @@ export default function FoodDetailEdgeToEdge() {
         setShowReserveModal(true);
     };
 
+    // ยืนยันการจอง
     const handleConfirmBooking = () => {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
@@ -166,39 +175,44 @@ export default function FoodDetailEdgeToEdge() {
             .then(resData => {
                 setShowReserveModal(false);
                 if (resData.success) {
-                    Swal.fire({
-                        title: 'จองสำเร็จ!',
-                        text: 'สามารถรับอาหารได้ตามสถานที่ที่ระบุไว้',
-                        icon: 'success',
-                        confirmButtonColor: '#c084fc',
-                        confirmButtonText: 'ดูรายการจองของฉัน',
-                        customClass: {
-                            popup: '!rounded-[28px] !p-6 shadow-2xl',
-                            confirmButton: '!rounded-xl px-6 py-2.5 font-medium shadow-md'
+                    const newBookingId = resData.data?.id; // หรือ field ID การจองที่ API ส่งกลับมา
+                    setAlertModal({
+                        show: true,
+                        title: "จองสำเร็จ!",
+                        message: "สามารถรับอาหารได้ตามสถานที่ที่ระบุไว้",
+                        type: "success",
+                        confirmText: "ดูรายละเอียดการจอง",
+                        cancelText: "ตกลง", // ปิดหน้าต่างแล้วอยู่หน้าเดิม
+                        onConfirm: () => {
+                            if (newBookingId) {
+                                navigate(`/receive/${newBookingId}`); // หรือ navigate('/receive', { state: { id: newBookingId } })
+                            } else {
+                                navigate('/receive');
+                            }
                         }
-                    }).then(() => navigate('/receive'));
+                    });
                 } else {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาด',
-                        text: resData.message || 'ไม่สามารถทำรายการได้',
-                        icon: 'error',
-                        confirmButtonColor: '#f43f5e',
-                        customClass: {
-                            popup: 'rounded-2xl shadow-xl border border-red-100'
-                        }
+                    setAlertModal({
+                        show: true,
+                        title: "เกิดข้อผิดพลาด",
+                        message: resData.message || "ไม่สามารถทำรายการได้",
+                        type: "error",
+                        confirmText: "ตกลง",
+                        cancelText: null,
+                        onConfirm: null
                     });
                 }
             })
             .catch(() => {
                 setShowReserveModal(false);
-                Swal.fire({
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
-                    icon: 'error',
-                    confirmButtonColor: '#f43f5e',
-                    customClass: {
-                        popup: 'rounded-2xl shadow-xl border border-red-100'
-                    }
+                setAlertModal({
+                    show: true,
+                    title: "เกิดข้อผิดพลาด",
+                    message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้",
+                    type: "error",
+                    confirmText: "ลองอีกครั้ง",
+                    cancelText: null,
+                    onConfirm: null
                 });
             })
             .finally(() => setSubmitting(false));
@@ -210,7 +224,6 @@ export default function FoodDetailEdgeToEdge() {
         ? `https://maps.google.com/maps?q=${food.latitude},${food.longitude}&z=16&output=embed`
         : null;
 
-    // คำนวณขีดจำกัดจริงที่จองได้
     const maxLimit = Math.min(food.limitPerPerson || 1, food.remainingUnit || 1);
 
     return (
@@ -218,19 +231,13 @@ export default function FoodDetailEdgeToEdge() {
 
             {/* Header Image Display */}
             <div style={{
-                position: "relative",
-                width: "100%",
-                height: isMobile ? "280px" : "360px",
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
+                position: "relative", width: "100%", height: isMobile ? "280px" : "360px",
+                overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center"
             }}>
                 <div style={{
                     position: "absolute", inset: "-10px",
                     backgroundImage: `url(${BASE_URL}${food.foodImage})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
+                    backgroundSize: "cover", backgroundPosition: "center",
                     filter: "blur(28px) brightness(0.85) opacity(0.6)"
                 }} />
 
@@ -238,8 +245,7 @@ export default function FoodDetailEdgeToEdge() {
                     src={`${BASE_URL}${food.foodImage}`}
                     alt={food.foodName}
                     style={{
-                        position: "relative", zIndex: 1,
-                        maxHeight: "90%", maxWidth: "90%",
+                        position: "relative", zIndex: 1, maxHeight: "90%", maxWidth: "90%",
                         objectFit: "contain", borderRadius: "20px",
                         boxShadow: "0 12px 28px rgba(192, 132, 252, 0.15)"
                     }}
@@ -252,8 +258,7 @@ export default function FoodDetailEdgeToEdge() {
 
                 <div style={{
                     position: "absolute", bottom: "16px", right: "16px", zIndex: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    color: "#334155", padding: "6px 14px", borderRadius: "16px",
+                    backgroundColor: "rgba(255, 255, 255, 0.95)", color: "#334155", padding: "6px 14px", borderRadius: "16px",
                     display: "flex", alignItems: "center", gap: "6px",
                     boxShadow: "0 4px 14px rgba(192, 132, 252, 0.12)", backdropFilter: "blur(8px)",
                     border: "1px solid rgba(255, 255, 255, 0.8)"
@@ -324,7 +329,7 @@ export default function FoodDetailEdgeToEdge() {
                             title="food-map"
                             width="100%"
                             height="180"
-                            style={{ border: 0, borderRadius: "14px", border: "1px solid #f1f5f9" }}
+                            style={{ border: 0, borderRadius: "14px" }}
                             src={googleMapEmbedUrl}
                         ></iframe>
                     )}
@@ -402,12 +407,10 @@ export default function FoodDetailEdgeToEdge() {
                 )}
             </div>
 
-            {/* --- ALERT MODAL ลอยกลางหน้า --- */}
+            {/* --- 1. RESERVATION POPUP MODAL (หน้าต่างเลือกจำนวน) --- */}
             {showReserveModal && (
                 <div style={styleOne.centerModalBackdrop} onClick={() => setShowReserveModal(false)}>
                     <div style={styleOne.centerModalCard} onClick={(e) => e.stopPropagation()}>
-
-                        {/* Header & Icon */}
                         <div style={{ textAlign: "center", marginBottom: "16px" }}>
                             <div style={styleOne.modalHeaderIcon}>
                                 <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#c084fc" }}>shopping_basket</i>
@@ -420,7 +423,6 @@ export default function FoodDetailEdgeToEdge() {
                             </p>
                         </div>
 
-                        {/* Banner แสดงจำนวนชิ้นคงเหลือที่จองได้ */}
                         <div style={styleOne.stockAlertBanner}>
                             <i className="material-icons-outlined" style={{ fontSize: "20px", color: "#38bdf8" }}>info</i>
                             <div style={{ textAlign: "left" }}>
@@ -433,21 +435,16 @@ export default function FoodDetailEdgeToEdge() {
                             </div>
                         </div>
 
-                        {/* Stepper Control & Quick Chips */}
                         <div style={{ margin: "20px 0" }}>
                             <label style={{ fontSize: "13px", color: "#475569", fontWeight: "600", display: "block", textAlign: "center", marginBottom: "12px" }}>
                                 เลือกจำนวนที่ต้องการรับ
                             </label>
 
-                            {/* Stepper + / - */}
                             <div style={{ display: "flex", alignItems: "center", gap: "16px", justifyContent: "center", marginBottom: "16px" }}>
                                 <button
                                     onClick={() => setReserveQuantity(prev => Math.max(1, prev - 1))}
                                     disabled={reserveQuantity <= 1}
-                                    style={{
-                                        ...styleOne.qtyStepperBtn,
-                                        opacity: reserveQuantity <= 1 ? 0.4 : 1
-                                    }}
+                                    style={{ ...styleOne.qtyStepperBtn, opacity: reserveQuantity <= 1 ? 0.4 : 1 }}
                                 >
                                     -
                                 </button>
@@ -457,16 +454,12 @@ export default function FoodDetailEdgeToEdge() {
                                 <button
                                     onClick={() => setReserveQuantity(prev => Math.min(maxLimit, prev + 1))}
                                     disabled={reserveQuantity >= maxLimit}
-                                    style={{
-                                        ...styleOne.qtyStepperBtn,
-                                        opacity: reserveQuantity >= maxLimit ? 0.4 : 1
-                                    }}
+                                    style={{ ...styleOne.qtyStepperBtn, opacity: reserveQuantity >= maxLimit ? 0.4 : 1 }}
                                 >
                                     +
                                 </button>
                             </div>
 
-                            {/* Quick Selection Chips */}
                             {maxLimit > 1 && (
                                 <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
                                     {Array.from({ length: maxLimit }, (_, i) => i + 1).map((qty) => (
@@ -488,25 +481,73 @@ export default function FoodDetailEdgeToEdge() {
                             )}
                         </div>
 
-                        {/* Actions */}
                         <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
-                            <button
-                                style={styleOne.cancelBtn}
-                                onClick={() => setShowReserveModal(false)}
-                            >
+                            <button style={styleOne.cancelBtn} onClick={() => setShowReserveModal(false)}>
                                 ยกเลิก
                             </button>
-                            <button
-                                style={styleOne.confirmBtn}
-                                onClick={handleConfirmBooking}
-                                disabled={submitting}
-                            >
+                            <button style={styleOne.confirmBtn} onClick={handleConfirmBooking} disabled={submitting}>
                                 {submitting ? "กำลังบันทึก..." : "ยืนยันการรับ"}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* --- 2. CUSTOM SYSTEM ALERT POPUP (ใช้แทน SweetAlert2) --- */}
+            {alertModal.show && (
+                <div style={styleOne.centerModalBackdrop} onClick={() => setAlertModal(prev => ({ ...prev, show: false }))}>
+                    <div style={styleOne.centerModalCard} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ textAlign: "center" }}>
+                            {/* Alert Icon ตามประเภท */}
+                            <div style={{
+                                ...styleOne.modalHeaderIcon,
+                                backgroundColor: alertModal.type === 'success' ? '#f0fdf4' : alertModal.type === 'error' ? '#fff1f2' : '#faf5ff',
+                                border: alertModal.type === 'success' ? '1px solid #bbf7d0' : alertModal.type === 'error' ? '1px solid #fecdd3' : '1px solid #f3e8ff'
+                            }}>
+                                <i className="material-icons-outlined" style={{
+                                    fontSize: "32px",
+                                    color: alertModal.type === 'success' ? '#10b981' : alertModal.type === 'error' ? '#f43f5e' : '#c084fc'
+                                }}>
+                                    {alertModal.type === 'success' ? 'check_circle' : alertModal.type === 'error' ? 'error_outline' : 'info'}
+                                </i>
+                            </div>
+
+                            <h3 style={{ margin: "16px 0 8px 0", fontSize: "20px", color: "#334155", fontWeight: "700" }}>
+                                {alertModal.title}
+                            </h3>
+                            <p style={{ margin: "0 0 24px 0", fontSize: "14px", color: "#64748b", lineHeight: "1.5" }}>
+                                {alertModal.message}
+                            </p>
+
+                            <div style={{ display: "flex", gap: "12px" }}>
+                                {alertModal.cancelText && (
+                                    <button
+                                        style={styleOne.cancelBtn}
+                                        onClick={() => setAlertModal(prev => ({ ...prev, show: false }))}
+                                    >
+                                        {alertModal.cancelText}
+                                    </button>
+                                )}
+                                <button
+                                    style={{
+                                        ...styleOne.confirmBtn,
+                                        backgroundColor: alertModal.type === 'error' ? '#f43f5e' : '#c084fc',
+                                        boxShadow: alertModal.type === 'error' ? '0 4px 14px rgba(244, 63, 94, 0.35)' : '0 4px 14px rgba(192, 132, 252, 0.35)'
+                                    }}
+                                    onClick={() => {
+                                        const action = alertModal.onConfirm;
+                                        setAlertModal(prev => ({ ...prev, show: false }));
+                                        if (action) action();
+                                    }}
+                                >
+                                    {alertModal.confirmText}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
@@ -561,40 +602,37 @@ const styleOne = {
     reviewBubble: { backgroundColor: "#f8fafc", padding: "12px 14px", borderRadius: "14px", marginTop: "10px", border: "1px solid #f1f5f9" },
     mainCtaBtn: { width: "100%", padding: "14px", borderRadius: "16px", backgroundColor: "#c084fc", color: "#fff", border: "none", fontSize: "16px", fontWeight: "700", cursor: "pointer", marginTop: "12px", transition: "all 0.2s ease" },
 
-    // Alert Modal ลอยกลางหน้า
+    // Custom Pop-up Styles
     centerModalBackdrop: {
         position: "fixed", inset: 0, zIndex: 999,
-        backgroundColor: "rgba(51, 65, 85, 0.4)", backdropFilter: "blur(6px)",
+        backgroundColor: "rgba(51, 65, 85, 0.45)", backdropFilter: "blur(8px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "16px"
     },
     centerModalCard: {
-        width: "100%", maxWidth: "420px", backgroundColor: "#ffffff",
-        borderRadius: "24px", padding: "28px",
-        boxShadow: "0 20px 40px rgba(192, 132, 252, 0.15)",
-        border: "1px solid rgba(241, 245, 249, 0.9)"
+        width: "100%", maxWidth: "400px", backgroundColor: "#ffffff",
+        borderRadius: "28px", padding: "28px",
+        boxShadow: "0 20px 50px rgba(192, 132, 252, 0.25)",
+        border: "1px solid rgba(243, 232, 255, 0.8)"
     },
     modalHeaderIcon: {
-        width: "56px", height: "56px", borderRadius: "50%",
-        backgroundColor: "#faf5ff", display: "inline-flex",
-        alignItems: "center", justifyContent: "center",
-        boxShadow: "0 4px 12px rgba(192, 132, 252, 0.15)"
+        width: "60px", height: "60px", borderRadius: "50%",
+        display: "inline-flex", alignItems: "center", justifyContent: "center"
     },
     stockAlertBanner: {
         backgroundColor: "#f0f9ff", border: "1px solid #bae6fd",
-        borderRadius: "14px", padding: "12px 14px",
+        borderRadius: "16px", padding: "12px 16px",
         display: "flex", alignItems: "center", gap: "10px"
     },
     qtyStepperBtn: {
         width: "44px", height: "44px", borderRadius: "14px",
         border: "1px solid #cbd5e1", backgroundColor: "#ffffff",
         fontSize: "20px", fontWeight: "600", cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: "#334155", boxShadow: "0 2px 4px rgba(0,0,0,0.03)"
+        display: "flex", alignItems: "center", justifyContent: "center", color: "#334155"
     },
     quickQtyChip: {
         padding: "8px 16px", borderRadius: "14px",
-        fontSize: "13px", cursor: "pointer", transition: "all 0.15s ease"
+        fontSize: "13px", cursor: "pointer"
     },
     cancelBtn: {
         flex: 1, padding: "12px", borderRadius: "14px",
@@ -604,7 +642,6 @@ const styleOne = {
     confirmBtn: {
         flex: 1.5, padding: "12px", borderRadius: "14px",
         border: "none", backgroundColor: "#c084fc",
-        color: "#ffffff", fontWeight: "700", cursor: "pointer",
-        boxShadow: "0 4px 14px rgba(192, 132, 252, 0.35)"
+        color: "#ffffff", fontWeight: "700", cursor: "pointer"
     }
 };
