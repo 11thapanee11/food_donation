@@ -15,18 +15,34 @@ import { fromLonLat } from "ol/proj";
 import { Style, Icon } from "ol/style";
 import Overlay from "ol/Overlay";
 
-// Custom SVG Marker สีพาสเทล
-const pastelMarkerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none">
+// คำนวณระยะทางระหว่าง 2 พิกัด (หน่วย: กิโลเมตร)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+// Custom SVG Marker สีพาสเทล - ปรับขนาดเล็กลง (20x20 px)
+const smallPastelMarkerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9" fill="#c084fc" stroke="#ffffff" stroke-width="2.5"/>
-        <circle cx="12" cy="12" r="4" fill="#ffffff"/>
+        <circle cx="12" cy="12" r="3.5" fill="#ffffff"/>
     </svg>
 `)}`;
 
 const markerStyle = new Style({
     image: new Icon({
-        src: pastelMarkerSvg,
-        anchor: [0.5, 0.5],
+        src: smallPastelMarkerSvg,
+        anchor: [0.8, 0.8],
     }),
 });
 
@@ -40,25 +56,35 @@ const MapPage = () => {
 
     const [foods, setFoods] = useState([]);
     const [filteredFoods, setFilteredFoods] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
     const [isPageLoading, setIsPageLoading] = useState(true);
-    const [tooltipData, setTooltipData] = useState(null);
+    const [hoveredFood, setHoveredFood] = useState(null);
 
-    const defaultCenter = [99.015, 18.892]; // [Longitude, Latitude] ใน OpenLayers
-    const [centerPos, setCenterPos] = useState(defaultCenter);
+    const defaultCenter = [99.015, 18.892];
+    const [userCoords, setUserCoords] = useState(null);
+
+    // Filter States
+    const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
+    const [maxDistance, setMaxDistance] = useState("all");
+    const [timeRangeFilter, setTimeRangeFilter] = useState("all"); // กรองช่วงเวลาชั่วโมง
 
     const categories = ["ทั้งหมด", "อาหารคาว", "อาหารหวาน", "เครื่องดื่ม", "ผลไม้/ผัก", "เบเกอรี่"];
 
-    // 1. ดึงตำแหน่งผู้ใช้ (Geolocation)
+    // 1. Geolocation
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const currentCoords = [position.coords.longitude, position.coords.latitude];
-                    setCenterPos(currentCoords);
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    };
+                    setUserCoords(coords);
+
                     if (mapInstanceRef.current) {
-                        mapInstanceRef.current.getView().setCenter(fromLonLat(currentCoords));
-                        mapInstanceRef.current.getView().setZoom(16);
+                        mapInstanceRef.current
+                            .getView()
+                            .setCenter(fromLonLat([coords.lng, coords.lat]));
+                        mapInstanceRef.current.getView().setZoom(15);
                     }
                 },
                 (error) => console.error("Error getting geolocation: ", error),
@@ -67,7 +93,7 @@ const MapPage = () => {
         }
     }, []);
 
-    // 2. ดึงข้อมูลอาหารจาก Backend API
+    // 2. Fetch Foods API
     useEffect(() => {
         setIsPageLoading(true);
         const token = localStorage.getItem("accessToken");
@@ -89,54 +115,53 @@ const MapPage = () => {
                         (item) => item.latitude && item.longitude && item.foodStatus === "available"
                     );
                     setFoods(validFoods);
-                    setFilteredFoods(validFoods);
                 }
                 setIsPageLoading(false);
             })
             .catch((err) => {
-                console.error("Error fetching map coordinates:", err);
+                console.error("Error fetching foods:", err);
                 setIsPageLoading(false);
             });
     }, []);
 
-    // 3. เริ่มต้นสร้างแผนที่ Google Maps โดยใช้ OpenLayers
+    // 3. Init OpenLayers Map
     useEffect(() => {
         if (isPageLoading || !mapElement.current || mapInstanceRef.current) return;
 
-        // Layer: Google Maps Tile (Roadmap)
         const googleLayer = new TileLayer({
             source: new XYZ({
                 url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
             }),
         });
 
-        // Vector Layer สำหรับเก็บหมุด
         const vectorLayer = new VectorLayer({
             source: vectorSourceRef.current,
         });
 
-        // Overlay สำหรับ Tooltip
         const overlay = new Overlay({
             element: tooltipContainerRef.current,
-            offset: [0, -15],
+            offset: [0, -12],
             positioning: "bottom-center",
         });
         overlayRef.current = overlay;
 
-        // สร้าง Instance แผนที่
+        const initialCenter = userCoords
+            ? [userCoords.lng, userCoords.lat]
+            : defaultCenter;
+
         const map = new Map({
             target: mapElement.current,
             layers: [googleLayer, vectorLayer],
             overlays: [overlay],
             view: new View({
-                center: fromLonLat(centerPos),
-                zoom: 16,
+                center: fromLonLat(initialCenter),
+                zoom: 24,
             }),
         });
 
         mapInstanceRef.current = map;
 
-        // Event Pointer Move สำหรับแสดง Hover Tooltip
+        // Pointer move event (Hover)
         map.on("pointermove", (e) => {
             const pixel = map.getEventPixel(e.originalEvent);
             const hit = map.hasFeatureAtPixel(pixel);
@@ -147,22 +172,24 @@ const MapPage = () => {
                 const feature = map.forEachFeatureAtPixel(pixel, (feat) => feat);
                 if (feature) {
                     const foodData = feature.get("foodData");
-                    setTooltipData(foodData);
+                    setHoveredFood(foodData);
                     overlay.setPosition(e.coordinate);
                 }
             } else {
-                setTooltipData(null);
+                setHoveredFood(null);
                 overlay.setPosition(undefined);
             }
         });
 
-        // Event Click หมุดปัก ไปยังหน้ารายละเอียดอาหาร
+        // Click event (Navigate to detail)
         map.on("click", (e) => {
             const feature = map.forEachFeatureAtPixel(e.pixel, (feat) => feat);
             if (feature) {
                 const foodData = feature.get("foodData");
-                if (foodData) {
-                    navigate("/food-detail", { state: { id: foodData.id, fromPage: "/map" } });
+                if (foodData && foodData.id) {
+                    navigate(`/food-detail/${foodData.id}`, {
+                        state: { id: foodData.id, fromPage: "/map" },
+                    });
                 }
             }
         });
@@ -175,7 +202,77 @@ const MapPage = () => {
         };
     }, [isPageLoading]);
 
-    // 4. วาดหมุดอาหารลงแผนที่
+    // 4. Filtering Logic
+    useEffect(() => {
+        let result = [...foods];
+
+        // 4.1 หมวดหมู่
+        if (selectedCategory !== "ทั้งหมด") {
+            result = result.filter(
+                (item) => item.category === selectedCategory || item.foodType === selectedCategory
+            );
+        }
+
+        // 4.2 ระยะทาง
+        if (maxDistance !== "all" && userCoords) {
+            const limitKm = parseFloat(maxDistance);
+            result = result.filter((item) => {
+                const dist = calculateDistance(
+                    userCoords.lat,
+                    userCoords.lng,
+                    Number(item.latitude),
+                    Number(item.longitude)
+                );
+                item.calculatedDistance = dist;
+                return dist <= limitKm;
+            });
+        } else if (userCoords) {
+            result.forEach((item) => {
+                item.calculatedDistance = calculateDistance(
+                    userCoords.lat,
+                    userCoords.lng,
+                    Number(item.latitude),
+                    Number(item.longitude)
+                );
+            });
+        }
+
+        // 4.3 กรองตามช่วงเวลาชั่วโมงที่เปิดรับ (Pickup Hour Range)
+        if (timeRangeFilter !== "all") {
+            result = result.filter((item) => {
+                if (!item.pickupTime) return true;
+
+                // ดึงเฉพาะชั่วโมงจากสตริง pickupTime (เช่น "10:30" หรือ "2026-04-12T10:30:00")
+                let hour = -1;
+                if (item.pickupTime.includes("T")) {
+                    hour = new Date(item.pickupTime).getHours();
+                } else if (item.pickupTime.includes(":")) {
+                    hour = parseInt(item.pickupTime.split(":")[0], 10);
+                }
+
+                if (isNaN(hour) || hour === -1) return true;
+
+                switch (timeRangeFilter) {
+                    case "08-10":
+                        return hour >= 8 && hour < 10;
+                    case "10-12":
+                        return hour >= 10 && hour < 12;
+                    case "13-15":
+                        return hour >= 13 && hour < 15;
+                    case "15-18":
+                        return hour >= 15 && hour < 18;
+                    case "18-21":
+                        return hour >= 18;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        setFilteredFoods(result);
+    }, [foods, selectedCategory, maxDistance, timeRangeFilter, userCoords]);
+
+    // 5. Render Markers
     useEffect(() => {
         if (!vectorSourceRef.current) return;
 
@@ -197,24 +294,11 @@ const MapPage = () => {
         });
     }, [filteredFoods]);
 
-    // 5. กรองหมวดหมู่อาหาร
-    const handleCategoryChange = (category) => {
-        setSelectedCategory(category);
-        if (category === "ทั้งหมด") {
-            setFilteredFoods(foods);
-        } else {
-            const filtered = foods.filter(
-                (item) => item.category === category || item.foodType === category
-            );
-            setFilteredFoods(filtered);
-        }
-    };
-
     if (isPageLoading) {
         return (
             <div style={styles.loadingContainer}>
                 <div style={styles.spinner} />
-                <p style={styles.loadingText}>กำลังดึงข้อมูลแผนที่ Google Maps...</p>
+                <p style={styles.loadingText}>กำลังโหลดแผนที่...</p>
                 <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
             </div>
         );
@@ -222,23 +306,54 @@ const MapPage = () => {
 
     return (
         <div style={styles.pageContainer}>
-            {/* Filter Bar หมวดหมู่อาหาร */}
-            <div style={styles.filterContainer}>
-                <span style={styles.filterTitle}>
-                    <i className="material-icons" style={{ fontSize: "18px" }}>filter_list</i>
-                    หมวดหมู่:
-                </span>
-                <div style={styles.filterButtonsGroup}>
+            {/* Control Panel ด้านบน */}
+            <div style={styles.filterControlPanel}>
+                <div style={styles.dropdownRow}>
+                    {/* ตัวกรองระยะทาง */}
+                    <div style={styles.selectGroup}>
+                        <label style={styles.selectLabel}>📍 ระยะทาง:</label>
+                        <select
+                            value={maxDistance}
+                            onChange={(e) => setMaxDistance(e.target.value)}
+                            style={styles.selectInput}
+                        >
+                            <option value="all">ทุกระยะทาง</option>
+                            <option value="1">ไม่เกิน 1 กม.</option>
+                            <option value="3">ไม่เกิน 3 กม.</option>
+                            <option value="5">ไม่เกิน 5 กม.</option>
+                            <option value="10">ไม่เกิน 10 กม.</option>
+                        </select>
+                    </div>
+
+                    {/* ตัวกรองช่วงชั่วโมงรับของ */}
+                    <div style={styles.selectGroup}>
+                        <label style={styles.selectLabel}>⏰ ช่วงเวลารับ:</label>
+                        <select
+                            value={timeRangeFilter}
+                            onChange={(e) => setTimeRangeFilter(e.target.value)}
+                            style={styles.selectInput}
+                        >
+                            <option value="all">ทุกช่วงเวลา</option>
+                            <option value="08-10">08:00 - 10:00 น.</option>
+                            <option value="10-12">10:00 - 12:00 น.</option>
+                            <option value="13-15">13:00 - 15:00 น.</option>
+                            <option value="15-18">15:00 - 18:00 น.</option>
+                            <option value="18-21">18:00 น. เป็นต้นไป</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* แถบหมวดหมู่อาหาร */}
+                <div style={styles.categoryChipsGroup}>
                     {categories.map((cat) => (
                         <button
                             key={cat}
-                            onClick={() => handleCategoryChange(cat)}
+                            onClick={() => setSelectedCategory(cat)}
                             style={{
-                                ...styles.filterChip,
+                                ...styles.chipBtn,
                                 backgroundColor: selectedCategory === cat ? "#c084fc" : "#ffffff",
                                 color: selectedCategory === cat ? "#ffffff" : "#64748b",
                                 border: selectedCategory === cat ? "1px solid #c084fc" : "1px solid #e2e8f0",
-                                boxShadow: selectedCategory === cat ? "0 4px 12px rgba(192, 132, 252, 0.3)" : "none",
                             }}
                         >
                             {cat}
@@ -247,28 +362,54 @@ const MapPage = () => {
                 </div>
             </div>
 
-            {/* กล่องแสดงแผนที่ Google Maps */}
+            {/* แผนที่ */}
             <div ref={mapElement} style={styles.mapCanvas} />
 
-            {/* Hidden DOM Element สำหรับ Tooltip */}
-            <div ref={tooltipContainerRef} style={{ display: tooltipData ? "block" : "none" }}>
-                {tooltipData && (
-                    <div style={styles.tooltipBox}>
-                        {tooltipData.imageUrl && (
+            {/* Hover Tooltip Card */}
+            <div ref={tooltipContainerRef} style={{ display: hoveredFood ? "block" : "none" }}>
+                {hoveredFood && (
+                    <div style={styles.hoverCard}>
+                        {hoveredFood.imageUrl && (
                             <img
-                                src={tooltipData.imageUrl}
-                                alt={tooltipData.foodName}
-                                style={styles.tooltipImg}
+                                src={hoveredFood.imageUrl}
+                                alt={hoveredFood.foodName}
+                                style={styles.cardImg}
                             />
                         )}
-                        <div style={styles.tooltipContent}>
-                            <h4 style={styles.tooltipTitle}>{tooltipData.foodName}</h4>
-                            {tooltipData.locationName && (
-                                <p style={styles.tooltipSub}>📍 {tooltipData.locationName}</p>
+                        <div style={styles.cardContent}>
+                            <h4 style={styles.cardTitle}>{hoveredFood.foodName}</h4>
+
+                            {/* วันที่หมดอายุ */}
+                            {hoveredFood.expiryDate && (
+                                <p style={styles.cardExpiryText}>
+                                    ⏳ หมดอายุ: {hoveredFood.expiryDate}
+                                </p>
                             )}
-                            {tooltipData.quantity && (
-                                <span style={styles.tooltipTag}>จำนวน: {tooltipData.quantity}</span>
+
+                            {/* ช่วงเวลารับ */}
+                            {hoveredFood.pickupTime && (
+                                <p style={styles.cardTimeText}>
+                                    ⏰ เวลารับ: {hoveredFood.pickupTime}
+                                </p>
                             )}
+
+                            {/* สถานที่ & ระยะทาง */}
+                            {hoveredFood.locationName && (
+                                <p style={styles.cardSubText}>📍 {hoveredFood.locationName}</p>
+                            )}
+                            {hoveredFood.calculatedDistance !== undefined && (
+                                <p style={styles.cardDistText}>
+                                    📏 {hoveredFood.calculatedDistance.toFixed(1)} กม. จากคุณ
+                                </p>
+                            )}
+
+                            {/* จำนวนที่รับได้ */}
+                            <div style={styles.cardFooter}>
+                                <span style={styles.cardQuantityBadge}>
+                                    📦 เหลือ {hoveredFood.quantity || 1} รายการ
+                                </span>
+                                <span style={styles.clickHint}>แตะเพื่อจอง ➔</span>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -287,52 +428,144 @@ const styles = {
         height: "calc(100vh - 64px)",
         overflow: "hidden",
         backgroundColor: "#faf5ff",
+        fontFamily: "'Prompt', sans-serif",
     },
-    filterContainer: {
+    filterControlPanel: {
         position: "absolute",
         top: "16px",
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 1000,
         display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        backgroundColor: "rgba(255, 255, 255, 0.92)",
-        backdropFilter: "blur(8px)",
-        padding: "8px 16px",
-        borderRadius: "30px",
-        boxShadow: "0 8px 20px rgba(192, 132, 252, 0.15)",
+        flexDirection: "column",
+        gap: "10px",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(10px)",
+        padding: "12px 18px",
+        borderRadius: "20px",
+        boxShadow: "0 8px 24px rgba(192, 132, 252, 0.18)",
         border: "1px solid rgba(241, 245, 249, 0.9)",
-        maxWidth: "90%",
-        overflowX: "auto",
+        maxWidth: "92%",
+        width: "fit-content",
     },
-    filterTitle: {
+    dropdownRow: {
+        display: "flex",
+        gap: "12px",
+        justifyContent: "center",
+        flexWrap: "wrap",
+    },
+    selectGroup: {
         display: "flex",
         alignItems: "center",
-        gap: "4px",
-        fontSize: "13px",
+        gap: "6px",
+    },
+    selectLabel: {
+        fontSize: "12px",
         fontWeight: "600",
         color: "#475569",
         whiteSpace: "nowrap",
     },
-    filterButtonsGroup: {
-        display: "flex",
-        gap: "8px",
+    selectInput: {
+        padding: "5px 10px",
+        borderRadius: "12px",
+        border: "1px solid #e2e8f0",
+        backgroundColor: "#ffffff",
+        fontSize: "12px",
+        color: "#334155",
+        outline: "none",
+        cursor: "pointer",
     },
-    filterChip: {
-        padding: "6px 14px",
-        borderRadius: "20px",
-        fontSize: "13px",
+    categoryChipsGroup: {
+        display: "flex",
+        gap: "6px",
+        overflowX: "auto",
+        paddingBottom: "2px",
+    },
+    chipBtn: {
+        padding: "4px 12px",
+        borderRadius: "14px",
+        fontSize: "12px",
         fontWeight: "500",
         cursor: "pointer",
-        transition: "all 0.2s ease-in-out",
         whiteSpace: "nowrap",
         outline: "none",
+        transition: "all 0.2s ease",
     },
     mapCanvas: {
         width: "100%",
         height: "100%",
         zIndex: 1,
+    },
+    hoverCard: {
+        backgroundColor: "#ffffff",
+        borderRadius: "16px",
+        padding: "10px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+        width: "210px",
+        pointerEvents: "none",
+        border: "1px solid #f1f5f9",
+    },
+    cardImg: {
+        width: "100%",
+        height: "100px",
+        objectFit: "cover",
+        borderRadius: "10px",
+        marginBottom: "8px",
+    },
+    cardContent: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "3px",
+    },
+    cardTitle: {
+        margin: 0,
+        fontSize: "14px",
+        fontWeight: "700",
+        color: "#1e293b",
+    },
+    cardExpiryText: {
+        margin: 0,
+        fontSize: "11px",
+        fontWeight: "600",
+        color: "#e11d48", // สีแดงเตือนวันหมดอายุ
+    },
+    cardTimeText: {
+        margin: 0,
+        fontSize: "11px",
+        color: "#059669",
+        fontWeight: "500",
+    },
+    cardSubText: {
+        margin: 0,
+        fontSize: "11px",
+        color: "#64748b",
+    },
+    cardDistText: {
+        margin: 0,
+        fontSize: "11px",
+        fontWeight: "600",
+        color: "#c084fc",
+    },
+    cardFooter: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: "6px",
+        paddingTop: "6px",
+        borderTop: "1px solid #f1f5f9",
+    },
+    cardQuantityBadge: {
+        backgroundColor: "#f3e8ff",
+        color: "#7e22ce",
+        fontSize: "10px",
+        fontWeight: "600",
+        padding: "2px 8px",
+        borderRadius: "10px",
+    },
+    clickHint: {
+        fontSize: "10px",
+        color: "#94a3b8",
+        fontWeight: "500",
     },
     loadingContainer: {
         display: "flex",
@@ -341,11 +574,10 @@ const styles = {
         alignItems: "center",
         height: "80vh",
         gap: "16px",
-        fontFamily: "'Prompt', sans-serif",
     },
     spinner: {
-        width: "40px",
-        height: "40px",
+        width: "36px",
+        height: "36px",
         border: "4px solid #f3e8ff",
         borderTop: "4px solid #c084fc",
         borderRadius: "50%",
@@ -353,50 +585,7 @@ const styles = {
     },
     loadingText: {
         color: "#c084fc",
-        fontSize: "16px",
+        fontSize: "15px",
         fontWeight: "600",
-    },
-    tooltipBox: {
-        backgroundColor: "#ffffff",
-        borderRadius: "12px",
-        padding: "8px",
-        boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
-        width: "170px",
-        pointerEvents: "none",
-        fontFamily: "'Prompt', sans-serif",
-        border: "1px solid #f1f5f9",
-    },
-    tooltipImg: {
-        width: "100%",
-        height: "85px",
-        objectFit: "cover",
-        borderRadius: "8px",
-        marginBottom: "6px",
-    },
-    tooltipContent: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "2px",
-    },
-    tooltipTitle: {
-        margin: 0,
-        fontSize: "13px",
-        fontWeight: "700",
-        color: "#334155",
-    },
-    tooltipSub: {
-        margin: 0,
-        fontSize: "11px",
-        color: "#64748b",
-    },
-    tooltipTag: {
-        alignSelf: "flex-start",
-        backgroundColor: "#f3e8ff",
-        color: "#7e22ce",
-        fontSize: "10px",
-        fontWeight: "600",
-        padding: "2px 8px",
-        borderRadius: "10px",
-        marginTop: "2px",
     },
 };
