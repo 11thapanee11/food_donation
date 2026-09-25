@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from 'jwt-decode';
 import Swal from 'sweetalert2';
 
-export default function MyFoodsGridStyle() {
+export default function ListDonorFood() {
     const navigate = useNavigate();
 
     const [userId, setUserId] = useState(null);
@@ -254,7 +254,7 @@ export default function MyFoodsGridStyle() {
     return (
         <div style={styles.fullWidthWrapper}>
             <div style={{ ...styles.container, padding: isMobile ? "20px 16px" : "36px 20px" }}>
-                
+
                 {/* Header */}
                 <div
                     style={{
@@ -294,8 +294,15 @@ export default function MyFoodsGridStyle() {
                         <button
                             key={tab.key}
                             style={{
-                                ...styles.tabBtn,
-                                ...(activeTab === tab.key ? styles.activeTabBtn : {})
+                                padding: "8px 18px",
+                                borderRadius: "20px",
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                                outline: "none",
+                                backgroundColor: activeTab === tab.key ? "#C084FC" : "#FFFFFF",
+                                color: activeTab === tab.key ? "#FFFFFF" : "#64748B",
+                                border: activeTab === tab.key ? "1px solid #C084FC" : "1px solid #E9D5FF",
+                                fontWeight: activeTab === tab.key ? "600" : "500",
                             }}
                             onClick={() => setActiveTab(tab.key)}
                         >
@@ -373,12 +380,15 @@ const styles = {
         fontWeight: "500",
         cursor: "pointer",
         whiteSpace: "nowrap",
+        outline: "none",
+
     },
     activeTabBtn: {
         backgroundColor: "#C084FC",
         color: "#FFFFFF",
         borderColor: "#C084FC",
         fontWeight: "600",
+        outline: "none",
     },
     gridContainer: {
         display: "grid",

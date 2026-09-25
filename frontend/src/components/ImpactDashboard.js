@@ -1,213 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer
-} from 'recharts';
+import React, { useState, useMemo } from 'react';
 
 export default function ImpactDashboard() {
-
-    const [summary, setSummary] = useState({
-        totalCarbon: 0,
-        totalWeight: 0,
-        totalDonations: 0
+    // สมมติข้อมูลจำลอง (Mock Data)
+    const [summary] = useState({
+        totalWeight: 68.5,
+        totalDonations: 14,
+        favoriteCategory: "อาหารกล่องพร้อมทาน",
+        peopleHelpedApprox: 135
     });
-    const [impactHistory, setImpactHistory] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const token = localStorage.getItem('accessToken');
-                const headers = { 'Authorization': `Bearer ${token}` };
+    const [impactHistory] = useState([
+        {
+            id: 1,
+            date: "2026-05-18T11:30:00Z",
+            name: "ข้าวกล่องกระเพราไก่ (ทำสดใหม่)",
+            category: "อาหารพร้อมทาน",
+            weight: 5.5,
+        },
+        {
+            id: 2,
+            date: "2026-05-15T16:00:00Z",
+            name: "ขนมปังและเบเกอรี่โฮมเมด",
+            category: "เบเกอรี่ / ขนม",
+            weight: 3.0,
+        },
+        {
+            id: 3,
+            date: "2026-05-10T14:20:00Z",
+            name: "แกงเขียวหวานและข้าวสวย",
+            category: "อาหารพร้อมทาน",
+            weight: 8.2,
+        },
+        {
+            id: 4,
+            date: "2026-05-02T10:00:00Z",
+            name: "ผลไม้สดตามฤดูกาล (มะม่วง/กล้วย)",
+            category: "ผลไม้",
+            weight: 4.5,
+        }
+    ]);
 
-                const [summaryRes, historyRes] = await Promise.all([
-                    fetch('http://localhost:8082/donor/impact-summary', { headers }),
-                    fetch('http://localhost:8082/impact-logs', { headers })
-                ]);
+    // State สำหรับการค้นหาและกรองช่วงเวลา
+    const [searchQuery, setSearchQuery] = useState("");
+    const [dateFilter, setDateFilter] = useState("all");
 
-                const summaryData = await summaryRes.json();
-                const historyData = await historyRes.json();
+    // ฟังก์ชันกรองข้อมูลตามช่วงเวลาและคำค้นหา
+    const filteredHistory = useMemo(() => {
+        const now = new Date();
 
-                if (summaryData.success) {
-                    setSummary(summaryData.data);
-                }
+        return impactHistory.filter(item => {
+            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-                if (historyData.success) {
-                    setImpactHistory(historyData.data);
-                }
+            const itemDate = new Date(item.date);
+            let matchesDate = true;
 
-            } catch (err) {
-                setError(err.message);
-                console.error("Dashboard Fetch Error:", err);
-            } finally {
-                setLoading(false);
+            if (dateFilter === "7days") {
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(now.getDate() - 7);
+                matchesDate = itemDate >= sevenDaysAgo;
+            } else if (dateFilter === "14days") {
+                const fourteenDaysAgo = new Date();
+                fourteenDaysAgo.setDate(now.getDate() - 14);
+                matchesDate = itemDate >= fourteenDaysAgo;
+            } else if (dateFilter === "30days") {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(now.getDate() - 30);
+                matchesDate = itemDate >= thirtyDaysAgo;
+            } else if (dateFilter === "thisyear") {
+                matchesDate = itemDate.getFullYear() === now.getFullYear();
             }
-        };
 
-        fetchDashboardData();
-    }, []);
-
-    // เตรียมข้อมูลสำหรับแสดงผลในกราฟ (แปลงวันที่ให้อ่านง่ายขึ้น)
-    const chartData = impactHistory.map(item => ({
-        ...item,
-        formattedDate: new Date(item.date).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })
-    })).reverse(); // เรียงจากอดีต -> ปัจจุบัน
-
-    if (loading) return <div style={styles.loading}>กำลังโหลดข้อมูลแดชบอร์ด...</div>;
-    if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
+            return matchesSearch && matchesDate;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    }, [impactHistory, searchQuery, dateFilter]);
 
     return (
         <div style={styles.container}>
 
-            <div style={styles.headerContainer}>
-                <span style={styles.leafIcon} className="material-symbols-outlined">
-                    temp_preferences_eco</span>
-                <h2 style={styles.headerTitle}>สรุปผลลัพธ์การลดก๊าซเรือนกระจกจากการบริจาคอาหาร</h2>
+            {/* ส่วนหัวต้อนรับ */}
+            <div style={styles.welcomeCard}>
+                <div>
+                    <span style={styles.miniTag}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>eco</span>
+                        สถิติการแบ่งปันของคุณ
+                    </span>
+                    <h2 style={styles.welcomeTitle}>ส่งต่อความสุข ลดขยะอาหารไปด้วยกัน</h2>
+                    <p style={styles.welcomeDesc}>ทุกชิ้นส่วนของอาหารที่คุณนำมาแบ่งปัน ช่วยสร้างประโยชน์และคุณค่าให้สังคมได้เสมอ</p>
+                </div>
+                <div style={styles.headerIconBox}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '36px', color: '#c084fc' }}>
+                        volunteer_activism
+                    </span>
+                </div>
             </div>
 
-            <div style={styles.statsGrid}>
-
-                {/* กล่องซ้ายใหญ่: ยอดรวมก๊าซเรือนกระจก */}
-                <div style={styles.mainGreenCard}>
-                    <p style={styles.greenCardLabel}>ลดการปล่อยก๊าซเรือนกระจกรวมทั้งหมด</p>
-                    <h1 style={styles.greenCardValue}>
-                        {summary.totalCarbon.toFixed(2)} <span style={styles.greenCardUnit}>kgCO2e</span>
-                    </h1>
-                    <div style={styles.globeContainer}>
-                        <span style={styles.globeIcon} className="material-symbols-outlined">globe</span>
+            {/* ส่วนสถิติภาพรวม */}
+            <div style={styles.statsRow}>
+                <div style={styles.statCardPrimary}>
+                    <div style={styles.statIconBoxPrimary}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#FFFFFF' }}>scale</span>
+                    </div>
+                    <div>
+                        <p style={styles.statLabelPrimary}>น้ำหนักอาหารที่ช่วยลดขยะ</p>
+                        <h3 style={styles.statValuePrimary}>{summary.totalWeight.toFixed(1)} <span style={{ fontSize: '18px', fontWeight: '400' }}>กก.</span></h3>
                     </div>
                 </div>
 
-                {/* กล่องขวา: ย่อยออกมาเป็น 2 แถวพาสเทล */}
-                <div style={styles.sideCardsContainer}>
-                    <div style={{ ...styles.pastelCard, border: "2px solid #ff8c00", backgroundColor: "none" }}>
-                        <div>
-                            <p style={styles.pastelCardLabel}>ช่วยลดขยะอาหาร</p>
-                            <h3 style={styles.pastelCardValue}>
-                                {summary.totalWeight.toFixed(2)} <span style={styles.pastelCardUnit}>กิโลกรัม</span>
-                            </h3>
-                        </div>
-                        <span style={styles.cardEmoji} className="material-symbols-outlined">takeout_dining_2</span>
+                <div style={styles.statCardSky}>
+                    <div style={{ ...styles.statIconBox, backgroundColor: '#e0f2fe', color: '#0284c7' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>card_giftcard</span>
                     </div>
-
-                    <div style={styles.pastelCard}>
-                        <div>
-                            <p style={styles.pastelCardLabel}>จำนวนที่ส่งมอบ</p>
-                            <h3 style={styles.pastelCardValue}>
-                                {summary.totalDonations} <span style={styles.pastelCardUnit}>ครั้ง</span>
-                            </h3>
-                        </div>
-                        <span style={styles.cardEmoji} className="material-symbols-outlined">fork_spoon</span>
+                    <div>
+                        <p style={styles.statLabel}>แบ่งปันไปแล้ว</p>
+                        <h3 style={styles.statValue}>{summary.totalDonations} <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal' }}>ครั้ง</span></h3>
                     </div>
                 </div>
 
-            </div>
-
-            {/* ส่วนแสดงกราฟ */}
-            <div style={styles.chartContainer}>
-                <h3 style={styles.sectionTitle}>แนวโน้มการช่วยลดก๊าซเรือนกระจก</h3>
-                {chartData.length > 0 ? (
-                    <div style={{ width: '100%', height: 200 }}>
-                        <ResponsiveContainer>
-                            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
-                                {/* เส้น Grid แนวนอนแบบจางๆ */}
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
-
-                                {/* แกน X และ Y */}
-                                <XAxis
-                                    dataKey="formattedDate"
-                                    tick={{ fill: '#777777', fontSize: 13 }}
-                                    axisLine={{ stroke: '#EAEAEA' }}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tick={{ fill: '#777777', fontSize: 13 }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-
-                                {/* Tooltip เมื่อเอาเมาส์ไปชี้ */}
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: '#FFFFFF',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                                        border: '1px solid #fff0df',
-                                        padding: '10px 15px'
-                                    }}
-                                    labelStyle={{ color: '#333333', fontWeight: 'bold', marginBottom: '4px' }}
-                                    formatter={(value) => [`${Number(value).toFixed(2)} kgCO2e`, 'การลดคาร์บอน']}
-                                />
-
-                                {/* เส้นกราฟ Smooth สีเขียวธีมหลัก */}
-                                <Line
-                                    type="liner"
-                                    dataKey="carbon"
-                                    stroke="#328d7d"
-                                    strokeWidth={3.5}
-                                    dot={{ r: 5, fill: '#328d7d', stroke: '#FFFFFF', strokeWidth: 2 }}
-                                    activeDot={{ r: 8, fill: '#ff8c00', stroke: '#FFFFFF', strokeWidth: 2 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                <div style={styles.statCardMint}>
+                    <div style={{ ...styles.statIconBox, backgroundColor: '#dcfce7', color: '#059669' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>restaurant_menu</span>
                     </div>
-                ) : (
-                    <p style={{ textAlign: 'center', color: '#888888', padding: '30px' }}>ยังไม่มีข้อมูลสำหรับแสดงกราฟ</p>
-                )}
+                    <div>
+                        <p style={styles.statLabel}>หมวดหมู่ยอดฮิต</p>
+                        <h3 style={{ ...styles.statValue, fontSize: '16px', color: '#047857', marginTop: '4px' }}>{summary.favoriteCategory}</h3>
+                    </div>
+                </div>
             </div>
 
-            {/* ส่วนตารางประวัติ (Table Report) */}
-            <div style={styles.tableContainer}>
-                <h3 style={styles.sectionTitle}>ประวัติการบริจาค</h3>
-                <table style={styles.table}>
-                    <thead>
-                        <tr style={styles.tableHeaderRow}>
-                            <th style={{ ...styles.th, width: '25%' }}>วันที่</th>
-                            <th style={{ ...styles.th, width: '35%' }}>รายการบริจาค</th>
-                            <th style={{ ...styles.th, width: '20%' }}>จำนวนกิโลกรัม</th>
-                            <th style={{ ...styles.th, width: '20%', textAlign: 'right' }}>การลดคาร์บอน</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {impactHistory && impactHistory.length > 0 ? (
-                            impactHistory.map((item) => (
-                                <tr key={item.id} style={styles.tableBodyRow}>
-                                    <td style={styles.td}>
-                                        {new Date(item.date).toLocaleDateString('th-TH', {
-                                            day: 'numeric',
-                                            month: 'long',
-                                            year: 'numeric'
-                                        })}
-                                    </td>
-                                    <td style={styles.td}>{item.name}</td>
-                                    <td style={styles.td}>
-                                        {item.weight ? item.weight.toFixed(1) : '0.0'} kg
-                                    </td>
-                                    <td style={{ ...styles.td, ...styles.carbonText, textAlign: 'right' }}>
-                                        <span style={{ color: '#ff8c00', fontWeight: 'bold' }}>
-                                            {item.carbon ? item.carbon.toFixed(1) : '0.0'}
+            {/* ส่วนรายการประวัติ พร้อมระบบค้นหาและฟิลเตอร์ช่วงเวลา */}
+            <div style={styles.feedSection}>
+                <div style={styles.feedHeader}>
+                    <h3 style={styles.feedTitle}>ประวัติการแบ่งปันล่าสุด</h3>
+                    <span style={styles.feedCount}>แสดง {filteredHistory.length} จาก {impactHistory.length} รายการ</span>
+                </div>
+
+                {/* แถบเครื่องมือค้นหาและฟิลเตอร์ช่วงเวลา */}
+                <div style={styles.filterToolbar}>
+                    {/* ค้นหาด้วยชื่อ */}
+                    <div style={styles.searchBox}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#94a3b8' }}>search</span>
+                        <input
+                            type="text"
+                            placeholder="ค้นหารายการแบ่งปัน..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={styles.searchInput}
+                        />
+                    </div>
+
+                    {/* กรองตามช่วงเวลา */}
+                    <div style={styles.filterGroup}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#94a3b8' }}>calendar_today</span>
+                        <select
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            style={styles.selectInput}
+                        >
+                            <option value="all">ทั้งหมด</option>
+                            <option value="7days">7 วันล่าสุด</option>
+                            <option value="14days">14 วันล่าสุด</option>
+                            <option value="30days">30 วันล่าสุด</option>
+                            <option value="thisyear">ปีนี้</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* รายการ Feed List */}
+                <div style={styles.feedList}>
+                    {filteredHistory.length > 0 ? (
+                        filteredHistory.map((item) => (
+                            <div key={item.id} style={styles.feedItem}>
+                                <div style={styles.feedItemLeft}>
+                                    <div style={styles.itemIconBox}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#9333ea' }}>
+                                            fastfood
                                         </span>
-                                        <span style={{ color: '#328d7d', marginLeft: '4px' }}>
-                                            kgCO2e
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="4" style={{ ...styles.td, textAlign: 'center', padding: '20px', color: '#666666' }}>
-                                    ยังไม่มีประวัติการบริจาค
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                                    </div>
+                                    <div>
+                                        <h4 style={styles.itemName}>{item.name}</h4>
+                                        <div style={styles.itemMetaRow}>
+                                            <span style={styles.itemCategory}>{item.category}</span>
+                                            <span style={styles.dotSeparator}>•</span>
+                                            <span style={styles.itemDate}>
+                                                {new Date(item.date).toLocaleDateString('th-TH', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric'
+                                                })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={styles.feedItemRight}>
+                                    <span style={styles.itemWeightLabel}>น้ำหนัก</span>
+                                    <span style={styles.itemWeightValue}>+{item.weight.toFixed(1)} กก.</span>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div style={styles.emptyState}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '40px', color: '#cbd5e1', marginBottom: '8px' }}>search_off</span>
+                            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>ไม่พบรายการในช่วงเวลาที่คุณเลือก</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
         </div>
@@ -216,171 +212,273 @@ export default function ImpactDashboard() {
 
 const styles = {
     container: {
-        maxWidth: "1150px",
+        maxWidth: "1080px",
         margin: "0 auto",
         display: "flex",
         flexDirection: "column",
-        gap: "25px",
-        padding: "40px 20px",
+        gap: "24px",
+        padding: "30px 20px",
+        fontFamily: "'Sarabun', sans-serif",
     },
-    headerContainer: {
+    welcomeCard: {
+        backgroundColor: "#faf5ff",
+        border: "1.5px solid #f3e8ff",
+        borderRadius: "20px",
+        padding: "28px 36px",
         display: "flex",
-        alignItems: "center",
-        gap: "12px",
-    },
-    leafIcon: {
-        fontSize: "42px",
-        color: "#328d7d"
-    },
-    headerTitle: {
-        fontSize: "24px",
-        fontWeight: "bold",
-        color: "#328d7d",
-        margin: 0,
-    },
-    sectionTitle: {
-        fontSize: "18px",
-        fontWeight: "600",
-        color: "#333333",
-        marginBottom: "15px",
-        marginTop: "0px",
-    },
-    statsGrid: {
-        display: "flex",
-        flexDirection: "row",
-        gap: "25px",
-        width: "100%",
-        flexWrap: "wrap",
-    },
-    statsGrid: {
-        display: "flex",
-        flexDirection: "row",
-        gap: "15px",
-        width: "100%",
-        flexWrap: "wrap",
-    },
-    mainGreenCard: {
-        flex: 1,
-        minWidth: "320px",
-        backgroundColor: "#328d7d",
-        borderRadius: "18px",
-        padding: "16px 24px",
-        display: "flex",
-        flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
-        textAlign: "center",
-        color: "#FFFFFF",
-        boxShadow: "0 4px 15px rgba(58, 139, 115, 0.1)",
+        boxShadow: "0 4px 15px rgba(192, 132, 252, 0.05)",
     },
-    greenCardLabel: {
-        fontSize: "22px",
-        fontWeight: "500",
+    headerIconBox: {
+        backgroundColor: "#FFFFFF",
+        padding: "16px",
+        borderRadius: "16px",
+        boxShadow: "0 4px 12px rgba(192, 132, 252, 0.15)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    miniTag: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        backgroundColor: "#f3e8ff",
+        color: "#9333ea",
+        padding: "4px 12px",
+        borderRadius: "20px",
+        fontSize: "13px",
+        fontWeight: "600",
+        marginBottom: "10px",
+    },
+    welcomeTitle: {
+        fontSize: "24px",
+        fontWeight: "700",
+        color: "#6b21a8",
         margin: "0 0 6px 0",
     },
-    greenCardValue: {
-        fontSize: "40px",
-        fontWeight: "bold",
-        margin: "0 0 4px 0",
-        letterSpacing: "0.5px"
+    welcomeDesc: {
+        fontSize: "14px",
+        color: "#475569",
+        margin: 0,
     },
-    greenCardUnit: {
-        fontSize: "20px",
-        fontWeight: "500"
+    statsRow: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: "20px",
     },
-    globeContainer: {
+    statCardPrimary: {
+        backgroundColor: "#c084fc",
+        borderRadius: "20px",
+        padding: "24px",
+        color: "#FFFFFF",
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
+        gap: "18px",
+        boxShadow: "0 8px 20px rgba(192, 132, 252, 0.25)",
     },
-    globeIcon: {
-        fontSize: "32px"
-    },
-    sideCardsContainer: {
-        flex: 1,
-        minWidth: "320px",
+    statIconBoxPrimary: {
+        backgroundColor: "rgba(255, 255, 255, 0.25)",
+        padding: "14px",
+        borderRadius: "14px",
         display: "flex",
-        flexDirection: "column",
-        gap: "12px",
+        alignItems: "center",
+        justifyContent: "center",
     },
-    pastelCard: {
-        backgroundColor: "#fff0df",
-        borderRadius: "18px",
-        padding: "14px 22px",
+    statLabelPrimary: {
+        fontSize: "14px",
+        opacity: "0.95",
+        margin: "0 0 6px 0",
+        fontWeight: "500",
+    },
+    statValuePrimary: {
+        fontSize: "30px",
+        fontWeight: "700",
+        margin: 0,
+    },
+    statCardSky: {
+        backgroundColor: "#f0f9ff",
+        border: "1.5px solid #e0f2fe",
+        borderRadius: "20px",
+        padding: "24px",
+        display: "flex",
+        alignItems: "center",
+        gap: "18px",
+        boxShadow: "0 4px 12px rgba(56, 189, 248, 0.05)",
+    },
+    statCardMint: {
+        backgroundColor: "#ecfdf5",
+        border: "1.5px solid #d1fae5",
+        borderRadius: "20px",
+        padding: "24px",
+        display: "flex",
+        alignItems: "center",
+        gap: "18px",
+        boxShadow: "0 4px 12px rgba(52, 211, 153, 0.05)",
+    },
+    statIconBox: {
+        padding: "14px",
+        borderRadius: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    statLabel: {
+        fontSize: "14px",
+        color: "#64748b",
+        margin: "0 0 6px 0",
+        fontWeight: "500",
+    },
+    statValue: {
+        fontSize: "26px",
+        fontWeight: "700",
+        color: "#1e293b",
+        margin: 0,
+    },
+    feedSection: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: "20px",
+        padding: "28px 36px",
+        border: "1.5px solid #f1f5f9",
+        boxShadow: "0 4px 15px rgba(0,0,0,0.02)",
+    },
+    feedHeader: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        boxShadow: "0 4px 10px rgba(255, 238, 218, 0.3)",
+        marginBottom: "20px",
     },
-    pastelCardLabel: {
-        fontSize: "16px",
-        color: "#333",
-        margin: "0 0 4px 0",
-        fontWeight: "500"
-    },
-    pastelCardValue: {
-        fontSize: "26px",
+    feedTitle: {
+        fontSize: "18px",
         fontWeight: "700",
-        color: "#ff8c00",
-        margin: 0
+        color: "#1e293b",
+        margin: 0,
     },
-    pastelCardUnit: {
-        fontSize: "16px",
-        color: "#777777",
-        fontWeight: "400",
-        marginLeft: "4px"
-    },
-    cardEmoji: {
-        fontSize: "32px",
-        color: "#ff8c00"
-    },
-    chartContainer: {
-        backgroundColor: "#ffff",
-        borderRadius: "20px",
-        padding: "25px",
-        border: "2px solid #bdddd7"
-    },
-    tableContainer: {
-        backgroundColor: "#ffff",
-        borderRadius: "20px",
-        padding: "25px",
-        border: "2px solid #ffdfb7"
-    },
-    table: {
-        width: "100%",
-        borderCollapse: "collapse",
-        textAlign: "left",
-    },
-    tableHeaderRow: {
-        borderBottom: "2px solid #EAEAEA"
-    },
-    th: {
-        padding: "16px 12px",
-        fontSize: "16px",
-        color: "#4A5568",
+    feedCount: {
+        fontSize: "13px",
+        color: "#64748b",
+        backgroundColor: "#f8fafc",
+        padding: "6px 12px",
+        borderRadius: "12px",
         fontWeight: "600",
+        border: "1px solid #e2e8f0",
     },
-    tableBodyRow: {
-        borderBottom: "1px solid #F1F1F1",
+    filterToolbar: {
+        display: "flex",
+        gap: "12px",
+        marginBottom: "20px",
+        flexWrap: "wrap",
     },
-    td: {
-        padding: "18px 12px",
+    searchBox: {
+        flex: "1 1 240px",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        backgroundColor: "#f8fafc",
+        border: "1.5px solid #e2e8f0",
+        borderRadius: "14px",
+        padding: "0 14px",
+    },
+    searchInput: {
+        width: "100%",
+        border: "none",
+        backgroundColor: "transparent",
+        padding: "12px 0",
+        fontSize: "14px",
+        color: "#1e293b",
+        outline: "none",
+    },
+    filterGroup: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        backgroundColor: "#f8fafc",
+        border: "1.5px solid #e2e8f0",
+        borderRadius: "14px",
+        padding: "0 14px",
+    },
+    selectInput: {
+        border: "none",
+        backgroundColor: "transparent",
+        padding: "12px 0",
+        fontSize: "14px",
+        color: "#475569",
+        outline: "none",
+        cursor: "pointer",
+    },
+    feedList: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "14px",
+    },
+    feedItem: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "16px 20px",
+        backgroundColor: "#faf5ff",
+        border: "1.5px solid #f3e8ff",
+        borderRadius: "16px",
+    },
+    feedItemLeft: {
+        display: "flex",
+        alignItems: "center",
+        gap: "16px",
+    },
+    itemIconBox: {
+        backgroundColor: "#f3e8ff",
+        padding: "12px",
+        borderRadius: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    itemName: {
+        fontSize: "15px",
+        fontWeight: "600",
+        color: "#1e293b",
+        margin: "0 0 6px 0",
+    },
+    itemMetaRow: {
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+    },
+    itemCategory: {
+        fontSize: "13px",
+        color: "#9333ea",
+        backgroundColor: "#f3e8ff",
+        padding: "2px 10px",
+        borderRadius: "8px",
+        fontWeight: "500",
+    },
+    dotSeparator: {
+        color: "#cbd5e1",
+        fontSize: "12px",
+    },
+    itemDate: {
+        fontSize: "13px",
+        color: "#64748b",
+    },
+    feedItemRight: {
+        textAlign: "right",
+    },
+    itemWeightLabel: {
+        display: "block",
+        fontSize: "12px",
+        color: "#64748b",
+        marginBottom: "2px",
+    },
+    itemWeightValue: {
         fontSize: "16px",
-        color: "#333333",
+        fontWeight: "700",
+        color: "#9333ea",
     },
-    carbonText: {
-        color: "#ff8c00",
-        textAlign: "right"
-    },
-    loading: {
+    emptyState: {
         textAlign: "center",
-        padding: "100px",
-        color: "#ff8c00",
-        fontSize: "20px"
-    },
-    error: {
-        textAlign: "center",
-        padding: "100px",
-        color: "red"
+        padding: "40px 20px",
+        backgroundColor: "#f8fafc",
+        borderRadius: "16px",
+        border: "1.5 dashed #e2e8f0",
     },
 };

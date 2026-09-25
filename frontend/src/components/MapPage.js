@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 // นำเข้าโมดูลหลักของ OpenLayers
@@ -24,14 +24,14 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos((lat1 * Math.PI) / 180) *
-            Math.cos((lat2 * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 };
 
-// Custom SVG Marker สีพาสเทล - ปรับขนาดเล็กลง (20x20 px)
+// Custom SVG Marker สีพาสเทล
 const smallPastelMarkerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9" fill="#c084fc" stroke="#ffffff" stroke-width="2.5"/>
@@ -65,9 +65,53 @@ const MapPage = () => {
     // Filter States
     const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
     const [maxDistance, setMaxDistance] = useState("all");
-    const [timeRangeFilter, setTimeRangeFilter] = useState("all"); // กรองช่วงเวลาชั่วโมง
+    const [timeRangeFilter, setTimeRangeFilter] = useState("all");
 
     const categories = ["ทั้งหมด", "อาหารคาว", "อาหารหวาน", "เครื่องดื่ม", "ผลไม้/ผัก", "เบเกอรี่"];
+
+    // คำนวณหาพิกัดและข้อมูลของจุดที่มีการบริจาคหนาแน่นที่สุด
+    const topHotspot = useMemo(() => {
+        if (!foods || foods.length === 0) return null;
+
+        const areaMap = {};
+        foods.forEach(item => {
+            const name = item.locationName || item.address || "จุดรับบริจาคหลัก";
+            if (!areaMap[name]) {
+                areaMap[name] = { name, count: 0, lat: Number(item.latitude), lng: Number(item.longitude) };
+            }
+            areaMap[name].count += 1;
+        });
+
+        let best = null;
+        let maxC = 0;
+        for (const val of Object.values(areaMap)) {
+            if (val.count > maxC) {
+                maxC = val.count;
+                best = val;
+            }
+        }
+        return best;
+    }, [foods]);
+
+    // ฟังก์ชันเลื่อนแผนที่ไปที่ตำแหน่งต่างๆ
+    const panToLocation = (type) => {
+        if (!mapInstanceRef.current) return;
+        const view = mapInstanceRef.current.getView();
+
+        if (type === "user" && userCoords) {
+            view.animate({
+                center: fromLonLat([userCoords.lng, userCoords.lat]),
+                zoom: 16,
+                duration: 800,
+            });
+        } else if (type === "hotspot" && topHotspot) {
+            view.animate({
+                center: fromLonLat([topHotspot.lng, topHotspot.lat]),
+                zoom: 16,
+                duration: 800,
+            });
+        }
+    };
 
     // 1. Geolocation
     useEffect(() => {
@@ -84,7 +128,7 @@ const MapPage = () => {
                         mapInstanceRef.current
                             .getView()
                             .setCenter(fromLonLat([coords.lng, coords.lat]));
-                        mapInstanceRef.current.getView().setZoom(15);
+                        mapInstanceRef.current.getView().setZoom(16);
                     }
                 },
                 (error) => console.error("Error getting geolocation: ", error),
@@ -155,13 +199,12 @@ const MapPage = () => {
             overlays: [overlay],
             view: new View({
                 center: fromLonLat(initialCenter),
-                zoom: 24,
+                zoom: 16,
             }),
         });
 
         mapInstanceRef.current = map;
 
-        // Pointer move event (Hover)
         map.on("pointermove", (e) => {
             const pixel = map.getEventPixel(e.originalEvent);
             const hit = map.hasFeatureAtPixel(pixel);
@@ -181,7 +224,6 @@ const MapPage = () => {
             }
         });
 
-        // Click event (Navigate to detail)
         map.on("click", (e) => {
             const feature = map.forEachFeatureAtPixel(e.pixel, (feat) => feat);
             if (feature) {
@@ -206,14 +248,12 @@ const MapPage = () => {
     useEffect(() => {
         let result = [...foods];
 
-        // 4.1 หมวดหมู่
         if (selectedCategory !== "ทั้งหมด") {
             result = result.filter(
                 (item) => item.category === selectedCategory || item.foodType === selectedCategory
             );
         }
 
-        // 4.2 ระยะทาง
         if (maxDistance !== "all" && userCoords) {
             const limitKm = parseFloat(maxDistance);
             result = result.filter((item) => {
@@ -237,12 +277,10 @@ const MapPage = () => {
             });
         }
 
-        // 4.3 กรองตามช่วงเวลาชั่วโมงที่เปิดรับ (Pickup Hour Range)
         if (timeRangeFilter !== "all") {
             result = result.filter((item) => {
                 if (!item.pickupTime) return true;
 
-                // ดึงเฉพาะชั่วโมงจากสตริง pickupTime (เช่น "10:30" หรือ "2026-04-12T10:30:00")
                 let hour = -1;
                 if (item.pickupTime.includes("T")) {
                     hour = new Date(item.pickupTime).getHours();
@@ -308,6 +346,27 @@ const MapPage = () => {
         <div style={styles.pageContainer}>
             {/* Control Panel ด้านบน */}
             <div style={styles.filterControlPanel}>
+
+                {/* ปุ่มสลับมุมมองด่วน (ตำแหน่งปัจจุบัน vs จุดบริจาคหนาแน่นสุด) */}
+                <div style={styles.quickFocusRow}>
+                    <button
+                        style={styles.focusBtn}
+                        onClick={() => panToLocation("user")}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "#0284c7" }}>my_location</span>
+                        ตำแหน่งของฉัน
+                    </button>
+                    {topHotspot && (
+                        <button
+                            style={styles.focusBtn}
+                            onClick={() => panToLocation("hotspot")}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "#9333ea" }}>local_fire_department</span>
+                            จุดหนาแน่นสูงสุด ({topHotspot.count} รายการ)
+                        </button>
+                    )}
+                </div>
+
                 <div style={styles.dropdownRow}>
                     {/* ตัวกรองระยะทาง */}
                     <div style={styles.selectGroup}>
@@ -379,21 +438,18 @@ const MapPage = () => {
                         <div style={styles.cardContent}>
                             <h4 style={styles.cardTitle}>{hoveredFood.foodName}</h4>
 
-                            {/* วันที่หมดอายุ */}
                             {hoveredFood.expiryDate && (
                                 <p style={styles.cardExpiryText}>
                                     ⏳ หมดอายุ: {hoveredFood.expiryDate}
                                 </p>
                             )}
 
-                            {/* ช่วงเวลารับ */}
                             {hoveredFood.pickupTime && (
                                 <p style={styles.cardTimeText}>
                                     ⏰ เวลารับ: {hoveredFood.pickupTime}
                                 </p>
                             )}
 
-                            {/* สถานที่ & ระยะทาง */}
                             {hoveredFood.locationName && (
                                 <p style={styles.cardSubText}>📍 {hoveredFood.locationName}</p>
                             )}
@@ -403,7 +459,6 @@ const MapPage = () => {
                                 </p>
                             )}
 
-                            {/* จำนวนที่รับได้ */}
                             <div style={styles.cardFooter}>
                                 <span style={styles.cardQuantityBadge}>
                                     📦 เหลือ {hoveredFood.quantity || 1} รายการ
@@ -447,6 +502,25 @@ const styles = {
         border: "1px solid rgba(241, 245, 249, 0.9)",
         maxWidth: "92%",
         width: "fit-content",
+    },
+    quickFocusRow: {
+        display: "flex",
+        gap: "8px",
+        justifyContent: "center",
+    },
+    focusBtn: {
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "6px 12px",
+        backgroundColor: "#f8fafc",
+        border: "1px solid #e2e8f0",
+        borderRadius: "12px",
+        fontSize: "12px",
+        fontWeight: "600",
+        color: "#475569",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
     },
     dropdownRow: {
         display: "flex",
@@ -527,7 +601,7 @@ const styles = {
         margin: 0,
         fontSize: "11px",
         fontWeight: "600",
-        color: "#e11d48", // สีแดงเตือนวันหมดอายุ
+        color: "#e11d48",
     },
     cardTimeText: {
         margin: 0,

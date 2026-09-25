@@ -403,7 +403,7 @@ export default function Navbar() {
                                         บริจาคของฉัน
                                     </Link>
                                     <Link to="/impact-dashboard" style={getChipStyle(isDashboardActive)}>
-                                        Impact Dashboard
+                                        สถิติการแบ่งปัน
                                     </Link>
                                 </>
                             )}
@@ -595,18 +595,24 @@ export default function Navbar() {
                             }}
                         >
                             {isLoggedIn ? (
-                                <img
-                                    src={isAdmin ? profileAdmin : profileMember}
-                                    alt="user avatar"
-                                    style={{
-                                        width: "38px",
-                                        height: "38px",
-                                        borderRadius: "50%",
-                                        objectFit: "cover",
-                                        border: `2px solid ${theme.primaryBg}`,
-                                        boxShadow: "0 2px 8px rgba(192, 132, 252, 0.2)",
-                                    }}
-                                />
+                                <div style={{
+                                    width: "38px",
+                                    height: "38px",
+                                    borderRadius: "50%",
+                                    backgroundColor: isAdmin ? "#e0f2fe" : "#f0e0fe", // พื้นหลังพาสเทลอ่อน (ม่วงสำหรับแอดมิน / ฟ้าสำหรับสมาชิก)
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    border: `2px solid ${theme.primaryBg}`,
+                                    boxShadow: "0 2px 8px rgba(192, 132, 252, 0.2)",
+                                }}>
+                                    <span className="material-symbols-outlined" style={{
+                                        fontSize: "22px",
+                                        color: isAdmin ? "#0284c7" : "rgb(186, 88, 243)" // สีไอคอนตามสถานะ
+                                    }}>
+                                        {isAdmin ? "admin_panel_settings" : "person"}
+                                    </span>
+                                </div>
                             ) : (
                                 <button
                                     aria-label="Login"

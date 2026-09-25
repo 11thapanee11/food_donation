@@ -207,7 +207,12 @@ export default function Home() {
             {/* Hero Banner Section */}
             <div style={styles.heroBanner}>
                 <div style={styles.heroContent}>
-                    <span style={styles.heroBadge}>🌱 สังคมแห่งการแบ่งปันอาหาร</span>
+                    <div style={styles.heroBadge}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#8b5cf6' }}>
+                            eco
+                        </span>
+                        <span>สังคมแห่งการแบ่งปันอาหาร</span>
+                    </div>
                     <h1 style={styles.heroTitle}>บริจาคอาหาร ส่งต่อความสุข</h1>
                     <p style={styles.heroSubtitle}>
                         เชื่อมต่อผู้ส่งต่อและผู้รับอาหารเข้าด้วยกัน ร่วมกันลดขยะอาหารและขจัดความหิวโภชนาการในชุมชนของเรา
@@ -347,7 +352,7 @@ export default function Home() {
                                                 e.target.src = "https://placehold.co/600x400?text=No+Image";
                                             }}
                                         />
-                                        
+
                                         <div style={styles.imageOverlay} />
 
                                         {/* Tag สถานะการจอง */}
@@ -485,13 +490,17 @@ const styles = {
         alignItems: "center",
     },
     heroBadge: {
-        backgroundColor: "#f3e8ff",
+        backgroundColor: "rgba(255, 255, 255, 0.48)",
         color: "#8b5cf6",
         padding: "6px 16px",
         borderRadius: "20px",
         fontSize: "13px",
         fontWeight: "600",
         marginBottom: "16px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "8px",
+        backdropFilter: "blur(4px)",
     },
     heroTitle: {
         fontSize: "40px",

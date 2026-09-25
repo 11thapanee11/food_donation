@@ -120,12 +120,12 @@ export default function Profile() {
     const handleSave = () => {
         if (!validateForm()) return;
 
-        // แสดง Popup กำลังบันทึก
+        // แสดง Popup กำลังบันทึก (ค้างไว้จนกว่าจะ fetch เสร็จ)
         setPopup({
             show: true,
             type: 'loading',
             title: 'กำลังบันทึกข้อมูล...',
-            message: 'กรุณารอสักครู่ระบบกำลังอัปเดตข้อมูล',
+            message: 'กรุณารอสักครู่ ระบบกำลังอัปเดตข้อมูล',
             showBtn: false
         });
 
@@ -149,31 +149,37 @@ export default function Profile() {
                     });
                     setIsEditing(false);
 
-                    // แสดง Popup สำเร็จ
+                    // แสดง Popup สำเร็จ และตั้งเวลาให้หายไปเองใน 3 วินาที
                     setPopup({
                         show: true,
                         type: 'success',
                         title: 'บันทึกข้อมูลสำเร็จ',
                         message: response.message || "แก้ไขข้อมูลส่วนตัวเรียบร้อยแล้ว",
-                        showBtn: true
+                        showBtn: false
                     });
+
+                    setTimeout(() => {
+                        setPopup(prev => ({ ...prev, show: false }));
+                    }, 3000);
+
                 } else {
                     throw new Error(response.message || "ไม่สามารถแก้ไขข้อมูลได้");
                 }
             })
             .catch(err => {
+                // แสดง Popup Error และตั้งเวลาให้หายไปเองใน 3 วินาทีเช่นกัน
                 setPopup({
                     show: true,
                     type: 'error',
                     title: 'เกิดข้อผิดพลาด',
                     message: err.message || "มีบางอย่างผิดพลาด โปรดลองใหม่อีกครั้ง",
-                    showBtn: true
+                    showBtn: false
                 });
-            });
-    };
 
-    const closePopup = () => {
-        setPopup(prev => ({ ...prev, show: false }));
+                setTimeout(() => {
+                    setPopup(prev => ({ ...prev, show: false }));
+                }, 3000);
+            });
     };
 
     if (loading) return null;
@@ -195,15 +201,15 @@ export default function Profile() {
                 <div style={styles.card}>
                     {/* Banner Section */}
                     <div style={styles.banner}>
-                        <div style={styles.avatarGlow}>
-                            <div style={styles.avatarWrapper}>
-                                <img
-                                    src={profileMember}
-                                    alt="Profile"
-                                    style={styles.avatarImg}
-                                />
+
+                        <div style={styles.avatarWrapper}>
+                            <div style={styles.avatarIconBox}>
+                                <span className="material-symbols-outlined" style={styles.avatarIcon}>
+                                    person
+                                </span>
                             </div>
                         </div>
+
                         <h2 style={styles.userName}>{profile.firstName} {profile.lastName}</h2>
                         <span style={styles.userRoleTag}>สมาชิก</span>
                     </div>
@@ -376,18 +382,6 @@ export default function Profile() {
                         <h3 style={styles.popupTitle}>{popup.title}</h3>
                         <p style={styles.popupMessage}>{popup.message}</p>
 
-                        {popup.showBtn && (
-                            <button
-                                onClick={closePopup}
-                                style={{
-                                    ...styles.popupButton,
-                                    backgroundColor: popup.type === 'success' ? '#C084FC' : '#FECDD3',
-                                    color: popup.type === 'success' ? '#FFFFFF' : '#991B1B'
-                                }}
-                            >
-                                ตกลง
-                            </button>
-                        )}
                     </div>
                 </div>
             )}
@@ -433,7 +427,7 @@ const styles = {
         border: '1px solid rgba(241, 245, 249, 0.9)',
     },
     banner: {
-        background: 'linear-gradient(135deg, #c084fc 0%, #38bdf8 100%)',
+        background: "linear-gradient(135deg, #dfbfff 0%, #bfe5fd 100%)",
         padding: '36px 20px 30px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -448,17 +442,31 @@ const styles = {
         marginBottom: '12px',
     },
     avatarWrapper: {
-        width: '104px',
-        height: '104px',
-        borderRadius: '50%',
-        overflow: 'hidden',
-        border: '3px solid #ffffff',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: "16px",
+        width: "104px",
+        height: "104px",
+        borderRadius: "50%",
+        // เอาเงาและขอบวงนอกมารวมไว้ที่ชั้นนี้ชั้นเดียว เพื่อไม่ให้เกิดรอยซ้อน
+        boxShadow: "0 6px 16px rgba(192, 132, 252, 0.15)",
+        backgroundColor: "#f5f3ff",
+        border: "4px solid #e4deff",
     },
-    avatarImg: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
+    avatarIconBox: {
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        overflow: "hidden",
+    },
+    avatarIcon: {
+        fontSize: "48px",
+        color: "#b17ff1",
+        transform: "translateY(-1px)",
     },
     userName: {
         color: '#ffffff',
@@ -469,7 +477,7 @@ const styles = {
         textShadow: '0 1px 2px rgba(0,0,0,0.1)',
     },
     userRoleTag: {
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        backgroundColor: '#fcfcfc3b',
         color: '#ffffff',
         padding: '4px 16px',
         borderRadius: '20px',
