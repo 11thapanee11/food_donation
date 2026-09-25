@@ -244,8 +244,6 @@ export default function Navbar() {
     const isMyFoodsActive = currentPath === "/my-foods" || currentPath === "/food-form";
     const isDashboardActive = currentPath === "/impact-dashboard";
     const isAdminDashboardActive = currentPath === "/admin-dashboard";
-    const isManageFoodsActive = currentPath === "/manage-foods" || (currentPath === "/food-detail" && originPath === "/manage-foods");
-    const isManageUsersActive = currentPath === "/manage-users";
     const isReportActive = currentPath === "/manage-report" || (currentPath === "/report-detail" && originPath === "/manage-report");
     const isLoginActive =
         currentPath === "/login" ||
@@ -369,7 +367,7 @@ export default function Navbar() {
                                 หน้าหลัก
                             </Link>
                             <Link to="/ranking" style={getChipStyle(isRankingActive)}>
-                                อันดับ
+                                ผลลัพธ์ชุมชน
                             </Link>
                             <Link to="/map" style={getChipStyle(isMapActive)}>
                                 แผนที่
@@ -382,13 +380,7 @@ export default function Navbar() {
                             {isAdmin ? (
                                 <>
                                     <Link to="/admin-dashboard" style={getChipStyle(isAdminDashboardActive)}>
-                                        Dashboard
-                                    </Link>
-                                    <Link to="/manage-foods" style={getChipStyle(isManageFoodsActive)}>
-                                        รายการอาหาร
-                                    </Link>
-                                    <Link to="/manage-users" style={getChipStyle(isManageUsersActive)}>
-                                        จัดการผู้ใช้
+                                        สถิติและภาพรวม
                                     </Link>
                                     <Link to="/manage-report" style={getChipStyle(isReportActive)}>
                                         รายงานปัญหา

@@ -9,6 +9,7 @@ import {
     ResponsiveContainer,
     PieChart,
     Pie,
+    Cell,
 } from 'recharts';
 
 export default function ImpactDashboard() {
@@ -24,13 +25,23 @@ export default function ImpactDashboard() {
                 const response = await fetch('http://localhost:8082/dashboard/stats');
                 const result = await response.json();
 
-                // แกะค่าจาก response.data (เพราะมี ApiResponse หุ้มอยู่)
                 if (result.data) {
                     setStats(result.data);
                 }
+
+                // ข้อมูลจำลองสำหรับกราฟแนวโน้มรายเดือน
+                setMonthlyData([
+                    { month: 'ม.ค.', total: 50, completed: 42 },
+                    { month: 'ก.พ.', total: 65, completed: 58 },
+                    { month: 'มี.ค.', total: 80, completed: 72 },
+                    { month: 'เม.ย.', total: 95, completed: 88 },
+                    { month: 'พ.ค.', total: 120, completed: 110 },
+                    { month: 'มิ.ย.', total: 140, completed: 132 },
+                ]);
+
             } catch (err) {
                 console.error("Error fetching dashboard stats:", err);
-                setError("ไม่สามารถดึงข้อมูลได้");
+                setError("ไม่สามารถเชื่อมต่อเพื่อดึงข้อมูลแผงควบคุมได้ในขณะนี้");
             } finally {
                 setLoading(false);
             }
@@ -39,295 +50,452 @@ export default function ImpactDashboard() {
         fetchDashboardData();
     }, []);
 
-    if (loading) return <div style={styles.loading}>กำลังโหลดข้อมูล...</div>;
-    if (error) return <div style={{ ...styles.loading, color: '#ef4444' }}>{error}</div>;
+    if (loading) return <div style={styles.loadingContainer}><div style={styles.spinner}></div><p>กำลังโหลดข้อมูลผู้ดูแลระบบ...</p></div>;
+    if (error) return <div style={styles.errorContainer}><span className="material-symbols-outlined" style={{ fontSize: '48px' }}>error</span><p>{error}</p></div>;
     if (!stats) return null;
 
+    // คำนวณอัตราความสำเร็จ
     const successRate = stats.totalBookings > 0
         ? Math.round(((stats.completed || 0) / stats.totalBookings) * 100)
         : 0;
 
-    // อัปเดตการกำหนดสี (COLORS) ด้านบนของไฟล์/คอมโพเนนต์
-    const DONUT_COLORS = ['#a9b988', '#f7eb90', '#ffb2b2'];
-    // เรียงตาม: สำเร็จ (#6b9222), รอรับของ (#f9d601), ยกเลิก (#ed171f), หมดอายุ (#8c8c8c)
+    const DONUT_COLORS = ['#C084FC', '#FACC15', '#F87171'];
 
     const pieData = [
-        { name: 'สำเร็จ', value: stats.completed || 0, fill: DONUT_COLORS[0] },
-        { name: 'รอรับของ', value: stats.pending || 0, fill: DONUT_COLORS[1] },
-        { name: 'ยกเลิก', value: stats.cancelled || 0, fill: DONUT_COLORS[2] },
-    ];
-
-    const reportData = [
-        { name: 'ทั้งหมด', count: stats.totalReports || 0 },
-        { name: 'รอดำเนินการ', count: stats.pendingReport || 0 },
-        { name: 'ตรวจสอบแล้ว', count: stats.checkedReport || 0 },
+        { name: 'ส่งมอบสำเร็จ', value: stats.completed || 0 },
+        { name: 'รอรับของ', value: stats.pending || 0 },
+        { name: 'ยกเลิก', value: stats.cancelled || 0 },
     ];
 
     return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <h1 style={styles.mainTitle}>สถิติภาพรวมของระบบ</h1>
-            </div>
-
-            {/* แถวที่ 1: HERO CARD (Carbon) + การ์ดย่อย 3 ใบ (ขยะอาหาร, บริจาคสำเร็จ, ผู้ใช้งาน) */}
-            <div style={styles.topSection}>
-                {/* Hero Card: CARBON ที่ช่วยลดได้ */}
-                <div style={styles.heroCard}>
-                    <div style={styles.heroHeader}>
-                        <div>
-                            <p style={styles.heroLabel}>CARBON ที่ช่วยลดได้สะสม</p>
-                            <h2 style={styles.heroValue}>
-                                {stats.totalCarbon.toFixed(2)} <span style={styles.heroUnit}>kgCO2e</span>
-                            </h2>
+        <div style={styles.fullWidthBackground}>
+            <div style={styles.contentContainer}>
+                {/* ส่วนหัว */}
+                <div style={styles.headerContainer}>
+                    <div>
+                        <div style={styles.topBadge}>
+                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>admin_panel_settings</span>
+                            ระบบผู้ดูแล
                         </div>
-                        <span className="material-symbols-outlined" style={styles.heroIcon}>temp_preferences_eco</span>
+                        <h1 style={styles.mainTitle}>สถิติและภาพรวมระบบ</h1>
+                        <p style={styles.subHeaderDesc}>สรุปสถิติด้านการแบ่งปันอาหาร อัตราการขอรับบริจาค และการจัดการระบบ</p>
                     </div>
-                    <div style={styles.equivalenceBox}>
-                        <span className="material-symbols-outlined" style={styles.equivIcon}>forest</span>
-                        <p style={styles.equivText}>
-                            เทียบเท่าการปลูกต้นไม้ <strong style={styles.equivHighlight}>{stats.treesEquivalent.toFixed(1)}</strong> ต้น ใน 1 ปี
-                        </p>
+
+                </div>
+
+                {/* ส่วนที่ 1: ตัวชี้วัดหลัก (KPIs) */}
+                <div style={styles.kpiGrid}>
+                    <div style={styles.kpiCard}>
+                        <div style={{ ...styles.kpiIconBox, backgroundColor: '#F3E8FF', color: '#9333EA' }}>
+                            <span className="material-symbols-outlined">volunteer_activism</span>
+                        </div>
+                        <div>
+                            <p style={styles.kpiLabel}>อาหารที่แชร์สำเร็จ</p>
+                            <h3 style={styles.kpiValue}>{stats.completed || 0} <span style={styles.kpiUnit}>รายการ</span></h3>
+                        </div>
+                    </div>
+
+                    <div style={styles.kpiCard}>
+                        <div style={{ ...styles.kpiIconBox, backgroundColor: '#E0F2FE', color: '#0284C7' }}>
+                            <span className="material-symbols-outlined">book_online</span>
+                        </div>
+                        <div>
+                            <p style={styles.kpiLabel}>การขอรับบริจาคทั้งหมด</p>
+                            <h3 style={styles.kpiValue}>{stats.totalBookings || 0} <span style={styles.kpiUnit}>ครั้ง</span></h3>
+                        </div>
+                    </div>
+
+                    <div style={styles.kpiCard}>
+                        <div style={{ ...styles.kpiIconBox, backgroundColor: '#FEF3C7', color: '#D97706' }}>
+                            <span className="material-symbols-outlined">diversity_3</span>
+                        </div>
+                        <div>
+                            <p style={styles.kpiLabel}>ผู้ใช้งานในระบบ</p>
+                            <h3 style={styles.kpiValue}>{stats.totalUsers || 0} <span style={styles.kpiUnit}>คน</span></h3>
+                        </div>
                     </div>
                 </div>
 
-                {/* การ์ดย่อย 3 ใบที่แยกออกจากกัน */}
-                <div style={styles.subKpiGrid}>
-                    {/* ขยะอาหารที่ช่วยลดได้ */}
-                    <div style={{ ...styles.subCard, backgroundColor: '#ffe8cc', borderColor: '#f07220' }}>
-                        <div>
-                            <p style={styles.subCardLabel}>จำนวนรายการอาหารที่หมดอายุ</p>
-                            <h3 style={{ ...styles.subCardValue, color: '#f07220' }}>
-                                {stats.expired} <span style={styles.subCardUnit}>รายการ</span>
-                            </h3>
+                {/* ส่วนที่ 2: กราฟแสดงผล */}
+                <div style={styles.mainChartsGrid}>
+                    {/* กราฟแท่ง */}
+                    <div style={styles.cardBox}>
+                        <div style={styles.cardHeaderFlex}>
+                            <div>
+                                <h3 style={styles.cardHeading}>สถิติการแบ่งปันอาหารรายเดือน</h3>
+                                <p style={styles.cardSubHeading}>แสดงปริมาณรายการอาหารที่ส่งมอบสำเร็จในแต่ละเดือน</p>
+                            </div>
                         </div>
-                        <div style={{ ...styles.iconBg }}>
-                            <span className="material-symbols-outlined" style={{ color: '#f07220', fontSize: '30px' }}>delete_sweep</span>
-                        </div>
-                    </div>
-
-                    {/* บริจาคสำเร็จ (แยกออกมา) */}
-                    <div style={{ ...styles.subCard, backgroundColor: '#bee8ef', borderColor: '#0369A1' }}>
-                        <div>
-                            <p style={styles.subCardLabel}>จำนวนอาหารบริจาค</p>
-                            <h3 style={{ ...styles.subCardValue, color: '#1b9cb2' }}>
-                                {stats.totalFoods} <span style={styles.subCardUnit}>รายการ</span>
-                            </h3>
-                        </div>
-                        <div style={{ ...styles.iconBg }}>
-                            <span className="material-symbols-outlined" style={{ color: '#1b9cb2', fontSize: '30px' }}>hand_meal</span>
-                        </div>
-                    </div>
-
-                    {/* ผู้ใช้งานทั้งหมด (แยกออกมา) */}
-                    <div style={{ ...styles.subCard, backgroundColor: '#f8ddff', borderColor: '#664680' }}>
-                        <div>
-                            <p style={styles.subCardLabel}>ผู้ใช้งานทั้งหมด</p>
-                            <h3 style={{ ...styles.subCardValue, color: '#9d71a8' }}>
-                                {stats.totalUsers} <span style={styles.subCardUnit}>ราย</span>
-                            </h3>
-                        </div>
-                        <div style={{ ...styles.iconBg }}>
-                            <span className="material-symbols-outlined" style={{ color: '#9d71a8', fontSize: '30px' }}>diversity_3</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* แถวที่ 2: 3 การ์ดเดิม (การจองทั้งหมด, สถานะการจอง, หมวดหมู่) */}
-            <div style={styles.threeCardsRow}>
-                {/* การ์ดที่ 1: การจองทั้งหมด */}
-                <div style={styles.whiteCard}>
-                    <p style={{ color: '#000000', margin: '0 0 10px 0', fontSize: '17px', fontWeight: 'bold' }}>การจองทั้งหมด</p>
-                    <h1 style={{ fontSize: '44px', margin: '0 0 12px 0', fontWeight: 'bold' }}>{stats.totalBookings}</h1>
-                    <p style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#595959' }}>
-                        อัตราสำเร็จ <span style={{ color: '#6b9222', fontWeight: 'bold' }}>{successRate}%</span>
-                    </p>
-                    <p style={{ color: '#8c8c8c', margin: 0, fontSize: '14px' }}>
-                        ({stats.completed}/{stats.totalBookings})
-                    </p>
-                </div>
-
-                {/* การ์ดที่ 2: สถานะการจอง */}
-                <div style={styles.whiteCard}>
-                    <h3 style={styles.cardTitle}>สถานะการจอง</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '140px' }}>
-                        <div style={{ width: '120px', height: '120px', position: 'relative' }}>
+                        <div style={{ width: '100%', height: '260px', marginTop: '16px' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={pieData}
-                                        innerRadius={38}
-                                        outerRadius={52}
-                                        paddingAngle={2}
-                                        dataKey="value"
-                                    />
-                                </PieChart>
+                                <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                    <XAxis dataKey="month" stroke="#94A3B8" fontSize={12} tickLine={false} />
+                                    <YAxis stroke="#94A3B8" fontSize={12} tickLine={false} />
+                                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1.5px solid #F3E8FF', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.1)' }} />
+                                    <Bar dataKey="completed" name="ส่งมอบสำเร็จ" fill="#C084FC" radius={[6, 6, 0, 0]} barSize={28} />
+                                </BarChart>
                             </ResponsiveContainer>
-                            <div style={styles.donutCenterText}>
-                                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{stats.totalBookings}</div>
-                                <div style={{ fontSize: '10px', color: '#8c8c8c' }}>การจอง</div>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, marginLeft: '12px' }}>
-                            <div style={styles.legendItem}>
-                                <span style={{ ...styles.badge, backgroundColor: '#a9b988' }}></span>
-                                <span>สำเร็จ {stats.completed}</span>
-                            </div>
-                            <div style={styles.legendItem}>
-                                <span style={{ ...styles.badge, backgroundColor: '#f7eb90' }}></span>
-                                <span>รอรับของ {stats.pending}</span>
-                            </div>
-                            <div style={styles.legendItem}>
-                                <span style={{ ...styles.badge, backgroundColor: '#ffb2b2' }}></span>
-                                <span>ยกเลิก {stats.cancelled}</span>
-                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* การ์ดที่ 3: หมวดหมู่อาหารที่บริจาคมากที่สุด */}
-                <div style={styles.whiteCard}>
-                    <h3 style={styles.cardTitle}>หมวดหมู่อาหารที่บริจาคมากที่สุด</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {stats.categories.map((cat, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                                <span style={styles.catName}>{cat.name}</span>
-                                <div style={styles.progressBarBg}>
-                                    <div style={{
-                                        ...styles.progressBarFill,
-                                        width: `${(cat.count / cat.max) * 100}%`,
-                                        backgroundColor: idx === 0 ? '#ff8c00' : idx === 1 ? '#fa9922' : idx === 2 ? '#faa945' : '#fcbd71'
-                                    }} />
+                    {/* กราฟโดนัท: สรุปสถานะการขอรับบริจาค */}
+                    <div style={styles.cardBox}>
+                        <h3 style={styles.cardHeading}>สถานะการขอรับบริจาคและอัตราสำเร็จ</h3>
+                        <p style={styles.cardSubHeading}>ภาพรวมประสิทธิภาพการส่งมอบ (อัตราสำเร็จ: {successRate}%)</p>
+
+                        <div style={styles.donutLayout}>
+                            <div style={{ width: '130px', height: '130px', position: 'relative' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            innerRadius={42}
+                                            outerRadius={58}
+                                            paddingAngle={4}
+                                            dataKey="value"
+                                        >
+                                            {pieData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div style={styles.donutCenter}>
+                                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#1E293B' }}>{successRate}%</span>
+                                    <span style={{ fontSize: '10px', color: '#64748B' }}>สำเร็จ</span>
                                 </div>
-                                <span style={{ fontWeight: 'bold', fontSize: '14px', width: '20px', textAlign: 'right' }}>{cat.count}</span>
                             </div>
-                        ))}
+
+                            <div style={styles.legendColumn}>
+                                <div style={styles.legendRow}>
+                                    <span style={{ ...styles.dotIndicator, backgroundColor: '#C084FC' }}></span>
+                                    <span style={styles.legendLabel}>สำเร็จ</span>
+                                    <span style={styles.legendVal}>{stats.completed || 0}</span>
+                                </div>
+                                <div style={styles.legendRow}>
+                                    <span style={{ ...styles.dotIndicator, backgroundColor: '#FACC15' }}></span>
+                                    <span style={styles.legendLabel}>รอรับของ</span>
+                                    <span style={styles.legendVal}>{stats.pending || 0}</span>
+                                </div>
+                                <div style={styles.legendRow}>
+                                    <span style={{ ...styles.dotIndicator, backgroundColor: '#F87171' }}></span>
+                                    <span style={styles.legendLabel}>ยกเลิก</span>
+                                    <span style={styles.legendVal}>{stats.cancelled || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ส่วนที่ 3: ข้อมูลเชิงลึกด้านล่าง */}
+                <div style={styles.bottomGrid}>
+                    {/* หมวดหมู่อาหารยอดนิยม */}
+                    <div style={styles.cardBox}>
+                        <h3 style={styles.cardHeading}>หมวดหมู่อาหารยอดนิยม</h3>
+                        <p style={styles.cardSubHeading}>ประเภทอาหารที่มีการนำมาแบ่งปันมากที่สุด</p>
+
+                        <div style={styles.categoryListContainer}>
+                            {stats.categories && stats.categories.length > 0 ? (
+                                stats.categories.map((cat, idx) => (
+                                    <div key={idx} style={styles.catRow}>
+                                        <span style={styles.catTitle}>{cat.name}</span>
+                                        <div style={styles.catBarBg}>
+                                            <div style={{
+                                                ...styles.catBarFill,
+                                                width: `${cat.max ? (cat.count / cat.max) * 100 : 40}%`
+                                            }}></div>
+                                        </div>
+                                        <span style={styles.catCount}>{cat.count}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={styles.emptyText}>ยังไม่มีข้อมูลหมวดหมู่</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* รายงานปัญหาและข้อร้องเรียน */}
+                    <div style={styles.cardBox}>
+                        <h3 style={styles.cardHeading}>รายงานปัญหาและข้อร้องเรียน</h3>
+                        <p style={styles.cardSubHeading}>ติดตามเคสที่ผู้ใช้งานแจ้งเรื่องเข้ามา</p>
+
+                        <div style={styles.reportStack}>
+                            <div style={styles.reportRowItem}>
+                                <span style={styles.reportTextLabel}>รายงานปัญหาทั้งหมด</span>
+                                <span style={styles.reportNumBadge}>{stats.totalReports || 0} เคส</span>
+                            </div>
+                            <div style={{ ...styles.reportRowItem, backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }}>
+                                <span style={{ ...styles.reportTextLabel, color: '#DC2626' }}>รอดำเนินการแก้ไข</span>
+                                <span style={{ ...styles.reportNumBadge, color: '#DC2626', backgroundColor: '#FFFFFF' }}>{stats.pendingReport || 0} เคส</span>
+                            </div>
+                            <div style={{ ...styles.reportRowItem, backgroundColor: '#F0FDF4', borderColor: '#86EFAC' }}>
+                                <span style={{ ...styles.reportTextLabel, color: '#16A34A' }}>ตรวจสอบและแก้ไขแล้ว</span>
+                                <span style={{ ...styles.reportNumBadge, color: '#16A34A', backgroundColor: '#FFFFFF' }}>{stats.checkedReport || 0} เคส</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div style={{ ...styles.whiteCard, marginTop: '20px' }}>
-                <h1 style={{ ...styles.cardTitle, marginBottom: '16px' }}>
-                    รายงานปัญหา
-                </h1>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <span style={{ color: '#595959', fontWeight: '500' }}>รายงานทั้งหมด</span>
-                        <span style={{
-                            fontWeight: 'bold',
-                            color: '#262626',
-                            backgroundColor: '#f5f5f5',
-                            borderRadius: '12px',
-                            padding: '4px 12px',
-                            fontSize: '14px'
-                        }}>
-                            {stats.totalReports || 0} รายการ
-                        </span>
-                    </div>
-
-                    {/* รอดำเนินการ */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <span style={{ color: '#595959', fontWeight: '500' }}>รอดำเนินการ</span>
-                        <span style={{
-                            fontWeight: 'bold',
-                            color: '#f05d62',
-                            backgroundColor: '#fff1f0',
-                            // border: '1px solid #ffccc7',
-                            borderRadius: '12px',
-                            padding: '4px 12px',
-                            fontSize: '14px'
-                        }}>
-                            {stats.pendingReport || 0} รายการ
-                        </span>
-                    </div>
-
-                    {/* ตรวจสอบแล้ว */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0' }}>
-                        <span style={{ color: '#595959', fontWeight: '500' }}>ตรวจสอบแล้ว</span>
-                        <span style={{
-                            fontWeight: 'bold',
-                            color: '#6b9c53',
-                            backgroundColor: '#e5f1d0',
-                            borderRadius: '12px',
-                            padding: '4px 12px',
-                            fontSize: '14px'
-                        }}>
-                            {stats.checkedReport || 0} รายการ
-                        </span>
-                    </div>
-                </div>
-            </div>
-
         </div>
     );
 }
 
 const styles = {
-    container: {
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: "20px 20px"
+    fullWidthBackground: {
+        width: "100%",
+        backgroundColor: "#FAF5FF",
+        minHeight: "100vh",
+        padding: "30px 0",
+        fontFamily: "'Prompt', sans-serif"
     },
-    header: { marginBottom: "20px", marginTop: "20px" },
-    mainTitle: { fontSize: "30px", fontWeight: "bold", color: "#1A1A1A", margin: 0 },
-    topSection: { display: "flex", gap: "20px", marginBottom: "20px", flexWrap: "wrap" },
-
-    // Hero Card
-    heroCard: {
-        flex: "1 1 380px",
-        backgroundColor: "#328d7d",
-        color: "#FFFFFF",
-        padding: "24px",
+    contentContainer: {
+        maxWidth: "1080px",
+        margin: "0 auto",
+        padding: "0 20px",
+        boxSizing: "border-box"
+    },
+    headerContainer: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: "24px",
+        flexWrap: "wrap",
+        gap: "15px"
+    },
+    topBadge: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        backgroundColor: "#F3E8FF",
+        color: "#9333EA",
+        padding: "6px 16px",
         borderRadius: "20px",
+        fontSize: "13px",
+        fontWeight: "600",
+        marginBottom: "10px",
+    },
+    mainTitle: {
+        fontSize: "26px",
+        fontWeight: "bold",
+        color: "#1E293B",
+        margin: 0
+    },
+    subHeaderDesc: {
+        fontSize: "14px",
+        color: "#64748B",
+        margin: "4px 0 0 0"
+    },
+    kpiGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        gap: "16px",
+        marginBottom: "20px"
+    },
+    kpiCard: {
+        backgroundColor: "#FFFFFF",
+        border: "1.5px solid #F3E8FF",
+        borderRadius: "16px",
+        padding: "18px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: "16px",
+        boxShadow: "0 4px 15px rgba(192, 132, 252, 0.04)"
+    },
+    kpiIconBox: {
+        width: "50px",
+        height: "50px",
+        borderRadius: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0
+    },
+    kpiLabel: {
+        fontSize: "13px",
+        color: "#64748B",
+        margin: "0 0 2px 0",
+        fontWeight: "500"
+    },
+    kpiValue: {
+        fontSize: "22px",
+        fontWeight: "bold",
+        color: "#1E293B",
+        margin: 0
+    },
+    kpiUnit: {
+        fontSize: "12px",
+        fontWeight: "normal",
+        color: "#94A3B8"
+    },
+    mainChartsGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+        gap: "20px",
+        marginBottom: "20px"
+    },
+    cardBox: {
+        backgroundColor: "#FFFFFF",
+        border: "1.5px solid #F3E8FF",
+        borderRadius: "20px",
+        padding: "24px",
+        boxShadow: "0 4px 15px rgba(192, 132, 252, 0.04)"
+    },
+    cardHeaderFlex: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start"
+    },
+    cardHeading: {
+        fontSize: "16px",
+        fontWeight: "bold",
+        color: "#1E293B",
+        margin: "0 0 4px 0"
+    },
+    cardSubHeading: {
+        fontSize: "13px",
+        color: "#64748B",
+        margin: 0
+    },
+    donutLayout: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-around",
+        marginTop: "16px",
+        minHeight: "140px"
+    },
+    donutCenter: {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column"
+    },
+    legendColumn: {
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        gap: "10px"
     },
-    heroHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
-    heroLabel: { fontSize: "15px", color: "rgba(255, 255, 255, 0.9)", margin: "0 0 6px 0" },
-    heroValue: { fontSize: "40px", fontWeight: "bold", margin: 0, lineHeight: "1" },
-    heroUnit: { fontSize: "20px", fontWeight: "normal", color: "rgba(255, 255, 255, 0.8)" },
-    heroIcon: { fontSize: "56px", color: "rgba(255, 255, 255, 0.2)" },
-    equivalenceBox: {
-        backgroundColor: "rgba(255, 255, 255, 0.12)",
-        padding: "12px 16px",
-        borderRadius: "12px",
+    legendRow: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        fontSize: "13px",
+        color: "#334155"
+    },
+    dotIndicator: {
+        width: "10px",
+        height: "10px",
+        borderRadius: "50%"
+    },
+    legendLabel: {
+        flex: 1
+    },
+    legendVal: {
+        fontWeight: "bold",
+        color: "#1E293B"
+    },
+    bottomGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+        gap: "20px"
+    },
+    categoryListContainer: {
+        marginTop: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px"
+    },
+    catRow: {
         display: "flex",
         alignItems: "center",
         gap: "10px",
+        fontSize: "13px"
+    },
+    catTitle: {
+        width: "110px",
+        color: "#334155",
+        fontWeight: "500",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+    },
+    catBarBg: {
+        flex: 1,
+        backgroundColor: "#F1F5F9",
+        height: "8px",
+        borderRadius: "4px",
+        overflow: "hidden"
+    },
+    catBarFill: {
+        height: "100%",
+        backgroundColor: "#C084FC",
+        borderRadius: "4px"
+    },
+    catCount: {
+        width: "24px",
+        textAlign: "right",
+        fontWeight: "bold",
+        color: "#1E293B"
+    },
+    emptyText: {
+        textAlign: "center",
+        color: "#94A3B8",
+        fontSize: "13px",
+        margin: "30px 0"
+    },
+    reportStack: {
         marginTop: "16px",
-    },
-    equivIcon: { fontSize: "22px", color: "#A7F3D0" },
-    equivText: { fontSize: "13px", margin: 0, color: "rgba(255, 255, 255, 0.9)" },
-    equivHighlight: { color: "#A7F3D0", fontWeight: "bold" },
-
-    // การ์ดย่อย 3 ใบ
-    subKpiGrid: { flex: "1 1 500px", display: "flex", flexDirection: "column", gap: "12px" },
-    subCard: {
-        padding: "16px 20px",
-        borderRadius: "16px",
-        // borderStyle: 'solid',
-        // borderWidth: '1.5px',
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
+        flexDirection: "column",
+        gap: "10px"
     },
-    subCardLabel: { fontSize: "14px", color: "#555", margin: "0 0 4px 0" },
-    subCardValue: { fontSize: "24px", fontWeight: "bold", margin: 0 },
-    subCardUnit: { fontSize: "14px", fontWeight: "normal", color: "#666" },
-    iconBg: { borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" },
-
-    // แถว 3 การ์ดเดิม
-    threeCardsRow: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" },
-    whiteCard: { padding: '20px', borderRadius: '16px', border: '2px solid #f0f0f0' },
-    cardTitle: { fontSize: '17px', fontWeight: 'bold', color: '#262626', margin: '0 0 15px 0' },
-    donutCenterText: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' },
-    legendItem: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' },
-    badge: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },
-    catName: { fontSize: '13px', width: '120px', color: '#262626', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-    progressBarBg: { flex: 1, backgroundColor: '#f5f5f5', height: '8px', borderRadius: '4px', overflow: 'hidden' },
-    progressBarFill: { height: '100%', borderRadius: '4px' },
-    loading: { textAlign: "center", padding: "100px", color: "#1B6B58" },
+    reportRowItem: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 14px",
+        backgroundColor: "#FAF5FF",
+        border: "1.5px solid #F3E8FF",
+        borderRadius: "12px"
+    },
+    reportTextLabel: {
+        fontSize: "13px",
+        color: "#475569",
+        fontWeight: "500"
+    },
+    reportNumBadge: {
+        fontSize: "13px",
+        fontWeight: "bold",
+        color: "#1E293B",
+        backgroundColor: "#FFFFFF",
+        padding: "2px 10px",
+        borderRadius: "8px",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+    },
+    loadingContainer: {
+        textAlign: "center",
+        padding: "120px 20px",
+        color: "#9333EA",
+        fontSize: "15px",
+        fontWeight: "600",
+        fontFamily: "'Prompt', sans-serif"
+    },
+    spinner: {
+        width: "40px",
+        height: "40px",
+        border: "4px solid #E2E8F0",
+        borderTop: "4px solid #9333EA",
+        borderRadius: "50%",
+        animation: "spin 1s linear infinite",
+        margin: "0 auto 16px auto"
+    },
+    errorContainer: {
+        textAlign: "center",
+        padding: "100px 20px",
+        color: "#EF4444",
+        fontFamily: "'Prompt', sans-serif"
+    }
 };
