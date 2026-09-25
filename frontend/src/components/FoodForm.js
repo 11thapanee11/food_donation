@@ -1,6 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+
+// นำเข้าโมดูลหลักของ OpenLayers
+import "ol/ol.css";
+import Map from "ol/Map";
+import View from "ol/View";
+import TileLayer from "ol/layer/Tile";
+import VectorLayer from "ol/layer/Vector";
+import XYZ from "ol/source/XYZ";
+import VectorSource from "ol/source/Vector";
+import Feature from "ol/Feature";
+import Point from "ol/geom/Point";
+import { fromLonLat, toLonLat } from "ol/proj";
+import { Style, Icon } from "ol/style";
 
 export default function FoodForm() {
     const navigate = useNavigate();
@@ -27,8 +39,8 @@ export default function FoodForm() {
         pickupDateEnd: "",
         pickupStartTime: "",
         pickupEndTime: "",
-        latitude: "",
-        longitude: "",
+        latitude: "18.7883",
+        longitude: "98.9853",
         foodStatus: "",
         foodCateId: "",
         donorId: ""
@@ -63,7 +75,7 @@ export default function FoodForm() {
         setTimeout(() => {
             closePopup();
             if (callback) callback();
-        }, 1500); // แสดงผลชั่วคราว 1.5 วินาทีแล้วปิดเอง
+        }, 1500);
     };
 
     const handleChange = (e) => {
@@ -126,7 +138,9 @@ export default function FoodForm() {
 
     const loadFoodData = () => {
         if (isEditMode) {
-            fetch(`http://localhost:8082/foods/${foodId}`)
+            fetch(`http://localhost:8082/foods/${foodId}`, {
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+            })
                 .then(res => {
                     if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลอาหารรายการนี้ได้");
                     return res.json();
@@ -155,7 +169,10 @@ export default function FoodForm() {
                             foodCateId: foodInfo.foodCateId,
                             fileImage: foodInfo.foodImage,
                             inputQuantity: calculatedQty,
-                            selectedUnit: calculatedUnit
+                            selectedUnit: calculatedUnit,
+                            // ดึงพิกัดจากฐานข้อมูลมาอัปเดตอย่างถูกต้อง
+                            latitude: foodInfo.latitude !== undefined && foodInfo.latitude !== null ? foodInfo.latitude : prev.latitude,
+                            longitude: foodInfo.longitude !== undefined && foodInfo.longitude !== null ? foodInfo.longitude : prev.longitude
                         }));
 
                         setInputQuantity(calculatedQty);
@@ -223,18 +240,130 @@ export default function FoodForm() {
         loadFoodData();
     }, [foodId, isEditMode]);
 
-    const { isLoaded } = useJsApiLoader({
-        googleMapsApiKey: "AIzaSyCnukRCzb4dVhy8beM7oLM0AUyf_8kuEm0"
-    });
+    // OpenLayers Map Integration (Google Maps XYZ Layer) พร้อมหมุดรูปภาพ
+    const mapElementRef = useRef(null);
+    const mapInstanceRef = useRef(null);
+    const vectorSourceRef = useRef(null);
 
-    const handleMapClick = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            latitude: e.latLng.lat(),
-            longitude: e.latLng.lng(),
-        }));
-        setErrors((prev) => ({ ...prev, location: "" }));
-    };
+    useEffect(() => {
+        if (!mapElementRef.current || currentStep !== 3) return;
+
+        if (!mapInstanceRef.current) {
+            vectorSourceRef.current = new VectorSource();
+            const vectorLayer = new VectorLayer({
+                source: vectorSourceRef.current
+            });
+
+            const googleLayer = new TileLayer({
+                source: new XYZ({
+                    url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                }),
+            });
+
+            const initialLon = Number(formData.longitude) || 98.9853;
+            const initialLat = Number(formData.latitude) || 18.7883;
+
+            const map = new Map({
+                target: mapElementRef.current,
+                layers: [googleLayer, vectorLayer],
+                view: new View({
+                    center: fromLonLat([initialLon, initialLat]),
+                    zoom: 15
+                })
+            });
+
+            map.on('click', (event) => {
+                if (!isEditable) return;
+                const clickedCoord = toLonLat(event.coordinate);
+                setFormData(prev => ({
+                    ...prev,
+                    longitude: clickedCoord[0],
+                    latitude: clickedCoord[1]
+                }));
+                setErrors(prev => ({ ...prev, location: "" }));
+            });
+
+            mapInstanceRef.current = map;
+        } else {
+            mapInstanceRef.current.setTarget(mapElementRef.current);
+            mapInstanceRef.current.updateSize();
+        }
+    }, [currentStep, isEditable]);
+
+    // อัปเดตตำแหน่งหมุดรูปทรง Pin บนแผนที่ทุกครั้งที่พิกัดเปลี่ยนแปลงหรือเปลี่ยนสเต็ป
+    useEffect(() => {
+        if (!mapElementRef.current || currentStep !== 3) return;
+
+        const lon = Number(formData.longitude) || 98.9853;
+        const lat = Number(formData.latitude) || 18.7883;
+
+        if (!mapInstanceRef.current) {
+            vectorSourceRef.current = new VectorSource();
+            const vectorLayer = new VectorLayer({
+                source: vectorSourceRef.current
+            });
+
+            const googleLayer = new TileLayer({
+                source: new XYZ({
+                    url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                }),
+            });
+
+            const map = new Map({
+                target: mapElementRef.current,
+                layers: [googleLayer, vectorLayer],
+                view: new View({
+                    center: fromLonLat([lon, lat]),
+                    zoom: 15
+                })
+            });
+
+            map.on('click', (event) => {
+                if (!isEditable) return;
+                const clickedCoord = toLonLat(event.coordinate);
+                setFormData(prev => ({
+                    ...prev,
+                    longitude: clickedCoord[0],
+                    latitude: clickedCoord[1]
+                }));
+                setErrors(prev => ({ ...prev, location: "" }));
+            });
+
+            mapInstanceRef.current = map;
+        } else {
+            mapInstanceRef.current.setTarget(mapElementRef.current);
+            mapInstanceRef.current.updateSize();
+            mapInstanceRef.current.getView().setCenter(fromLonLat([lon, lat]));
+        }
+
+        // วาดหรืออัปเดตหมุด Pin สีแดง
+        if (vectorSourceRef.current) {
+            vectorSourceRef.current.clear();
+            const markerFeature = new Feature({
+                geometry: new Point(fromLonLat([lon, lat]))
+            });
+
+            const pinSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" height="40" viewBox="0 0 24 24" width="40" fill="#EF4444">
+                    <path d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+            `;
+            const encodedSvg = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pinSvg);
+
+            markerFeature.setStyle(new Style({
+                image: new Icon({
+                    anchor: [0.5, 1],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'fraction',
+                    src: encodedSvg,
+                    scale: 1.2
+                })
+            }));
+
+            vectorSourceRef.current.addFeature(markerFeature);
+        }
+    }, [currentStep, isEditable, formData.latitude, formData.longitude]);
 
     const handleGetCurrentLocation = () => {
         if (navigator.geolocation) {
@@ -259,11 +388,6 @@ export default function FoodForm() {
                 { enableHighAccuracy: true }
             );
         }
-    };
-
-    const currentPos = {
-        lat: Number(formData.latitude) || 18.7883,
-        lng: Number(formData.longitude) || 98.9853
     };
 
     // ฟังก์ชันจัดการการลบรายการอาหาร (DELETE)
@@ -363,23 +487,12 @@ export default function FoodForm() {
             );
         }
 
-        if (!isExpired) {
-            return (
-                <>
-                    <button type="button" onClick={() => handleDeleteFood(formData.id)} style={styles.deleteBtn}>
-                        <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
-                        ลบรายการ
-                    </button>
-                    <button type="button" onClick={(e) => { e.preventDefault(); setIsEditable(true); }} style={styles.editBtn}>
-                        <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
-                        แก้ไขรายการ
-                    </button>
-                </>
-            );
-        }
+        return null;
     };
 
-    const handleNextStep = () => {
+    const handleNextStep = (e) => {
+        if (e) e.preventDefault();
+
         const newErrors = {};
 
         if (currentStep === 1) {
@@ -413,7 +526,6 @@ export default function FoodForm() {
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     };
 
-    // ฟังก์ชันจัดการบันทึกข้อมูล (CREATE / UPDATE)
     const handleSubmit = (e) => {
         e.preventDefault();
         const token = localStorage.getItem("accessToken");
@@ -424,7 +536,6 @@ export default function FoodForm() {
         if (!formData.pickupDateEnd) newErrors.pickupDateEnd = "กรุณากรอกข้อมูล";
         if (!formData.pickupStartTime) newErrors.pickupStartTime = "กรุณากรอกข้อมูล";
         if (!formData.pickupEndTime) newErrors.pickupEndTime = "กรุณากรอกข้อมูล";
-        if (!formData.latitude || !formData.longitude) newErrors.location = "กรุณาเลือกพิกัดตำแหน่งบนแผนที่";
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -486,11 +597,11 @@ export default function FoodForm() {
             });
     };
 
-    if (loading || !isLoaded) return <div style={styles.loading}>กำลังโหลด...</div>;
+    if (loading) return <div style={styles.loading}>กำลังโหลด...</div>;
 
     const renderFoodImage = () => {
         const hasImage = imagePreview || formData.fileImage || formData.foodImage;
-        
+
         if (!hasImage && isEditable) {
             return (
                 <div style={styles.uploadCardContainer}>
@@ -501,7 +612,7 @@ export default function FoodForm() {
                         style={{ display: "none" }}
                         ref={fileInputRef}
                     />
-                    <div 
+                    <div
                         onClick={handleClickUpload}
                         style={{
                             ...styles.dropzoneBox,
@@ -567,14 +678,21 @@ export default function FoodForm() {
     return (
         <div style={styles.page}>
             <div style={styles.container}>
-                
+
                 <div style={styles.headerCenter}>
                     <div style={styles.topBadge}>
                         <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>volunteer_activism</span>
-                        ร่วมแบ่งปันอาหาร
+                        {isEditMode ? "จัดการรายการอาหาร" : "ร่วมแบ่งปันอาหาร"}
                     </div>
-                    <h1 style={styles.mainTitle}>แบ่งปันอาหารส่วนเกินของคุณ</h1>
-                    <p style={styles.mainSubtitle}>ร่วมมือกันลดขยะอาหารและส่งต่อให้ผู้ที่ต้องการ ทุกการแบ่งปันมีความหมาย!</p>
+                    <h1 style={styles.mainTitle}>
+                        {isEditMode ? "รายละเอียดและแก้ไขรายการอาหาร" : "แบ่งปันอาหารส่วนเกินของคุณ"}
+                    </h1>
+                    <p style={styles.mainSubtitle}>
+                        {isEditMode
+                            ? "ตรวจสอบข้อมูล แก้ไข หรืออัปเดตสถานะรายการอาหารของคุณได้ที่นี่"
+                            : "ร่วมมือกันลดขยะอาหารและส่งต่อให้ผู้ที่ต้องการ ทุกการแบ่งปันมีความหมาย!"
+                        }
+                    </p>
                 </div>
 
                 <div style={styles.stepIndicatorContainer}>
@@ -607,44 +725,69 @@ export default function FoodForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} noValidate>
-
-                    {isEditMode && !isExpired && (
-                        <div style={styles.topStatusRow}>
-                            {formData.foodStatus !== 'closed' && (
-                                <button type="button" style={styles.confirmDeliveryBtn} onClick={handleConfirmDelivery}>
-                                    <span className="material-symbols-outlined">check_circle</span>
-                                    ยืนยันการส่งมอบอาหาร
-                                </button>
-                            )}
-                            <div style={styles.statusSelectGroup}>
-                                <label style={styles.statusLabel}>สถานะ:</label>
-                                <select
-                                    name="foodStatus"
-                                    value={formData.foodStatus || "available"}
-                                    onChange={handleChange}
-                                    disabled={!isEditable}
-                                    style={{
-                                        ...styles.inputField,
-                                        backgroundColor: isEditable ? "#FFFFFF" : "#F8FAFC",
-                                        cursor: isEditable ? "pointer" : "not-allowed",
-                                        width: "160px"
-                                    }}
-                                >
-                                    <option value="available">เปิดรับบริจาค</option>
-                                    <option value="closed">ปิดรับบริจาค</option>
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Stage 1: รูปภาพอาหาร */}
+                    {/* Stage 1: รูปภาพอาหาร พร้อมสถานะอาหาร และปุ่มยืนยันการส่งมอบอาหาร */}
                     {currentStep === 1 && (
-                        <div style={styles.cardSection}>
-                            <h3 style={styles.cardSectionTitle}>
-                                รูปภาพอาหาร <span style={styles.requiredStar}>*</span>
-                            </h3>
-                            {renderFoodImage()}
-                        </div>
+                        <>
+                            <div style={styles.step1HeaderRow}>
+                                {isEditMode && !isExpired && formData.foodStatus !== 'closed' && (
+                                    <button type="button" style={styles.confirmDeliveryBtn} onClick={handleConfirmDelivery}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
+                                        ยืนยันการส่งมอบ
+                                    </button>
+                                )}
+                                <div style={styles.topRightControls}>
+                                    {isEditMode && !isExpired && (
+                                        !isEditable ? (
+                                            <>
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setIsEditable(true); }} style={styles.editBtn}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                                                    แก้ไข
+                                                </button>
+                                                <button type="button" onClick={() => handleDeleteFood(formData.id || foodId)} style={styles.deleteBtn}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
+                                                    ลบ
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button type="button" onClick={() => setIsEditable(false)} style={styles.cancelEditCardBtn}>
+                                                ยกเลิกการแก้ไข
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={styles.cardSection}>
+                                <div style={styles.step1HeaderRow}>
+                                    <h3 style={{ ...styles.cardSectionTitle, borderBottom: "none", marginBottom: 0 }}>
+                                        รูปภาพอาหาร <span style={styles.requiredStar}>*</span>
+                                    </h3>
+
+                                    <div style={styles.statusSelectGroup}>
+                                        <label style={styles.statusLabel}>สถานะ:</label>
+                                        <select
+                                            name="foodStatus"
+                                            value={formData.foodStatus || "available"}
+                                            onChange={handleChange}
+                                            disabled={!isEditable}
+                                            style={{
+                                                ...styles.inputField,
+                                                padding: "6px 10px",
+                                                backgroundColor: isEditable ? "#FFFFFF" : "#F8FAFC",
+                                                color: !isEditable ? "#94A3B8" : "#1E293B",
+                                                cursor: isEditable ? "pointer" : "not-allowed",
+                                                width: "140px",
+                                                fontSize: "13px"
+                                            }}
+                                        >
+                                            <option value="available">เปิดรับบริจาค</option>
+                                            <option value="closed">ปิดรับบริจาค</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                {renderFoodImage()}
+                            </div>
+                        </>
                     )}
 
                     {/* Stage 2: ข้อมูลรายละเอียดอาหาร */}
@@ -663,7 +806,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.foodName ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.foodName ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.foodName ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -678,7 +822,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.foodCateId ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.foodCateId ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.foodCateId ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     >
@@ -700,7 +845,12 @@ export default function FoodForm() {
                                     value={formData.description}
                                     placeholder="ระบุส่วนผสม หรือข้อแนะนำเพิ่มเติม..."
                                     disabled={!isEditable}
-                                    style={{ ...styles.inputField, height: "80px", resize: "vertical" }}
+                                    style={{
+                                        ...styles.inputField,
+                                        height: "80px",
+                                        resize: "vertical",
+                                        color: !isEditable ? "#94A3B8" : "#1E293B"
+                                    }}
                                     onChange={handleChange}
                                 />
                             </div>
@@ -716,7 +866,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.expiryDate ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.expiryDate ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.expiryDate ? "#FEF2F2" : "#F8FAFC",
+                                            color: isEditMode ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -734,7 +885,8 @@ export default function FoodForm() {
                                                 ...styles.inputField,
                                                 flex: 1,
                                                 borderColor: errors.unitWeightKg ? "#EF4444" : "#E2E8F0",
-                                                backgroundColor: errors.unitWeightKg ? "#FEF2F2" : "#F8FAFC"
+                                                backgroundColor: errors.unitWeightKg ? "#FEF2F2" : "#F8FAFC",
+                                                color: !isEditable ? "#94A3B8" : "#1E293B"
                                             }}
                                             onChange={handleQuantityChange}
                                         />
@@ -742,7 +894,12 @@ export default function FoodForm() {
                                             value={selectedUnit}
                                             onChange={handleUnitSelectChange}
                                             disabled={!isEditable}
-                                            style={{ ...styles.inputField, width: "110px", flexShrink: 0 }}
+                                            style={{
+                                                ...styles.inputField,
+                                                width: "110px",
+                                                flexShrink: 0,
+                                                color: !isEditable ? "#94A3B8" : "#1E293B"
+                                            }}
                                         >
                                             {UNIT_OPTIONS.map((u) => (
                                                 <option key={u.value} value={u.value}>{u.label}</option>
@@ -765,7 +922,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.totalUnit ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.totalUnit ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.totalUnit ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -782,7 +940,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.limitPerPerson ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.limitPerPerson ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.limitPerPerson ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -807,7 +966,8 @@ export default function FoodForm() {
                                     style={{
                                         ...styles.inputField,
                                         borderColor: errors.address ? "#EF4444" : "#E2E8F0",
-                                        backgroundColor: errors.address ? "#FEF2F2" : "#F8FAFC"
+                                        backgroundColor: errors.address ? "#FEF2F2" : "#F8FAFC",
+                                        color: !isEditable ? "#94A3B8" : "#1E293B"
                                     }}
                                     onChange={handleChange}
                                 />
@@ -825,7 +985,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.pickupDateStart ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.pickupDateStart ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.pickupDateStart ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -841,7 +1002,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.pickupDateEnd ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.pickupDateEnd ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.pickupDateEnd ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -860,7 +1022,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.pickupStartTime ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.pickupStartTime ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.pickupStartTime ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -876,7 +1039,8 @@ export default function FoodForm() {
                                         style={{
                                             ...styles.inputField,
                                             borderColor: errors.pickupEndTime ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.pickupEndTime ? "#FEF2F2" : "#F8FAFC"
+                                            backgroundColor: errors.pickupEndTime ? "#FEF2F2" : "#F8FAFC",
+                                            color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
@@ -885,25 +1049,7 @@ export default function FoodForm() {
                             </div>
 
                             <div style={styles.mapContainer}>
-                                <GoogleMap
-                                    mapContainerStyle={styles.mapCanvas}
-                                    center={currentPos}
-                                    zoom={17}
-                                    onClick={isEditable ? handleMapClick : null}
-                                >
-                                    <Marker
-                                        position={currentPos}
-                                        draggable={isEditable}
-                                        onDragEnd={(e) => {
-                                            if (!isEditable) return;
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                latitude: e.latLng.lat(),
-                                                longitude: e.latLng.lng(),
-                                            }));
-                                        }}
-                                    />
-                                </GoogleMap>
+                                <div ref={mapElementRef} style={styles.mapCanvas} />
 
                                 {isEditable && (
                                     <button
@@ -916,27 +1062,28 @@ export default function FoodForm() {
                                     </button>
                                 )}
                             </div>
-                            {errors.location && <span style={styles.errorText}>{errors.location}</span>}
                         </div>
                     )}
 
                     {/* ปุ่มควบคุมสเต็ป */}
                     <div style={styles.buttonGroup}>
-                        {currentStep > 1 ? (
-                            <button type="button" style={styles.cancelBtn} onClick={handlePrevStep}>
-                                ย้อนกลับ
-                            </button>
-                        ) : (
-                            <div />
-                        )}
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            {currentStep > 1 && (
+                                <button type="button" style={styles.cancelBtn} onClick={handlePrevStep}>
+                                    ย้อนกลับ
+                                </button>
+                            )}
+                        </div>
 
-                        {currentStep < 3 ? (
-                            <button type="button" style={styles.submitBtn} onClick={handleNextStep}>
-                                ถัดไป
-                            </button>
-                        ) : (
-                            renderActionButtons()
-                        )}
+                        <div>
+                            {currentStep < 3 ? (
+                                <button type="button" style={styles.submitBtn} onClick={(e) => handleNextStep(e)}>
+                                    ถัดไป
+                                </button>
+                            ) : (
+                                renderActionButtons()
+                            )}
+                        </div>
                     </div>
                 </form>
             </div>
@@ -964,8 +1111,8 @@ export default function FoodForm() {
                         {(popup.type === "confirm" || popup.type === "input") && (
                             <div style={styles.modalFooter}>
                                 <button style={styles.modalCancelBtn} onClick={closePopup}>ยกเลิก</button>
-                                <button 
-                                    style={styles.modalConfirmBtn} 
+                                <button
+                                    style={styles.modalConfirmBtn}
                                     onClick={() => {
                                         if (popup.type === "input") {
                                             const val = document.getElementById("modalInputCode").value;
@@ -1049,22 +1196,27 @@ const styles = {
         borderRadius: "2px",
         transition: "all 0.3s ease",
     },
-    topStatusRow: {
+    step1HeaderRow: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: "20px",
         flexWrap: "wrap",
-        gap: "12px",
+        gap: "10px",
+    },
+    topRightControls: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        flexWrap: "wrap",
     },
     statusSelectGroup: {
         display: "flex",
         alignItems: "center",
-        gap: "10px",
-        marginLeft: "auto",
+        gap: "6px",
     },
     statusLabel: {
-        fontSize: "14px",
+        fontSize: "13px",
         fontWeight: "600",
         color: "#64748B",
     },
@@ -1208,7 +1360,6 @@ const styles = {
         border: "1.5px solid #E2E8F0",
         backgroundColor: "#F8FAFC",
         fontSize: "14px",
-        color: "#1E293B",
         outline: "none",
         fontFamily: "inherit",
     },
@@ -1234,7 +1385,7 @@ const styles = {
         right: "16px",
         padding: "8px 14px",
         backgroundColor: "#FFFFFF",
-        border: "1.5px solid #E2E8F0",
+        border: "1px solid #E2E8F0",
         borderRadius: "10px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         cursor: "pointer",
@@ -1244,6 +1395,7 @@ const styles = {
         fontSize: "13px",
         fontWeight: "600",
         color: "#475569",
+        zIndex: 1000,
     },
     buttonGroup: {
         display: "flex",
@@ -1252,7 +1404,7 @@ const styles = {
         marginTop: "24px",
     },
     cancelBtn: {
-        padding: "10px 24px",
+        padding: "10px 20px",
         borderRadius: "12px",
         border: "1.5px solid #CBD5E1",
         backgroundColor: "#FFFFFF",
@@ -1273,44 +1425,54 @@ const styles = {
         boxShadow: "0 4px 12px rgba(192, 132, 252, 0.25)",
     },
     editBtn: {
-        padding: "10px 28px",
-        borderRadius: "12px",
-        border: "none",
-        backgroundColor: "#C084FC",
-        color: "#FFFFFF",
+        padding: "6px 14px",
+        borderRadius: "10px",
+        border: "1.5px solid #E9D5FF",
+        backgroundColor: "#FAF5FF",
+        color: "#9333EA",
         fontSize: "14px",
         fontWeight: "600",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: "6px",
+        gap: "4px",
     },
     deleteBtn: {
-        padding: "10px 24px",
-        borderRadius: "12px",
-        border: "none",
-        backgroundColor: "#EF4444",
-        color: "#FFFFFF",
+        padding: "6px 14px",
+        borderRadius: "10px",
+        border: "1.5px solid #FCA5A5",
+        backgroundColor: "#FEF2F2",
+        color: "#EF4444",
         fontSize: "14px",
         fontWeight: "600",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: "6px",
+        gap: "4px",
+    },
+    cancelEditCardBtn: {
+        padding: "6px 14px",
+        borderRadius: "10px",
+        border: "1.5px solid #CBD5E1",
+        backgroundColor: "#FFFFFF",
+        color: "#64748B",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer",
     },
     confirmDeliveryBtn: {
         backgroundColor: "#10B981",
         color: "#FFFFFF",
         border: "none",
-        borderRadius: "12px",
-        padding: "10px 20px",
+        borderRadius: "10px",
+        padding: "6px 14px",
         fontSize: "14px",
         fontWeight: "600",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: "8px",
-        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+        gap: "4px",
+        boxShadow: "0 2px 8px rgba(16, 185, 129, 0.2)",
     },
     loading: {
         textAlign: "center",
