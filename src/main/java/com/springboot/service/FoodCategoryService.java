@@ -31,15 +31,14 @@ public class FoodCategoryService {
         return categories.stream()
                 .map(cat -> new FoodCategoryDto(
                         cat.getFoodCateId(),
-                        cat.getFoodCateName(),
-                        cat.getEmissionFactor()))
+                        cat.getFoodCateName()))
                 .toList();
     }
 
     public FoodCategoryDto getCategoryById(Integer id) {
         FoodCategory cat = foodCategoryRepository.findById(id)
                 .orElseThrow(() -> new ApplicationException("ไม่พบหมวดหมู่รหัส: " + id, HttpStatus.NOT_FOUND));
-        return new FoodCategoryDto(cat.getFoodCateId(), cat.getFoodCateName(), cat.getEmissionFactor());
+        return new FoodCategoryDto(cat.getFoodCateId(), cat.getFoodCateName());
     }
 
     public List<DashboardStatsDto.CategoryStatDto> getFoodCategoryStats() {

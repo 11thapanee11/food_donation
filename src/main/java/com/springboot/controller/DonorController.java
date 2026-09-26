@@ -29,34 +29,4 @@ public class DonorController {
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลสำเร็จ", donors));
     }
 
-    @GetMapping("/impact-summary")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getImpactSummary(
-            @RequestHeader("Authorization") String authHeader) {
-
-        User user = userService.authenticate(authHeader);
-        Map<String, Object> summaryData = donorService.getImpactSummary(user.getUserId());
-
-        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลสถิติมวลรวมสำเร็จ", summaryData));
-    }
-
-    @GetMapping("/ranking")
-    public ResponseEntity<ApiResponse<List<DonorDto>>> getListTotalImpact() {
-        List<DonorDto> listTotalImpact = donorService.getListTotalImpact();
-        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลสำเร็จ", listTotalImpact));
-    }
-
-    @PutMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<String>> updateDonorStatus(
-            @PathVariable Integer id,
-            @RequestBody Map<String, String> body) {
-
-        String newStatus = body.get("status");
-        if (newStatus == null || newStatus.isEmpty()) {
-            throw new ApplicationException("โปรดระบุสถานะที่ต้องการเปลี่ยน", HttpStatus.BAD_REQUEST);
-        }
-
-        donorService.updateDonorStatus(id, newStatus);
-        return ResponseEntity.ok(ApiResponse.success("อัปเดตสถานะสำเร็จ"));
-    }
-
 }

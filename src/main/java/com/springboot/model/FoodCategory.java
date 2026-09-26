@@ -13,9 +13,6 @@ public class FoodCategory {
     @Column(name = "food_cate_name", length = 50, nullable = false)
     private String foodCateName;
 
-    @Column(name = "emission_factor", nullable = false)
-    private Double emissionFactor;
-
     public Integer getFoodCateId() {
         return foodCateId;
     }
@@ -30,14 +27,6 @@ public class FoodCategory {
 
     public void setFoodCateName(String foodCateName) {
         this.foodCateName = foodCateName;
-    }
-
-    public Double getEmissionFactor() {
-        return emissionFactor;
-    }
-
-    public void setEmissionFactor(Double emissionFactor) {
-        this.emissionFactor = emissionFactor;
     }
 
 }

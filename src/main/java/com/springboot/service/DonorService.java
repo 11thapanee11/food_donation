@@ -34,8 +34,6 @@ public class DonorService {
             dto.setId(d.getUser().getUserId());
             dto.setName(d.getUser().getFirstName() + " " + d.getUser().getLastName());
             dto.setEmail(d.getUser().getEmail());
-            dto.setStatus(d.getDonorStatus());
-            dto.setTotalCo2(d.getTotalImpactAmount());
             return dto;
         }).toList();
     }
@@ -44,81 +42,8 @@ public class DonorService {
         return donorRepository.findById(user.getUserId()).orElseGet(() -> {
             Donor newDonor = new Donor();
             newDonor.setUser(user);
-            newDonor.setDonorStatus("active");
-            newDonor.setTotalImpactAmount(0.0);
             return donorRepository.save(newDonor);
         });
-    }
-
-    public void updateTotalImpactAmount(Integer donorId, double carbonReduction) {
-        Donor donor = donorRepository.findById(donorId)
-                .orElseThrow(() -> new ApplicationException(
-                        "ไม่พบข้อมูลผู้บริจาคไอดี: " + donorId, HttpStatus.NOT_FOUND));
-
-        // ดึงยอดเก่ามาคำนวณสะสม (ป้องกันกรณี totalImpactAmount ในเบสเป็น NULL)
-        double currentImpact = donor.getTotalImpactAmount() != null ? donor.getTotalImpactAmount() : 0.0;
-        // เซ็ตค่าผลรวมใหม่เข้าไปที่ Object Properties
-        donor.setTotalImpactAmount(currentImpact + carbonReduction);
-
-        // บันทึกการเปลี่ยนแปลงกลับลงตาราง donor
-        donorRepository.save(donor);
-
-        try {
-            donorRepository.save(donor);
-        } catch (Exception e) {
-            throw new ApplicationException("ไม่สามารถอัปเดตข้อมูลผู้บริจาคได้: " + e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public Map<String, Object> getImpactSummary(Integer userId) {
-        // ค้นหาผู้บริจาคเพื่อเอาค่าคาร์บอนรวมสะสม
-        Donor donor = donorRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลผู้บริจาคไอดี: " + userId, HttpStatus.NOT_FOUND));
-
-        Map<String, Object> summaryMap = new HashMap<>();
-
-        // คาร์บอนรวม (ดึงสะสมจากฟิลด์ตรงๆ ของ Donor)
-        double totalCarbon = donor.getTotalImpactAmount() != null ? donor.getTotalImpactAmount() : 0.0;
-        summaryMap.put("totalCarbon", totalCarbon);
-
-        // หาน้ำหนักรวมจากตาราง Booking (ฟิกซ์เฉพาะสถานะ COMPLETE จากคิวรีภายใน)
-        Double totalWeight = bookingRepository.sumWeightByDonorIdAndComplete(userId);
-        summaryMap.put("totalWeight", totalWeight != null ? totalWeight : 0.0);
-
-        // นับจำนวนครั้งการบริจาคสำเร็จจากตาราง Booking (ฟิกซ์เฉพาะสถานะ COMPLETE
-        // จากคิวรีภายใน)
-        int totalDonationCount = bookingRepository.countCompleteBookingsByDonorId(userId);
-        summaryMap.put("totalDonations", totalDonationCount);
-
-        return summaryMap;
-    }
-
-    public List<DonorDto> getListTotalImpact() {
-        List<Donor> donors = donorRepository.findTopDonorsByImpact();
-        if (donors == null || donors.isEmpty()) {
-            throw new ApplicationException("ไม่พบข้อมูลผู้บริจาค", HttpStatus.NOT_FOUND);
-        }
-
-        return donors.stream()
-                .map(d -> new DonorDto(
-                        d.getUser().getFirstName(),
-                        d.getUser().getLastName(),
-                        d.getTotalImpactAmount()))
-                .toList();
-    }
-
-    public void updateDonorStatus(Integer userId, String newStatus) {
-        Donor donor = donorRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลผู้บริจาค", HttpStatus.NOT_FOUND));
-
-        try {
-            donor.setDonorStatus(newStatus);
-            donorRepository.save(donor);
-        } catch (Exception e) {
-            throw new ApplicationException("ไม่สามารถแก้ไขสถานะบัญชีผู้ใช้งานได้ กรุณาลองใหม่อีกครั้ง" + e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
     }
 
     public Donor getDonorByUserId(Integer userId) {

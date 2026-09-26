@@ -3,15 +3,13 @@ package com.springboot.dto;
 public class FoodCategoryDto {
     private Integer id;
     private String name;
-    private Double emissionFactor;
 
     public FoodCategoryDto() {
     }
 
-    public FoodCategoryDto(Integer id, String name, Double emissionFactor) {
+    public FoodCategoryDto(Integer id, String name) {
         this.id = id;
         this.name = name;
-        this.emissionFactor = emissionFactor;
     }
 
     public Integer getId() {
@@ -28,14 +26,6 @@ public class FoodCategoryDto {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Double getEmissionFactor() {
-        return emissionFactor;
-    }
-
-    public void setEmissionFactor(Double emissionFactor) {
-        this.emissionFactor = emissionFactor;
     }
 
     

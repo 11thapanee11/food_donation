@@ -14,15 +14,6 @@ import java.util.*;
 @Repository
 public interface DonorRepository extends JpaRepository<Donor, Integer> {
 
-    // @Modifying
-    // @Transactional
-    // @Query(value = "INSERT INTO donor (user_id, donor_status, total_impact_amount) VALUES (:userId, 'ACTIVE', 0.0) ON DUPLICATE KEY UPDATE user_id = user_id", nativeQuery = true)
-    // void insertDonorIfNotExist(@Param("userId") Integer userId);
-
-    // ดึง Donor เรียงตามค่าพลังงานที่ลดได้ (มากไปน้อย)
-    @Query("SELECT d FROM Donor d WHERE d.totalImpactAmount > 0 AND d.donorStatus = 'active' ORDER BY d.totalImpactAmount DESC")
-    List<Donor> findTopDonorsByImpact();
-    // List<Donor> findAllByOrderByTotalImpactAmountDesc();
 
     @Query("SELECT d FROM Donor d JOIN User u ON d.userId = u.userId")
     List<Donor> findAllDonors();

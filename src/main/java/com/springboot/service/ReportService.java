@@ -90,7 +90,6 @@ public class ReportService {
             dto.setFoodName(report.getBooking().getFood().getFoodName());
             dto.setReporterName(report.getBooking().getRecipient().getUser().getFirstName() + " "
                     + report.getBooking().getRecipient().getUser().getLastName());
-            dto.setDonorStatus(report.getBooking().getFood().getDonor().getDonorStatus());
         }
 
         return dto;
