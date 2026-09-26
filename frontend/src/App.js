@@ -14,7 +14,6 @@ import FoodReceive from './components/FoodReceive';
 import ActivityHistoryPage from './components/ActivityHistoryPage';
 import AdminDashboard from './components/AdminDashboard';
 import ListFood from './components/ListFood';
-import ManageUsers from './components/ManageUser';
 import ListReport from './components/ListReport';
 import ReportDetail from './components/ReportDetail';
 import BookingDetail from "./components/BookingDetail";
@@ -119,7 +118,6 @@ function App() {
         <Route element={<AdminRoute />}>
           <Route path='/admin-dashboard' element={<AdminDashboard />} />
           <Route path='/manage-foods' element={<ListFood />} />
-          <Route path='/manage-users' element={<ManageUsers />} />
           <Route path='/manage-report' element={<ListReport />} />
           <Route path='/report-detail' element={<ReportDetail />} />
         </Route>

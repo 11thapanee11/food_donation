@@ -44,6 +44,8 @@ public class FoodDto {
     private String donorName;
     private String donorPhoneNum;
 
+    private boolean hasUserBooked;
+
     public String getFoodName() {
         return foodName;
     }
@@ -218,5 +220,13 @@ public class FoodDto {
 
     public void setDonorPhoneNum(String donorPhoneNum) {
         this.donorPhoneNum = donorPhoneNum;
+    }
+
+    public boolean isHasUserBooked() {
+        return hasUserBooked;
+    }
+
+    public void setHasUserBooked(boolean hasUserBooked) {
+        this.hasUserBooked = hasUserBooked;
     }
 }

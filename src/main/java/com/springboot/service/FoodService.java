@@ -23,19 +23,22 @@ public class FoodService {
     private final FoodRepository foodRepository;
     private final UserRepository userRepository;
     private final FoodCategoryRepository foodCategoryRepository;
+    private final BookingRepository bookingRepository;
     private final NotificationService notificationService;
 
     private static final String UPLOAD_DIR = "D:/Project/food_donation/uploads/food/";
 
     public FoodService(FoodRepository foodRepository, UserRepository userRepository,
-            FoodCategoryRepository foodCategoryRepository, NotificationService notificationService) {
+            FoodCategoryRepository foodCategoryRepository, BookingRepository bookingRepository,
+            NotificationService notificationService) {
         this.foodRepository = foodRepository;
         this.userRepository = userRepository;
         this.foodCategoryRepository = foodCategoryRepository;
+        this.bookingRepository = bookingRepository;
         this.notificationService = notificationService;
     }
 
-    private FoodDto mapToDto(Food food) {
+    private FoodDto mapToDto(Food food, Integer currentUserId) {
         FoodDto dto = new FoodDto();
         dto.setId(food.getFoodId());
         dto.setFoodName(food.getFoodName());
@@ -66,26 +69,34 @@ public class FoodService {
                 dto.setDonorPhoneNum(food.getDonor().getUser().getPhoneNumber());
             }
         }
+
+        if (currentUserId != null && currentUserId > 0) {
+            boolean hasBooked = bookingRepository.existsByFood_FoodIdAndRecipient_UserId(food.getFoodId(), currentUserId);
+            dto.setHasUserBooked(hasBooked);
+        } else {
+            dto.setHasUserBooked(false); // ถ้าไม่ได้ล็อกอิน (Guest) ค่าจะเป็น false เสมอ
+        }
+
         return dto;
     }
 
-    public List<FoodDto> getAllFoods() {
+    public List<FoodDto> getAllFoods(Integer currentUserId) {
         List<Food> foods = foodRepository.findAll();
         if (foods.isEmpty()) {
             throw new ApplicationException("ไม่พบข้อมูลอาหาร", HttpStatus.NOT_FOUND);
         }
-        return foods.stream().map(this::mapToDto).toList();
+        return foods.stream().map(food -> mapToDto(food, currentUserId)).toList();
     }
 
-    public FoodDto getFoodById(Integer id) {
+    public FoodDto getFoodById(Integer id, Integer currentUserId) {
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new ApplicationException("ไม่พบรายการอาหาร id=" + id, HttpStatus.NOT_FOUND));
-        return mapToDto(food);
+        return mapToDto(food, currentUserId);
     }
 
-    public List<FoodDto> getFoodsByCategory(Integer foodCateId) {
+    public List<FoodDto> getFoodsByCategory(Integer foodCateId, Integer currentUserId) {
         List<Food> foods = foodRepository.findByFoodCategory_FoodCateId(foodCateId);
-        return foods.stream().map(this::mapToDto).toList();
+        return foods.stream().map(food -> mapToDto(food, currentUserId)).toList();
     }
 
     public Food addFood(Donor donor, FoodDto foodDto, String imagePath) {

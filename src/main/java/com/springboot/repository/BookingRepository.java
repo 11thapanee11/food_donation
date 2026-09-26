@@ -43,10 +43,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
         long countByBookingStatus(String status);
 
-        // boolean existsByRecipientUserUserIdAndFoodFoodId(Integer userId, Integer
-        // foodId);
-        boolean existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(Integer recipientId, Integer foodId,
-                        List<String> statuses);
+        boolean existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(Integer recipientId, Integer foodId,List<String> statuses);
+        
         // @Query("SELECT COUNT(b) > 0 FROM Booking b " +
         // "WHERE b.recipient.userId = :recipientId " +
         // "AND b.food.foodId = :foodId " +
@@ -59,5 +57,5 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         @Query("SELECT SUM(b.bookingUnit) FROM Booking b WHERE b.bookingStatus = 'completed'")
         Double sumCompletedBookingUnits();
 
-        // boolean existsByFood_FoodIdAndUser_UserId(Integer foodId, Integer userId);
+        boolean existsByFood_FoodIdAndRecipient_UserId(Integer foodId, Integer userId);
 }

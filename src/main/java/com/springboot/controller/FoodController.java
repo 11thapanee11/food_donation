@@ -30,21 +30,26 @@ public class FoodController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FoodDto>>> getAllFoods() {
-        List<FoodDto> foods = foodService.getAllFoods();
+    public ResponseEntity<ApiResponse<List<FoodDto>>> getAllFoods(@RequestHeader("Authorization") String authHeader) {
+        User user = userService.authenticate(authHeader);
+        List<FoodDto> foods = foodService.getAllFoods(user.getUserId());
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารทั้งหมดสำเร็จ", foods));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<FoodDto>> getFoodById(@PathVariable Integer id) {
-        FoodDto foodDto = foodService.getFoodById(id);
+    public ResponseEntity<ApiResponse<FoodDto>> getFoodById(@PathVariable Integer id,
+            @RequestHeader("Authorization") String authHeader) {
+        User user = userService.authenticate(authHeader);
+        FoodDto foodDto = foodService.getFoodById(id, user.getUserId());
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารสำเร็จ", foodDto));
     }
 
     @GetMapping("/category/{id}")
     public ResponseEntity<ApiResponse<List<FoodDto>>> getFoodsByCategory(
+            @RequestHeader("Authorization") String authHeader,
             @PathVariable("id") Integer categoryId) {
-        List<FoodDto> foods = foodService.getFoodsByCategory(categoryId);
+        User user = userService.authenticate(authHeader);
+        List<FoodDto> foods = foodService.getFoodsByCategory(categoryId, user.getUserId());
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารตามหมวดหมู่สำเร็จ", foods));
     }
 

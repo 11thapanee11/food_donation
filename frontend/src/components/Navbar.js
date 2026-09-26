@@ -239,7 +239,7 @@ export default function Navbar() {
     const isHomeActive = currentPath === "/" || (currentPath === "/food-detail" && originPath === "/");
     const isCommunityActive = currentPath === "/community-overview";
     const isMapActive = currentPath === "/map" || (currentPath === "/food-detail" && originPath === "/map");
-    const isReceiveActive = currentPath === "/receive" || (currentPath === "/food-detail" && originPath === "/receive");
+    const isReceiveActive = currentPath === "/receive" || (currentPath === "/booking-detail" && originPath === "/receive");
     const isMyFoodsActive = currentPath === "/my-foods" || currentPath === "/food-form";
     const isActivityHistoryActive = currentPath === "/activity-history";
     const isAdminDashboardActive = currentPath === "/admin-dashboard";

@@ -159,7 +159,7 @@ export default function FoodReceiveOptimized() {
                                 <button
                                     type="button"
                                     style={styles.actionBtnPrimary}
-                                    onClick={() => navigate("/booking-detail", { state: { id: booking.id } })}
+                                    onClick={() => navigate("/booking-detail", { state: { id: booking.bookingId || booking.id, fromPage: '/receive', } })}
                                 >
                                     <span>ดูรายละเอียดนัดรับ</span>
                                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>chevron_right</span>

@@ -2,15 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from 'jwt-decode';
 
-export default function FoodDetailEdgeToEdge() {
+export default function FoodDetail() {
     const location = useLocation();
-    const { fromPage, bookingStatus } = location.state || {};
+    const { fromPage, preloadedHasBooked } = location.state || {};
     const incomingId = location.state?.id;
     const navigate = useNavigate();
 
     const [userId, setUserId] = useState(null);
     const [food, setFood] = useState(null);
-    const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // State สำหรับการจอง
@@ -36,7 +35,6 @@ export default function FoodDetailEdgeToEdge() {
     const isOwner = food && food.donorId && String(food.donorId) === String(userId);
     const BASE_URL = "http://localhost:8082";
 
-    const isFromReceive = fromPage === "/receive";
     const isFromManage = fromPage === "/manage-foods";
 
     const [reviews, setReviews] = useState([]);
@@ -70,57 +68,29 @@ export default function FoodDetailEdgeToEdge() {
         const token = localStorage.getItem("accessToken");
         const isValidToken = token && token !== "null" && token !== "undefined";
 
-        const fetchBookingStatus = async (foodId) => {
-            if (!isValidToken) return false;
-            try {
-                const res = await fetch(`${BASE_URL}/bookings/foods/${foodId}/check-booking`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-                const resData = await res.json();
-                return resData?.data ?? false;
-            } catch (err) {
-                return false;
-            }
-        };
-
-        if (isFromReceive) {
-            setLoading(true);
-            fetch(`${BASE_URL}/bookings/${incomingId}`, {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+        // ดึงข้อมูลอาหารพร้อมส่ง Authorization ไปด้วยเพื่อให้ Backend เช็คสถานะ hasUserBooked ได้ทันที
+        fetch(`${BASE_URL}/foods/${incomingId}`, {
+            headers: isValidToken ? { "Authorization": `Bearer ${token}` } : {}
+        })
+            .then((res) => res.json())
+            .then((resData) => {
+                if (resData.success) {
+                    const actualFoodData = resData.data;
+                    actualFoodData.isCurrentByUserBooked = actualFoodData.hasUserBooked ?? preloadedHasBooked ?? false;
+                    setFood(actualFoodData);
+                }
             })
-                .then((res) => res.json())
-                .then(async (resData) => {
-                    if (resData.success) {
-                        const bookingData = resData.data;
-                        setBooking(bookingData);
-                        if (bookingData.foodId) {
-                            const foodResult = await fetch(`${BASE_URL}/foods/${bookingData.foodId}`, {
-                                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
-                            }).then(res => res.json());
-                            setFood(foodResult.data || foodResult);
-                        }
-                    }
-                })
-                .finally(() => setLoading(false));
-        } else {
-            fetch(`${BASE_URL}/foods/${incomingId}`)
-                .then((res) => res.json())
-                .then(async (resData) => {
-                    if (resData.success) {
-                        const actualFoodData = resData.data;
-                        actualFoodData.isCurrentByUserBooked = await fetchBookingStatus(incomingId);
-                        setFood(actualFoodData);
-                    }
-                })
-                .finally(() => setLoading(false));
-        }
-    }, [incomingId, isFromReceive]);
+            .finally(() => setLoading(false));
+    }, [incomingId, preloadedHasBooked]);
 
     useEffect(() => {
         if (incomingId) {
-            fetch(`${BASE_URL}/reviews/food/${incomingId}`, {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
-            })
+            const token = localStorage.getItem("accessToken");
+            const headers = (token && token !== "null" && token !== "undefined") 
+                ? { "Authorization": `Bearer ${token}` } 
+                : {};
+
+            fetch(`${BASE_URL}/reviews/food/${incomingId}`, { headers })
                 .then(res => res.json())
                 .then(result => {
                     if (result.success) setReviews(result.data || []);
@@ -143,7 +113,7 @@ export default function FoodDetailEdgeToEdge() {
     // เปิดการจองหรือแสดง Alert ให้ Login
     const handleOpenReserveModal = () => {
         const token = localStorage.getItem("accessToken");
-        if (!token) {
+        if (!token || token === "undefined" || token === "null") {
             setAlertModal({
                 show: true,
                 title: "กรุณาเข้าสู่ระบบ",
@@ -163,7 +133,7 @@ export default function FoodDetailEdgeToEdge() {
     // ยืนยันการจอง
     const handleConfirmBooking = () => {
         const token = localStorage.getItem("accessToken");
-        if (!token) return;
+        if (!token || token === "undefined" || token === "null") return;
 
         setSubmitting(true);
         fetch(`${BASE_URL}/bookings`, {
@@ -175,17 +145,17 @@ export default function FoodDetailEdgeToEdge() {
             .then(resData => {
                 setShowReserveModal(false);
                 if (resData.success) {
-                    const newBookingId = resData.data?.id; // หรือ field ID การจองที่ API ส่งกลับมา
+                    const newBookingId = resData.data?.id; 
                     setAlertModal({
                         show: true,
                         title: "จองสำเร็จ!",
                         message: "สามารถรับอาหารได้ตามสถานที่ที่ระบุไว้",
                         type: "success",
-                        confirmText: "ดูรายละเอียดการจอง",
-                        cancelText: "ตกลง", // ปิดหน้าต่างแล้วอยู่หน้าเดิม
+                        confirmText: "ดูรายละเอียดการรับบริจาค",
+                        cancelText: "ตกลง",
                         onConfirm: () => {
                             if (newBookingId) {
-                                navigate(`/receive/${newBookingId}`); // หรือ navigate('/receive', { state: { id: newBookingId } })
+                                navigate('/booking-detail', { state: { id: newBookingId, fromPage: "/food-detail" } });
                             } else {
                                 navigate('/receive');
                             }
@@ -224,7 +194,7 @@ export default function FoodDetailEdgeToEdge() {
         ? `https://maps.google.com/maps?q=${food.latitude},${food.longitude}&z=16&output=embed`
         : null;
 
-    const maxLimit = Math.min(food.limitPerPerson || 1, food.remainingUnit || 1);
+    const maxLimit = Math.min(food.limitPerPerson || 1, food.remainingQuantity || 1);
 
     return (
         <div style={styleOne.pageBg}>
@@ -278,11 +248,11 @@ export default function FoodDetailEdgeToEdge() {
                     </div>
                     <span style={{
                         ...styleOne.statusPill,
-                        backgroundColor: food.remainingUnit > 0 ? "#ecfdf5" : "#fff1f2",
-                        color: food.remainingUnit > 0 ? "#10b981" : "#f43f5e",
-                        border: food.remainingUnit > 0 ? "1px solid #a7f3d0" : "1px solid #fecdd3"
+                        backgroundColor: food.remainingQuantity > 0 ? "#ecfdf5" : "#fff1f2",
+                        color: food.remainingQuantity > 0 ? "#10b981" : "#f43f5e",
+                        border: food.remainingQuantity > 0 ? "1px solid #a7f3d0" : "1px solid #fecdd3"
                     }}>
-                        {food.remainingUnit > 0 ? `เหลือในระบบ ${food.remainingUnit} ชิ้น` : "หมดแล้ว"}
+                        {food.remainingQuantity > 0 ? `เหลือในระบบ ${food.remainingQuantity} ชิ้น` : "หมดแล้ว"}
                     </span>
                 </div>
 
@@ -391,18 +361,18 @@ export default function FoodDetailEdgeToEdge() {
                 </div>
 
                 {/* Bottom Main Action Button */}
-                {(!isFromReceive && !isOwner && !isFromManage) && (
+                {(!isOwner && !isFromManage) && (
                     <button
                         onClick={handleOpenReserveModal}
-                        disabled={food?.isCurrentByUserBooked || food.remainingUnit <= 0}
+                        disabled={food?.isCurrentByUserBooked || food.remainingQuantity <= 0}
                         style={{
                             ...styleOne.mainCtaBtn,
-                            backgroundColor: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "#cbd5e1" : "#c084fc",
-                            boxShadow: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "none" : "0 4px 14px rgba(192, 132, 252, 0.35)",
-                            cursor: (food?.isCurrentByUserBooked || food.remainingUnit <= 0) ? "not-allowed" : "pointer"
+                            backgroundColor: (food?.isCurrentByUserBooked || food.remainingQuantity <= 0) ? "#cbd5e1" : "#c084fc",
+                            boxShadow: (food?.isCurrentByUserBooked || food.remainingQuantity <= 0) ? "none" : "0 4px 14px rgba(192, 132, 252, 0.35)",
+                            cursor: (food?.isCurrentByUserBooked || food.remainingQuantity <= 0) ? "not-allowed" : "pointer"
                         }}
                     >
-                        {food?.isCurrentByUserBooked ? 'คุณได้ทำการจองรายการนี้แล้ว' : food.remainingUnit <= 0 ? 'รายการนี้หมดแล้ว' : 'กดรับอาหารบริจาค'}
+                        {food?.isCurrentByUserBooked ? 'คุณได้ทำการจองรายการนี้แล้ว' : food.remainingQuantity <= 0 ? 'รายการนี้หมดแล้ว' : 'กดรับอาหารบริจาค'}
                     </button>
                 )}
             </div>
@@ -430,7 +400,7 @@ export default function FoodDetailEdgeToEdge() {
                                     สามารถจองได้สูงสุด <span style={{ fontSize: "15px", fontWeight: "800", color: "#0369a1" }}>{maxLimit}</span> ชิ้น
                                 </div>
                                 <div style={{ fontSize: "11px", color: "#38bdf8" }}>
-                                    (คงเหลือในระบบ {food.remainingUnit} ชิ้น • จำกัด {food.limitPerPerson || 1} ชิ้น/คน)
+                                    (คงเหลือในระบบ {food.remainingQuantity} ชิ้น • จำกัด {food.limitPerPerson || 1} ชิ้น/คน)
                                 </div>
                             </div>
                         </div>
@@ -493,12 +463,11 @@ export default function FoodDetailEdgeToEdge() {
                 </div>
             )}
 
-            {/* --- 2. CUSTOM SYSTEM ALERT POPUP (ใช้แทน SweetAlert2) --- */}
+            {/* --- 2. CUSTOM SYSTEM ALERT POPUP --- */}
             {alertModal.show && (
                 <div style={styleOne.centerModalBackdrop} onClick={() => setAlertModal(prev => ({ ...prev, show: false }))}>
                     <div style={styleOne.centerModalCard} onClick={(e) => e.stopPropagation()}>
                         <div style={{ textAlign: "center" }}>
-                            {/* Alert Icon ตามประเภท */}
                             <div style={{
                                 ...styleOne.modalHeaderIcon,
                                 backgroundColor: alertModal.type === 'success' ? '#f0fdf4' : alertModal.type === 'error' ? '#fff1f2' : '#faf5ff',
@@ -556,13 +525,11 @@ const styleOne = {
     pageBg: {
         background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)",
         minHeight: "100vh",
-        fontFamily: "'Prompt', sans-serif",
         paddingBottom: "40px"
     },
     loading: {
         textAlign: "center",
         padding: "100px 20px",
-        fontFamily: "'Prompt', sans-serif",
         color: "#c084fc",
         fontSize: "18px",
         fontWeight: "500"

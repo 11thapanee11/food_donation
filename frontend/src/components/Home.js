@@ -380,7 +380,7 @@ export default function Home() {
                                         {isMyFood ? (
                                             <span style={{ ...styles.bookedBadge, backgroundColor: "#0284c7" }}>
                                                 <i className="material-icons-outlined" style={{ fontSize: '14px' }}>person</i>
-                                                อาหารของคุณ
+                                                บริจาคของคุณ
                                             </span>
                                         ) : hasBooked ? (
                                             <span style={{ ...styles.bookedBadge, backgroundColor: "#059669" }}>
@@ -463,22 +463,19 @@ export default function Home() {
                                         {/* ปุ่มการทำงาน */}
                                         <button
                                             type="button"
-                                            disabled={isBooked}
                                             style={{
                                                 ...styles.detailBtn,
-                                                ...(isBooked ? styles.disabledBtn : {})
+                                                backgroundColor: isMyFood ? "#0284c7" : hasBooked ? "#059669" : food.remainingUnit <= 0 ? "#64748b" : "#a855f7"
                                             }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (!isBooked) {
-                                                    navigate('/food-detail', { state: { id: food.id || food.foodId, fromPage: '/' } });
-                                                }
+                                                navigate('/food-detail', { state: { id: food.id || food.foodId, fromPage: '/', preloadedHasBooked: food.hasUserBooked } });
                                             }}
                                         >
                                             <span>
-                                                {isMyFood ? "โพสต์ของคุณเอง" : hasBooked ? "คุณได้จองรายการนี้ไปแล้ว" : isBooked ? "รายการนี้ถูกจองแล้ว" : "รับอาหารรายการนี้"}
+                                                {isMyFood ? "ดูรายละเอียด" : hasBooked ? "ดูรายละเอียด" : food.remainingUnit <= 0 ? "หมดแล้ว (ดูรายละเอียด)" : "ขอรับบริจาค"}
                                             </span>
-                                            {!isBooked && <i className="material-icons-outlined" style={{ fontSize: "18px" }}>arrow_forward</i>}
+                                            <i className="material-icons-outlined" style={{ fontSize: "18px" }}>arrow_forward</i>
                                         </button>
                                     </div>
                                 </div>
