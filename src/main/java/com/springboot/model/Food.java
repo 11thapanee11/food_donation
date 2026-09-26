@@ -1,7 +1,6 @@
 package com.springboot.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -23,26 +22,20 @@ public class Food {
     @Column(name = "description", length = 255)
     private String description;
 
+    @Column(name = "quantity", nullable = false)
+    private Double quantity;
+
+    @Column(name = "unit", length = 50, nullable = false)
+    private String unit;
+
+    @Column(name = "remaining_quantity", nullable = false)
+    private Integer remainingQuantity = 0;
+
+    @Column(name = "limit_per_person", nullable = false)
+    private Integer limitPerPerson;
+
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
-
-    @Column(name = "unit_weight_kg", nullable = false)
-    private Double unitWeightKg;
-
-    @Column(name = "total_unit", nullable = false)
-    private Integer totalUnit;
-
-    @Column(name = "remaining_unit", nullable = false)
-    private Integer remainingUnit = 0;
-
-    @Column(name = "address", length = 225, nullable = false)
-    private String address;
-
-    @Column(name = "pickup_date_start", nullable = false)
-    private LocalDate pickupDateStart;
-
-    @Column(name = "pickup_date_end", nullable = false)
-    private LocalDate pickupDateEnd;
 
     @Column(name = "pickup_start_time", nullable = false)
     private LocalTime pickupStartTime;
@@ -50,8 +43,8 @@ public class Food {
     @Column(name = "pickup_end_time", nullable = false)
     private LocalTime pickupEndTime;
 
-    @Column(name = "limit_per_person", nullable = false)
-    private Integer limitPerPerson;
+    @Column(name = "location_name", length = 225, nullable = false)
+    private String locationName;
 
     @Column(name = "latitude", nullable = false)
     private Double latitude;
@@ -74,10 +67,8 @@ public class Food {
 
     public Food() {
         super();
- 
     }
 
-    // --- Getter & Setter ---
     public Integer getFoodId() {
         return foodId;
     }
@@ -110,60 +101,44 @@ public class Food {
         this.description = description;
     }
 
+    public Double getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Double quantity) {
+        this.quantity = quantity;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public Integer getRemainingQuantity() {
+        return remainingQuantity;
+    }
+
+    public void setRemainingQuantity(Integer remainingQuantity) {
+        this.remainingQuantity = remainingQuantity;
+    }
+
+    public Integer getLimitPerPerson() {
+        return limitPerPerson;
+    }
+
+    public void setLimitPerPerson(Integer limitPerPerson) {
+        this.limitPerPerson = limitPerPerson;
+    }
+
     public LocalDateTime getExpiryDate() {
         return expiryDate;
     }
 
     public void setExpiryDate(LocalDateTime expiryDate) {
         this.expiryDate = expiryDate;
-    }
-
-    public Double getUnitWeightKg() {
-        return unitWeightKg;
-    }
-
-    public void setUnitWeightKg(Double unitWeightKg) {
-        this.unitWeightKg = unitWeightKg;
-    }
-
-    public Integer getTotalUnit() {
-        return totalUnit;
-    }
-
-    public void setTotalUnit(Integer totalUnit) {
-        this.totalUnit = totalUnit;
-    }
-
-    public Integer getRemainingUnit() {
-        return remainingUnit;
-    }
-
-    public void setRemainingUnit(Integer remainingUnit) {
-        this.remainingUnit = remainingUnit;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public LocalDate getPickupDateStart() {
-        return pickupDateStart;
-    }
-
-    public void setPickupDateStart(LocalDate pickupDateStart) {
-        this.pickupDateStart = pickupDateStart;
-    }
-
-    public LocalDate getPickupDateEnd() {
-        return pickupDateEnd;
-    }
-
-    public void setPickupDateEnd(LocalDate pickupDateEnd) {
-        this.pickupDateEnd = pickupDateEnd;
     }
 
     public LocalTime getPickupStartTime() {
@@ -182,12 +157,12 @@ public class Food {
         this.pickupEndTime = pickupEndTime;
     }
 
-    public Integer getLimitPerPerson() {
-        return limitPerPerson;
+    public String getLocationName() {
+        return locationName;
     }
 
-    public void setLimitPerPerson(Integer limitPerPerson) {
-        this.limitPerPerson = limitPerPerson;
+    public void setLocationName(String locationName) {
+        this.locationName = locationName;
     }
 
     public Double getLatitude() {
@@ -229,5 +204,4 @@ public class Food {
     public void setDonor(Donor donor) {
         this.donor = donor;
     }
-    
 }

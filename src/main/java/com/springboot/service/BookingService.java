@@ -30,38 +30,38 @@ public class BookingService {
         this.notificationService = notificationService;
     }
 
-    public Booking addBooking(BookingDto request, Recipient recipient) {
-        if (request.getFoodId() == null) {
-            throw new ApplicationException("foodId เป็นค่าว่าง ไม่สามารถทำการจองได้", HttpStatus.BAD_REQUEST);
-        }
+    // public Booking addBooking(BookingDto request, Recipient recipient) {
+    //     if (request.getFoodId() == null) {
+    //         throw new ApplicationException("foodId เป็นค่าว่าง ไม่สามารถทำการจองได้", HttpStatus.BAD_REQUEST);
+    //     }
 
-        Food food = foodRepository.findById(request.getFoodId())
-                .orElseThrow(() -> new ApplicationException("ไม่พบรายการอาหาร", HttpStatus.NOT_FOUND));
+    //     Food food = foodRepository.findById(request.getFoodId())
+    //             .orElseThrow(() -> new ApplicationException("ไม่พบรายการอาหาร", HttpStatus.NOT_FOUND));
 
-        if (food.getRemainingUnit() < request.getQuantity()) {
-            throw new ApplicationException("จำนวนอาหารที่เหลือไม่เพียงพอสำหรับการจอง", HttpStatus.BAD_REQUEST);
-        }
+    //     if (food.getRemainingQuantity() < request.getQuantity()) {
+    //         throw new ApplicationException("จำนวนอาหารที่เหลือไม่เพียงพอสำหรับการจอง", HttpStatus.BAD_REQUEST);
+    //     }
 
-        food.setRemainingUnit(food.getRemainingUnit() - request.getQuantity());
-        foodRepository.save(food);
+    //     food.setRemainingQuantity(food.getRemainingQuantity() - request.getQuantity());
+    //     foodRepository.save(food);
 
-        Integer generatedCode = generateConfirmationCode();
-        Double totalWeight = food.getUnitWeightKg() * request.getQuantity();
+    //     Integer generatedCode = generateConfirmationCode();
+    //     Double totalWeight = food.getUnitWeightKg() * request.getQuantity();
 
-        Booking booking = new Booking();
-        booking.setBookingUnit(request.getQuantity());
-        booking.setBookingWeightKg(totalWeight);
-        booking.setBookingDate(LocalDateTime.now());
-        booking.setConfirmationCode(generatedCode);
-        booking.setBookingStatus("pending");
-        booking.setFood(food);
-        booking.setRecipient(recipient);
+    //     Booking booking = new Booking();
+    //     booking.setBookingUnit(request.getQuantity());
+    //     booking.setBookingWeightKg(totalWeight);
+    //     booking.setBookingDate(LocalDateTime.now());
+    //     booking.setConfirmationCode(generatedCode);
+    //     booking.setBookingStatus("pending");
+    //     booking.setFood(food);
+    //     booking.setRecipient(recipient);
 
-        Booking savedBooking = bookingRepository.save(booking);
-        notificationService.createBookingNotification(savedBooking);
+    //     Booking savedBooking = bookingRepository.save(booking);
+    //     notificationService.createBookingNotification(savedBooking);
 
-        return savedBooking;
-    }
+    //     return savedBooking;
+    // }
 
     private static final Random random = new Random();
 
@@ -127,7 +127,7 @@ public class BookingService {
         }
 
         Food food = booking.getFood();
-        food.setRemainingUnit(food.getRemainingUnit() + booking.getBookingUnit());
+        food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingUnit());
         foodRepository.save(food);
     }
 

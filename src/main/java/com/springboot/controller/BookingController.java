@@ -24,20 +24,20 @@ public class BookingController {
         this.recipientService = recipientService;
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<Booking>> addBooking(
-            @RequestBody BookingDto request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new com.springboot.exception.UnauthorizedException("กรุณาล็อกอินก่อนทำรายการจองอาหาร");
-        }
+    // @PostMapping
+    // public ResponseEntity<ApiResponse<Booking>> addBooking(
+    //         @RequestBody BookingDto request,
+    //         @RequestHeader(value = "Authorization", required = false) String authHeader) {
+    //     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    //         throw new com.springboot.exception.UnauthorizedException("กรุณาล็อกอินก่อนทำรายการจองอาหาร");
+    //     }
 
-        User user = userService.authenticate(authHeader);
-        Recipient recipient = recipientService.getOrCreateRecipient(user);
+    //     User user = userService.authenticate(authHeader);
+    //     Recipient recipient = recipientService.getOrCreateRecipient(user);
 
-        Booking booking = bookingService.addBooking(request, recipient);
-        return ResponseEntity.ok(ApiResponse.success("บันทึกการจองสำเร็จ", booking));
-    }
+    //     Booking booking = bookingService.addBooking(request, recipient);
+    //     return ResponseEntity.ok(ApiResponse.success("บันทึกการจองสำเร็จ", booking));
+    // }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<BookingDto>>> getListBooking(

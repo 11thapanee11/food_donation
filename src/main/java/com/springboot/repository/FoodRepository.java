@@ -36,4 +36,5 @@ public interface FoodRepository extends JpaRepository<Food, Integer> {
     List<Food> findByExpiryDateBetweenAndFoodStatus(LocalDateTime start, LocalDateTime end, String status);
 
     Long countByFoodCategory_FoodCateId(Integer foodCateId);
+
 }

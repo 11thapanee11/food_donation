@@ -41,12 +41,10 @@ public class FoodService {
         dto.setFoodName(food.getFoodName());
         dto.setDescription(food.getDescription());
         dto.setExpiryDate(food.getExpiryDate());
-        dto.setUnitWeightKg(food.getUnitWeightKg());
-        dto.setTotalUnit(food.getTotalUnit());
-        dto.setRemainingUnit(food.getRemainingUnit());
-        dto.setAddress(food.getAddress());
-        dto.setPickupDateStart(food.getPickupDateStart());
-        dto.setPickupDateEnd(food.getPickupDateEnd());
+        dto.setQuantity(food.getQuantity());
+        dto.setUnit(food.getUnit());
+        dto.setRemainingQuantity(food.getRemainingQuantity());
+        dto.setLocationName(food.getLocationName());
         dto.setPickupStartTime(food.getPickupStartTime());
         dto.setPickupEndTime(food.getPickupEndTime());
         dto.setLimitPerPerson(food.getLimitPerPerson());
@@ -99,14 +97,16 @@ public class FoodService {
         food.setFoodName(foodDto.getFoodName());
         food.setExpiryDate(foodDto.getExpiryDate());
 
-        food.setUnitWeightKg(foodDto.getUnitWeightKg());
-        food.setTotalUnit(foodDto.getTotalUnit());
-        food.setRemainingUnit(foodDto.getTotalUnit());
-        food.setDescription(foodDto.getDescription());
-        food.setAddress(foodDto.getAddress());
+        food.setQuantity(foodDto.getQuantity());
+        food.setUnit(foodDto.getUnit());
 
-        food.setPickupDateStart(foodDto.getPickupDateStart());
-        food.setPickupDateEnd(foodDto.getPickupDateEnd());
+        // แปลง quantity (Double) เป็น remainingQuantity (Integer) สำหรับค่าเริ่มต้น
+        int initialRemaining = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
+        food.setRemainingQuantity(initialRemaining);
+
+        food.setDescription(foodDto.getDescription());
+        food.setLocationName(foodDto.getLocationName());
+
         food.setPickupStartTime(foodDto.getPickupStartTime());
         food.setPickupEndTime(foodDto.getPickupEndTime());
 
@@ -153,35 +153,27 @@ public class FoodService {
         }
 
         // การจัดการจำนวน
-        // จำค่าจำนวนเต็มเดิม (Old Total) และคำนวณหาจำนวนที่ถูกจองไปแล้ว (Reserved)
-        int oldTotal = food.getTotalUnit() != null ? food.getTotalUnit() : 0;
-        int currentRemaining = food.getRemainingUnit() != null ? food.getRemainingUnit() : 0;
+        int oldTotal = food.getQuantity() != null ? food.getQuantity().intValue() : 0;
+        int currentRemaining = food.getRemainingQuantity() != null ? food.getRemainingQuantity() : 0;
         int reservedUnit = oldTotal - currentRemaining;
-        int newTotal = foodDto.getTotalUnit() != null ? foodDto.getTotalUnit() : 0;
+        int newTotal = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
 
         if (newTotal < reservedUnit) {
             throw new ApplicationException("ไม่สามารถปรับลดจำนวนทั้งหมดเป็น " + newTotal +
                     " เนื่องจากมีผู้จองอาหารไปแล้ว " + reservedUnit, HttpStatus.BAD_REQUEST);
         }
 
-        // คำนวณส่วนต่าง (Diff) ของจำนวนทั้งหมด
         int totalDifference = newTotal - oldTotal;
-
-        // อัปเดตสต็อกคงเหลือ (Remaining) อัตโนมัติด้วยส่วนต่าง
-        // - ปรับเพิ่ม Total (diff เป็นบวก) -> ยอดของเหลือจะเพิ่มขึ้น
-        // - ปรับลด Total (diff เป็นลบ) -> ยอดของเหลือจะลดลง
         int newRemaining = currentRemaining + totalDifference;
 
         // บันทึกจำนวนลง Entity
         food.setFoodName(foodDto.getFoodName());
         food.setExpiryDate(foodDto.getExpiryDate());
-        food.setUnitWeightKg(foodDto.getUnitWeightKg());
+        food.setQuantity(foodDto.getQuantity());
+        food.setUnit(foodDto.getUnit());
         food.setDescription(foodDto.getDescription());
-        food.setAddress(foodDto.getAddress());
-        food.setTotalUnit(newTotal);
-        food.setRemainingUnit(newRemaining);
-        food.setPickupDateStart(foodDto.getPickupDateStart());
-        food.setPickupDateEnd(foodDto.getPickupDateEnd());
+        food.setLocationName(foodDto.getLocationName());
+        food.setRemainingQuantity(newRemaining);
         food.setPickupStartTime(foodDto.getPickupStartTime());
         food.setPickupEndTime(foodDto.getPickupEndTime());
         food.setLimitPerPerson(foodDto.getLimitPerPerson());
@@ -200,32 +192,23 @@ public class FoodService {
     // ลบอาหาร
     @Transactional
     public void deleteFood(Integer id) {
-        // 1. ค้นหาข้อมูลอาหารก่อนลบ
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new ApplicationException("ไม่พบข้อมูลอาหารที่ต้องการลบ", HttpStatus.NOT_FOUND));
 
-        // 2. ดึง Path รูปภาพเดิมออกมาเก็บไว้ก่อนลบใน DB
         String imagePath = food.getFoodImage();
-
-        // 3. ลบข้อมูลออกจากฐานข้อมูล
         foodRepository.delete(food);
 
-        // 4. ลบไฟล์รูปภาพออกจากโฟลเดอร์บน Disk
         if (imagePath != null && !imagePath.trim().isEmpty()) {
             deletePhysicalFile(imagePath);
         }
     }
 
-    // Helper Method สำหรับแปลง URL รูปภาพกลับมาเป็น Path บน Disk แล้วทำการลบ
     private void deletePhysicalFile(String imagePath) {
         try {
-            // ดึงเฉพาะชื่อไฟล์ออกมาจาก Path เช่น "/images/food/abc.jpg" -> "abc.jpg"
             String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
-
             Path path = Paths.get(UPLOAD_DIR + fileName);
             Files.deleteIfExists(path);
         } catch (Exception e) {
-            // ไม่ควร throw exception ขัดขวางกระบวนการลบ DB ที่สำเร็จไปแล้ว
             System.err.println("ไม่สามารถลบไฟล์รูปภาพได้: " + e.getMessage());
         }
     }
@@ -245,12 +228,10 @@ public class FoodService {
         foodRepository.save(food);
     }
 
-    // ดึงรายการอาหารที่หมดอายุแล้ว (cutoffTime คือ ผ่านเวลา expiry มาเกินกำหนด)
     public List<Food> getExpiredFoods(LocalDateTime cutoffTime) {
         return foodRepository.findByExpiryDateBeforeAndFoodStatus(cutoffTime, "available");
     }
 
-    // ดึงรายการอาหารที่ใกล้หมดอายุ (ระหว่าง cutoffTime ถึง 24 ชม. ข้างหน้า)
     public List<Food> getNearExpiryFoods(LocalDateTime cutoffTime, LocalDateTime tomorrow) {
         return foodRepository.findByExpiryDateBetweenAndFoodStatus(cutoffTime, tomorrow, "available");
     }
@@ -260,5 +241,4 @@ public class FoodService {
         Long expired = foodRepository.countByFoodStatus("expired");
         return new FoodStatsDto(totalFoods, expired);
     }
-
 }

@@ -46,7 +46,7 @@ public class BookingScheduler {
 
                 Food food = booking.getFood();
                 if (food != null) {
-                    food.setRemainingUnit(food.getRemainingUnit() + booking.getBookingUnit());
+                    food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingUnit());
                     foodRepository.save(food);
                 }
             }

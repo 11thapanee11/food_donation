@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class FoodDto {
@@ -17,10 +15,10 @@ public class FoodDto {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime expiryDate;
 
-    private Double unitWeightKg;
-    private Integer totalUnit;
-    private Integer remainingUnit;
-    private String address;
+    private Double quantity;
+    private String unit;
+    private Integer remainingQuantity;
+    private String locationName;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate pickupDateStart;
@@ -37,13 +35,11 @@ public class FoodDto {
     private Double longitude;
     private String foodStatus;
 
-    // private MultipartFile foodImage;
     private String foodImage;
 
     // สำคัญ: ต้องรับเป็น ID (Integer) ให้ตรงกับที่ Java ต้องการ
     private Integer foodCateId;
     private String foodCateName;
-    // private Integer donor;
     private Integer donorId;
     private String donorName;
     private String donorPhoneNum;
@@ -72,36 +68,36 @@ public class FoodDto {
         this.expiryDate = expiryDate;
     }
 
-    public Double getUnitWeightKg() {
-        return unitWeightKg;
+    public Double getQuantity() {
+        return quantity;
     }
 
-    public void setUnitWeightKg(Double unitWeightKg) {
-        this.unitWeightKg = unitWeightKg;
+    public void setQuantity(Double quantity) {
+        this.quantity = quantity;
     }
 
-    public Integer getTotalUnit() {
-        return totalUnit;
+    public String getUnit() {
+        return unit;
     }
 
-    public void setTotalUnit(Integer totalUnit) {
-        this.totalUnit = totalUnit;
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
-    public Integer getRemainingUnit() {
-        return remainingUnit;
+    public Integer getRemainingQuantity() {
+        return remainingQuantity;
     }
 
-    public void setRemainingUnit(Integer remainingUnit) {
-        this.remainingUnit = remainingUnit;
+    public void setRemainingQuantity(Integer remainingQuantity) {
+        this.remainingQuantity = remainingQuantity;
     }
 
-    public String getAddress() {
-        return address;
+    public String getLocationName() {
+        return locationName;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setLocationName(String locationName) {
+        this.locationName = locationName;
     }
 
     public LocalDate getPickupDateStart() {

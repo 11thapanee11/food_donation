@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { decodeToken } from '../utils/jwt.js';
 
 export default function Home() {
     const [categories, setCategories] = useState([]);
@@ -16,6 +17,15 @@ export default function Home() {
 
     const navigate = useNavigate();
     const BASE_URL = "http://localhost:8082";
+
+    // ดึง ID ของผู้ใช้ปัจจุบันจาก LocalStorage (สำหรับเช็คอาหารของตัวเองหรือประวัติการจอง)
+    const token = localStorage.getItem("accessToken");
+    let currentUserId = 0;
+
+    if (token) {
+        const decoded = decodeToken(token);
+        currentUserId = Number(decoded?.sub) || 0;
+    }
 
     // ขอพิกัดตำแหน่งปัจจุบันของผู้ใช้งาน (GPS)
     useEffect(() => {
@@ -309,7 +319,7 @@ export default function Home() {
                             <select
                                 value={maxExpiryDays}
                                 onChange={(e) => setMaxExpiryDays(e.target.value)}
-                                style={{ ... styles.filterSelect, paddingRight: '30px'}}
+                                style={{ ...styles.filterSelect, paddingRight: '30px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
                                 <option value="0">วันนี้เท่านั้น</option>
@@ -329,8 +339,15 @@ export default function Home() {
                     {filteredFoods.length > 0 ? (
                         filteredFoods.map(food => {
                             const daysInfo = getDaysRemaining(food.expiryDate);
-                            const isBooked = food.isBooked || food.foodStatus === "booked" || food.remainingUnit <= 0;
-                            const unitName = food.unit || food.quantityUnit || "ชิ้น";
+
+                            // ตรวจสอบเงื่อนไข: อาหารของตัวเองหรือไม่
+                            const isMyFood = food.donorId === currentUserId || (food.donor && food.donor.userId === currentUserId);
+
+                            // ตรวจสอบเงื่อนไข: เคยจองแล้วหรือไม่ (รองรับฟิลด์ hasUserBooked จาก Backend)
+                            const hasBooked = food.hasUserBooked || false;
+
+                            const isBooked = food.isBooked || food.foodStatus === "booked" || food.remainingQuantity <= 0 || hasBooked || isMyFood;
+                            const unitName = food.unit || "ชิ้น";
 
                             const distKm = userLocation && food.latitude && food.longitude
                                 ? getDistanceKm(userLocation.lat, userLocation.lng, food.latitude, food.longitude)
@@ -338,17 +355,17 @@ export default function Home() {
 
                             return (
                                 <div
-                                    key={food.id}
+                                    key={food.id || food.foodId}
                                     style={{
                                         ...styles.foodCard,
                                         ...(isBooked ? styles.bookedCard : {})
                                     }}
-                                    onClick={() => navigate('/food-detail', { state: { id: food.id, fromPage: '/' } })}
+                                    onClick={() => navigate('/food-detail', { state: { id: food.id || food.foodId, fromPage: '/' } })}
                                 >
                                     {/* Image Box */}
                                     <div style={styles.cardImageWrapper}>
                                         <img
-                                            src={`${BASE_URL}${food.foodImage}`}
+                                            src={food.foodImage && food.foodImage.startsWith("http") ? food.foodImage : `${BASE_URL}${food.foodImage}`}
                                             alt={food.foodName}
                                             style={styles.cardImage}
                                             onError={(e) => {
@@ -359,8 +376,18 @@ export default function Home() {
 
                                         <div style={styles.imageOverlay} />
 
-                                        {/* Tag สถานะการจอง */}
-                                        {isBooked ? (
+                                        {/* Tag สถานะ: อาหารของคุณ / คุณจองแล้ว / จองแล้ว / ใกล้หมดอายุ */}
+                                        {isMyFood ? (
+                                            <span style={{ ...styles.bookedBadge, backgroundColor: "#0284c7" }}>
+                                                <i className="material-icons-outlined" style={{ fontSize: '14px' }}>person</i>
+                                                อาหารของคุณ
+                                            </span>
+                                        ) : hasBooked ? (
+                                            <span style={{ ...styles.bookedBadge, backgroundColor: "#059669" }}>
+                                                <i className="material-icons-outlined" style={{ fontSize: '14px' }}>done_all</i>
+                                                คุณจองแล้ว
+                                            </span>
+                                        ) : isBooked ? (
                                             <span style={styles.bookedBadge}>
                                                 <i className="material-icons-outlined" style={{ fontSize: '14px' }}>check_circle</i>
                                                 จองแล้ว / สิทธิ์เต็ม
@@ -391,23 +418,23 @@ export default function Home() {
                                             </div>
 
                                             {/* ช่วงเวลารับของ */}
-                                            {(food.pickupTime || food.receiveTime) && (
+                                            {(food.pickupStartTime && food.pickupEndTime) && (
                                                 <div style={styles.infoLine}>
                                                     <i className="material-icons-outlined" style={styles.iconStyle}>access_time</i>
                                                     <div style={styles.infoTextGroup}>
                                                         <span style={styles.labelSpan}>เวลารับของ</span>
-                                                        <span style={styles.valueSpan}>{food.pickupTime || food.receiveTime}</span>
+                                                        <span style={styles.valueSpan}>{food.pickupStartTime} - {food.pickupEndTime} น.</span>
                                                     </div>
                                                 </div>
                                             )}
 
-                                            {/* จำนวนที่บริจาค & คงเหลือ */}
+                                            {/* จำนวนคงเหลือ & ทั้งหมด */}
                                             <div style={styles.infoLine}>
                                                 <i className="material-icons-outlined" style={styles.iconStyle}>inventory_2</i>
                                                 <div style={styles.infoTextGroup}>
-                                                    <span style={styles.labelSpan}>คงเหลือ / บริจาคทั้งหมด</span>
+                                                    <span style={styles.labelSpan}>คงเหลือ / ทั้งหมด</span>
                                                     <span style={styles.highlightBadge}>
-                                                        {food.remainingUnit} / {food.totalUnit} {unitName}
+                                                        {food.remainingQuantity} / {food.quantity} {unitName}
                                                     </span>
                                                 </div>
                                             </div>
@@ -444,11 +471,13 @@ export default function Home() {
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (!isBooked) {
-                                                    navigate('/food-detail', { state: { id: food.id, fromPage: '/' } });
+                                                    navigate('/food-detail', { state: { id: food.id || food.foodId, fromPage: '/' } });
                                                 }
                                             }}
                                         >
-                                            <span>{isBooked ? "รายการนี้ถูกจองแล้ว" : "รับอาหารรายการนี้"}</span>
+                                            <span>
+                                                {isMyFood ? "โพสต์ของคุณเอง" : hasBooked ? "คุณได้จองรายการนี้ไปแล้ว" : isBooked ? "รายการนี้ถูกจองแล้ว" : "รับอาหารรายการนี้"}
+                                            </span>
                                             {!isBooked && <i className="material-icons-outlined" style={{ fontSize: "18px" }}>arrow_forward</i>}
                                         </button>
                                     </div>
@@ -684,11 +713,6 @@ const styles = {
         alignItems: "center",
         gap: "6px",
     },
-    selectLabel: {
-        fontSize: "13px",
-        fontWeight: "500",
-        color: "#64748b",
-    },
     filterSelect: {
         padding: "6px 12px",
         borderRadius: "10px",
@@ -699,7 +723,6 @@ const styles = {
         fontWeight: "500",
         outline: "none",
         cursor: "pointer",
-        
     },
     foodGrid: {
         display: "grid",

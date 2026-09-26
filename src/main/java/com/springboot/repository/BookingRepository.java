@@ -58,4 +58,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
         @Query("SELECT SUM(b.bookingUnit) FROM Booking b WHERE b.bookingStatus = 'completed'")
         Double sumCompletedBookingUnits();
+
+        // boolean existsByFood_FoodIdAndUser_UserId(Integer foodId, Integer userId);
 }
