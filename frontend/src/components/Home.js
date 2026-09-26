@@ -208,18 +208,18 @@ export default function Home() {
             <div style={styles.heroBanner}>
                 <div style={styles.heroContent}>
                     <div style={styles.heroBadge}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#8b5cf6' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#C084FC' }}>
                             eco
                         </span>
                         <span>สังคมแห่งการแบ่งปันอาหาร</span>
                     </div>
-                    <h1 style={styles.heroTitle}>บริจาคอาหาร ส่งต่อความสุข</h1>
+                    <h1 style={styles.heroTitle}>แบ่งปันอาหาร แจกจ่ายด้วยใจ ห่วงใยสิ่งแวดล้อม</h1>
                     <p style={styles.heroSubtitle}>
-                        เชื่อมต่อผู้ส่งต่อและผู้รับอาหารเข้าด้วยกัน ร่วมกันลดขยะอาหารและขจัดความหิวโภชนาการในชุมชนของเรา
+                        ร่วมเป็นส่วนหนึ่งในการกระจายและแจกจ่ายอาหารส่วนเกินให้ถึงมือผู้ที่ต้องการอย่างคุ้มค่า เพื่อป้องกันไม่ให้อาหารต้องกลายเป็นขยะและสร้างประโยชน์สูงสุดให้ชุมชนของเรา
                     </p>
 
                     <div style={styles.actionButtonGroup}>
-                        <button style={styles.donateBtn} onClick={() => navigate('/add-food')}>
+                        <button style={styles.donateBtn} onClick={() => navigate('/food-form')}>
                             <i className="material-icons-outlined" style={{ fontSize: '20px' }}>volunteer_activism</i>
                             บริจาคอาหาร
                         </button>
@@ -285,7 +285,9 @@ export default function Home() {
 
                         {/* กรองระยะทาง */}
                         <div style={styles.selectWrapper}>
-                            <span style={styles.selectLabel}>📍 ระยะทาง:</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#0284c7' }}>
+                                distance
+                            </span>
                             <select
                                 value={maxDistance}
                                 onChange={(e) => setMaxDistance(e.target.value)}
@@ -301,20 +303,22 @@ export default function Home() {
 
                         {/* กรองช่วงวันหมดอายุ */}
                         <div style={styles.selectWrapper}>
-                            <span style={styles.selectLabel}>⏰ หมดอายุภายใน:</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ea580c' }}>
+                                schedule
+                            </span>
                             <select
                                 value={maxExpiryDays}
                                 onChange={(e) => setMaxExpiryDays(e.target.value)}
-                                style={styles.filterSelect}
+                                style={{ ... styles.filterSelect, paddingRight: '30px'}}
                             >
-                                <option value="all">ทั้งหมด (เฉพาะที่ยังไม่หมดอายุ)</option>
+                                <option value="all">ทั้งหมด</option>
                                 <option value="0">วันนี้เท่านั้น</option>
-                                <option value="1">ไม่เกิน 1 วัน (พรุ่งนี้)</option>
+                                <option value="1">ไม่เกิน 1 วัน</option>
                                 <option value="3">ไม่เกิน 3 วัน</option>
                                 <option value="5">ไม่เกิน 5 วัน</option>
-                                <option value="7">ไม่เกิน 7 วัน (1 สัปดาห์)</option>
-                                <option value="14">ไม่เกิน 14 วัน (2 สัปดาห์)</option>
-                                <option value="30">ไม่เกิน 30 วัน (1 เดือน)</option>
+                                <option value="7">ไม่เกิน 7 วัน</option>
+                                <option value="14">ไม่เกิน 14 วัน</option>
+                                <option value="30">ไม่เกิน 30 วัน</option>
                             </select>
                         </div>
                     </div>
@@ -491,7 +495,7 @@ const styles = {
     },
     heroBadge: {
         backgroundColor: "rgba(255, 255, 255, 0.48)",
-        color: "#8b5cf6",
+        color: "#C084FC",
         padding: "6px 16px",
         borderRadius: "20px",
         fontSize: "13px",
@@ -527,7 +531,7 @@ const styles = {
         flexWrap: "wrap",
     },
     donateBtn: {
-        backgroundColor: "#a855f7",
+        backgroundColor: "#C084FC",
         color: "#ffffff",
         border: "none",
         padding: "12px 28px",
@@ -542,8 +546,8 @@ const styles = {
     },
     requestBtn: {
         backgroundColor: "#ffffff",
-        color: "#a855f7",
-        border: "2px solid #a855f7",
+        color: "#C084FC",
+        border: "2px solid #C084FC",
         padding: "10px 26px",
         borderRadius: "30px",
         fontSize: "15px",
@@ -695,6 +699,7 @@ const styles = {
         fontWeight: "500",
         outline: "none",
         cursor: "pointer",
+        
     },
     foodGrid: {
         display: "grid",

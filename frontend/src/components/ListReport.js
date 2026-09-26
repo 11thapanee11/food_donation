@@ -5,7 +5,7 @@ export default function ListReport() {
     const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // State สำหรับการกรองและค้นหา
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -38,15 +38,15 @@ export default function ListReport() {
 
     // ฟังก์ชันกรองข้อมูล
     const filteredReports = reports.filter(report => {
-        const matchesStatus = 
+        const matchesStatus =
             statusFilter === 'ALL' ? true :
-            statusFilter === 'PENDING' ? report.reportStatus !== 'checked' :
-            statusFilter === 'CHECKED' ? report.reportStatus === 'checked' : true;
+                statusFilter === 'PENDING' ? report.reportStatus !== 'checked' :
+                    statusFilter === 'CHECKED' ? report.reportStatus === 'checked' : true;
 
-        const matchesCategory = 
+        const matchesCategory =
             categoryFilter === 'ALL' ? true : report.reason === categoryFilter;
 
-        const matchesSearch = 
+        const matchesSearch =
             (report.foodName && report.foodName.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (report.reporterName && report.reporterName.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -62,12 +62,12 @@ export default function ListReport() {
             if (reportDateObj.getTime() !== targetDate.getTime()) {
                 matchesDate = false;
             }
-        } 
+        }
         // 2. กรองแบบช่วงวันที่ผ่านมา (ถ้าไม่ได้เลือกวันเจาะจง)
         else if (dateRangeOption !== 'ALL') {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
+
             const pastDate = new Date();
             pastDate.setDate(today.getDate() - parseInt(dateRangeOption));
             pastDate.setHours(0, 0, 0, 0);
@@ -156,7 +156,7 @@ export default function ListReport() {
                                 setDateRangeOption(e.target.value);
                                 if (e.target.value !== 'ALL') setSelectedDate(''); // รีเซ็ตวันเจาะจงถ้าเลือกช่วงเวลา
                             }}
-                            style={styles.selectDropdownSmall}
+                            style={{ ...styles.selectDropdownSmall, paddingRight: '40px' }}
                         >
                             <option value="ALL">ทุกช่วงเวลา</option>
                             <option value="7">7 วันที่ผ่านมา</option>
@@ -166,7 +166,7 @@ export default function ListReport() {
                     </div>
 
                     {(selectedDate || dateRangeOption !== 'ALL') && (
-                        <button 
+                        <button
                             style={styles.clearDateBtn}
                             onClick={() => { setSelectedDate(''); setDateRangeOption('ALL'); }}
                         >
@@ -352,24 +352,26 @@ const styles = {
         outline: "none",
         padding: "10px 0",
         fontSize: "13px",
-        fontFamily: "'Prompt', sans-serif",
         color: "#1E293B"
     },
     selectWrapper: {
         minWidth: "260px"
     },
     selectDropdown: {
-        width: "100%",
-        padding: "11px 14px",
+        width: "auto",
+        minWidth: "180px",
+        maxWidth: "100%",
+        padding: "11px 36px 11px 14px",
         borderRadius: "14px",
         border: "1.5px solid #F3E8FF",
         backgroundColor: "#FFFFFF",
         fontSize: "13px",
-        fontFamily: "'Prompt', sans-serif",
         color: "#475569",
         outline: "none",
         cursor: "pointer",
-        boxShadow: "0 2px 5px rgba(192, 132, 252, 0.02)"
+        boxShadow: "0 2px 5px rgba(192, 132, 252, 0.02)",
+        WebkitAppearance: "none",
+        MozAppearance: "none",
     },
     selectDropdownSmall: {
         padding: "6px 10px",
@@ -377,7 +379,6 @@ const styles = {
         border: "1.5px solid #F3E8FF",
         backgroundColor: "#FFFFFF",
         fontSize: "13px",
-        fontFamily: "'Prompt', sans-serif",
         color: "#334155",
         outline: "none",
         cursor: "pointer"
@@ -409,7 +410,6 @@ const styles = {
         borderRadius: "10px",
         border: "1.5px solid #F3E8FF",
         fontSize: "13px",
-        fontFamily: "'Prompt', sans-serif",
         color: "#334155",
         outline: "none"
     },

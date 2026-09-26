@@ -16,30 +16,8 @@ public class Donor {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "donor_status", length = 20)
-    private String donorStatus = "active";
-
-    @Column(name = "total_impact_amount")
-    private Double totalImpactAmount;
-
     public Donor() {
         super();
-    }
-
-    public String getDonorStatus() {
-        return donorStatus;
-    }
-
-    public void setDonorStatus(String donorStatus) {
-        this.donorStatus = donorStatus;
-    }
-
-    public Double getTotalImpactAmount() {
-        return totalImpactAmount;
-    }
-
-    public void setTotalImpactAmount(Double totalImpactAmount) {
-        this.totalImpactAmount = totalImpactAmount;
     }
 
     public Integer getUserId() {

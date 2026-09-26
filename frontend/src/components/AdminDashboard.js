@@ -86,22 +86,26 @@ export default function ImpactDashboard() {
                 {/* ส่วนที่ 1: ตัวชี้วัดหลัก (KPIs) */}
                 <div style={styles.kpiGrid}>
                     <div style={styles.kpiCard}>
-                        <div style={{ ...styles.kpiIconBox, backgroundColor: '#F3E8FF', color: '#9333EA' }}>
-                            <span className="material-symbols-outlined">volunteer_activism</span>
+                        <div style={{ ...styles.kpiIconBox, backgroundColor: '#ffe0f1', color: '#fc6fbc' }}>
+                            <span className="material-symbols-outlined">package_2</span>
                         </div>
                         <div>
-                            <p style={styles.kpiLabel}>อาหารที่แชร์สำเร็จ</p>
-                            <h3 style={styles.kpiValue}>{stats.completed || 0} <span style={styles.kpiUnit}>รายการ</span></h3>
+                            <p style={styles.kpiLabel}>จำนวนรายการอาหารที่ร่วมแบ่งปัน</p>
+                            <h3 style={{ ...styles.kpiValue, color: '#fc6fbc' }}>
+                                {stats.totalDonatedItems || 0} <span style={styles.kpiUnit}>รายการ</span>
+                            </h3>
                         </div>
                     </div>
 
                     <div style={styles.kpiCard}>
                         <div style={{ ...styles.kpiIconBox, backgroundColor: '#E0F2FE', color: '#0284C7' }}>
-                            <span className="material-symbols-outlined">book_online</span>
+                            <span className="material-symbols-outlined">volunteer_activism</span>
                         </div>
                         <div>
-                            <p style={styles.kpiLabel}>การขอรับบริจาคทั้งหมด</p>
-                            <h3 style={styles.kpiValue}>{stats.totalBookings || 0} <span style={styles.kpiUnit}>ครั้ง</span></h3>
+                            <p style={styles.kpiLabel}>จำนวนครั้งที่มีการส่งมอบอาหาร</p>
+                            <h3 style={{ ...styles.kpiValue, color: '#0369a1' }}>
+                                {stats.totalDonationTimes || 0} <span style={styles.kpiUnit}>ครั้ง</span>
+                            </h3>
                         </div>
                     </div>
 

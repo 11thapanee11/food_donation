@@ -17,20 +17,17 @@ public class DashboardService {
     private final FoodService foodService;
     private final BookingService bookingService;
     private final ReportService reportService;
-    private final ImpactLogService impactLogService;
     private final FoodCategoryService foodCategoryService;
 
     public DashboardService(UserService userService, 
                             FoodService foodService,
                             BookingService bookingService, 
                             ReportService reportService,
-                            ImpactLogService impactLogService, 
                             FoodCategoryService foodCategoryService) {
         this.userService = userService;
         this.foodService = foodService;
         this.bookingService = bookingService;
         this.reportService = reportService;
-        this.impactLogService = impactLogService;
         this.foodCategoryService = foodCategoryService;
     }
 
@@ -49,12 +46,6 @@ public class DashboardService {
             dto.setTotalFoods(0L);
             dto.setExpired(0L);
         }
-
-        // ข้อมูล Carbon และการคำนวณต้นไม้
-        Double totalCarbon = impactLogService.calculateTotalCarbon();
-        totalCarbon = (totalCarbon != null) ? totalCarbon : 0.0;
-        dto.setTotalCarbon(totalCarbon);
-        dto.setTreesEquivalent(totalCarbon / 23.7);
 
         // สถิติการจอง
         BookingStatsDto bookingStats = bookingService.getBookingStats();

@@ -2,24 +2,21 @@ import React, { useState } from "react";
 
 export default function CommunityImpactPage() {
     const [impactData] = useState({
-        mealsServed: 52847,
-        foodSavedKg: 2156,
+        totalDonations: 1420,
         activeDonors: 2483,
         pickupLocations: 156,
         recentActivities: [
             { id: 1, text: "ร้าน Green Valley ส่งมอบอาหารพร้อมทาน 25 มื้อ", location: "ย่านใจกลางเมือง", time: "2 นาทีที่แล้ว" },
-            { id: 2, text: "ร้าน Happy Bakery ช่วยเซฟขนมปังอบสด 10 กก.", location: "เขตเหนือ", time: "15 นาทีที่แล้ว" },
+            { id: 2, text: "ร้าน Happy Bakery แบ่งปันเบเกอรี่อบสดใหม่", location: "เขตเหนือ", time: "15 นาทีที่แล้ว" },
             { id: 3, text: "คุณสมชาย ส่งมอบอาหารสดและวัตถุดิบ 15 ชุด", location: "ตลาดตะวันตก", time: "1 ชั่วโมงที่แล้ว" },
-            { id: 4, text: "ร้านกาแฟชิวชิว ส่งมอบเบเกอรี่เหลือประจำวัน 8 กก.", location: "โซน ม.เชียงใหม่", time: "2 ชั่วโมงที่แล้ว" },
+            { id: 4, text: "ร้านกาแฟชิวชิว ส่งมอบเบเกอรี่เหลือประจำวัน", location: "โซน ม.เชียงใหม่", time: "2 ชั่วโมงที่แล้ว" },
         ]
     });
 
     return (
-        /* Outer Wrapper: ขยายพื้นหลังสีม่วงพาสเทลเต็มความกว้างหน้าจอ */
         <div style={styles.fullWidthWrapper}>
-            {/* Inner Content Container: ล็อกความกว้างไว้ตรงกลางเท่าเดิม */}
             <div style={styles.container}>
-                
+
                 {/* Header Section */}
                 <div style={styles.headerSection}>
                     <div style={styles.headerBadge}>
@@ -28,78 +25,61 @@ export default function CommunityImpactPage() {
                         </span>
                         <span>พลังแห่งการส่งต่อของพวกเรา</span>
                     </div>
-                    <h1 style={styles.mainTitle}>ผลลัพธ์การร่วมใจของชุมชน</h1>
+                    <h1 style={styles.mainTitle}>ผลลัพธ์การร่วมใจ แจกจ่ายเพื่อลดขยะอาหาร</h1>
                     <p style={styles.subTitle}>
-                        ทุกการบริจาคของคุณช่วยเปลี่ยนอาหารที่เหลือให้เป็นมื้อที่มีคุณค่า ร่วมกันลดขยะอาหารและส่งต่อความสุขให้ผู้คนในสังคม
+                        ทุกรายการอาหารที่นำมาแบ่งปันและแจกจ่าย ช่วยเปลี่ยนอาหารส่วนเกินให้กลายเป็นมื้อที่มีคุณค่า ร่วมกันขับเคลื่อนชุมชนของเราให้ปลอดขยะอาหาร
                     </p>
                 </div>
 
-                {/* Stat Cards Grid (4 Cards โทนสีพาสเทลสบายตา) */}
+                {/* Stat Cards Grid */}
                 <div style={styles.statsGrid}>
-                    
-                    {/* 1. มื้ออาหารที่ส่งมอบแล้ว (Pastel Lavender) */}
+
+                    {/* 1. ยอดการแบ่งปันทั้งหมด (สี #C084FC) */}
                     <div style={{ ...styles.statCard, borderColor: "#E9D5FF" }}>
                         <div style={styles.cardHeader}>
                             <div style={{ ...styles.iconBadge, backgroundColor: "#FAF5FF", color: "#C084FC" }}>
-                                <span className="material-symbols-outlined">restaurant</span>
+                                <span className="material-symbols-outlined">volunteer_activism</span>
                             </div>
-                            <span style={{ ...styles.trendTag, color: "#C084FC" }}>↗ +15% เดือนนี้</span>
+                            <span style={{ ...styles.trendTag, color: "#C084FC" }}>↗ +23% เดือนนี้</span>
                         </div>
                         <div style={styles.cardBody}>
-                            <span style={styles.cardLabel}>มื้ออาหารที่ส่งมอบแล้ว</span>
+                            <span style={styles.cardLabel}>ยอดการแบ่งปันทั้งหมด</span>
                             <h2 style={{ ...styles.cardValue, color: "#C084FC" }}>
-                                {impactData.mealsServed.toLocaleString()}
+                                {impactData.totalDonations.toLocaleString()}{" "}
+                                <span style={{ fontSize: "18px", fontWeight: "700" }}>ครั้ง</span>
                             </h2>
-                            <p style={styles.cardDescription}>มื้ออาหารแม้อิ่มที่ถูกส่งต่อถึงมือผู้รับ</p>
+                            <p style={styles.cardDescription}>จำนวนครั้งที่มีการส่งมอบอาหารสำเร็จ</p>
                         </div>
                     </div>
 
-                    {/* 2. อาหารที่ช่วยเซฟไว้ได้ (Pastel Mint Green) */}
-                    <div style={{ ...styles.statCard, borderColor: "#A7F3D0" }}>
+                    {/* 2. ผู้ร่วมส่งต่อสายบุญ (สี #38BDF8) */}
+                    <div style={{ ...styles.statCard, borderColor: "#BAE6FD" }}>
                         <div style={styles.cardHeader}>
-                            <div style={{ ...styles.iconBadge, backgroundColor: "#ECFDF5", color: "#34D399" }}>
-                                <span className="material-symbols-outlined">recycling</span>
-                            </div>
-                            <span style={{ ...styles.trendTag, color: "#34D399" }}>↗ +23% เดือนนี้</span>
-                        </div>
-                        <div style={styles.cardBody}>
-                            <span style={styles.cardLabel}>อาหารที่ช่วยเซฟไว้ได้</span>
-                            <h2 style={{ ...styles.cardValue, color: "#34D399" }}>
-                                {impactData.foodSavedKg.toLocaleString()}{" "}
-                                <span style={{ fontSize: "18px", fontWeight: "700" }}>กก.</span>
-                            </h2>
-                            <p style={styles.cardDescription}>ปริมาณขยะอาหารที่ถูกเปลี่ยนเป็นประโยชน์</p>
-                        </div>
-                    </div>
-
-                    {/* 3. ผู้ร่วมส่งต่อสายบุญ (เปลี่ยนโทนส้ม/แดง เป็น ชมพูพาสเทลละมุน #F472B6 / #DB2777) */}
-                    <div style={{ ...styles.statCard, borderColor: "#FBCFE8" }}>
-                        <div style={styles.cardHeader}>
-                            <div style={{ ...styles.iconBadge, backgroundColor: "#FDF2F8", color: "#F472B6" }}>
+                            <div style={{ ...styles.iconBadge, backgroundColor: "#F0F9FF", color: "#38BDF8" }}>
                                 <span className="material-symbols-outlined">group</span>
                             </div>
-                            <span style={{ ...styles.trendTag, color: "#F472B6" }}>↗ +8% เดือนนี้</span>
+                            <span style={{ ...styles.trendTag, color: "#38BDF8" }}>↗ +8% เดือนนี้</span>
                         </div>
                         <div style={styles.cardBody}>
                             <span style={styles.cardLabel}>ผู้ร่วมส่งต่อสายบุญ</span>
-                            <h2 style={{ ...styles.cardValue, color: "#F472B6" }}>
+                            <h2 style={{ ...styles.cardValue, color: "#38BDF8" }}>
                                 {impactData.activeDonors.toLocaleString()}
                             </h2>
                             <p style={styles.cardDescription}>ร้านค้าและบุคคลที่ร่วมบริจาคอาหาร</p>
                         </div>
                     </div>
 
-                    {/* 4. จุดรับ-ส่งมอบอาหาร (Pastel Sky Blue) */}
-                    <div style={{ ...styles.statCard, borderColor: "#BAE6FD" }}>
+                    {/* 3. จุดรับ-ส่งมอบอาหาร (สี #34D399) */}
+                    <div style={{ ...styles.statCard, borderColor: "#A7F3D0" }}>
                         <div style={styles.cardHeader}>
-                            <div style={{ ...styles.iconBadge, backgroundColor: "#F0F9FF", color: "#38BDF8" }}>
+                            <div style={{ ...styles.iconBadge, backgroundColor: "#ECFDF5", color: "#34D399" }}>
                                 <span className="material-symbols-outlined">location_on</span>
                             </div>
-                            <span style={{ ...styles.trendTag, color: "#38BDF8" }}>↗ +12% เดือนนี้</span>
+                            <span style={{ ...styles.trendTag, color: "#34D399" }}>↗ +12% เดือนนี้</span>
                         </div>
                         <div style={styles.cardBody}>
                             <span style={styles.cardLabel}>จุดรับ-ส่งมอบอาหาร</span>
-                            <h2 style={{ ...styles.cardValue, color: "#38BDF8" }}>
+                            <h2 style={{ ...styles.cardValue, color: "#34D399" }}>
                                 {impactData.pickupLocations.toLocaleString()}
                             </h2>
                             <p style={styles.cardDescription}>พื้นที่แบ่งปันอาหารกระจายทั่วเมือง</p>
@@ -131,9 +111,15 @@ export default function CommunityImpactPage() {
                                 <div style={{ flex: 1 }}>
                                     <p style={styles.feedText}>{act.text}</p>
                                     <div style={styles.feedMeta}>
-                                        <span>📍 {act.location}</span>
+                                        <span style={styles.metaWithIcon}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>location_on</span>
+                                            {act.location}
+                                        </span>
                                         <span>•</span>
-                                        <span>🕒 {act.time}</span>
+                                        <span style={styles.metaWithIcon}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>schedule</span>
+                                            {act.time}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -148,15 +134,13 @@ export default function CommunityImpactPage() {
 
 // Inline Styles
 const styles = {
-    // พื้นหลังสีม่วงพาสเทลแผ่เต็มหน้าจอ
     fullWidthWrapper: {
         width: "100%",
-        backgroundColor: "#FAF5FF", // สีม่วงลาเวนเดอร์พาสเทลจางๆ
+        backgroundColor: "#FAF5FF",
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
     },
-    // คอนเทนเนอร์เนื้อหากลางหน้าจอ (ความกว้างตามเดิม)
     container: {
         maxWidth: "1080px",
         width: "100%",
@@ -199,7 +183,7 @@ const styles = {
     },
     statsGrid: {
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
         gap: "20px",
         marginBottom: "32px",
     },
@@ -297,7 +281,7 @@ const styles = {
         backgroundColor: "#FAF5FF",
         padding: "16px 20px",
         borderRadius: "18px",
-        border: "1px solid #F3E8FF",
+        border: "1.5px solid #F3E8FF",
     },
     feedDot: {
         width: "8px",
@@ -314,9 +298,15 @@ const styles = {
     },
     feedMeta: {
         display: "flex",
+        alignItems: "center",
         gap: "8px",
         fontSize: "12px",
         color: "#94A3B8",
-        marginTop: "4px",
+        marginTop: "6px",
+    },
+    metaWithIcon: {
+        display: "flex",
+        alignItems: "center",
+        gap: "3px",
     },
 };

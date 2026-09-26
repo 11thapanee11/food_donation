@@ -9,9 +9,9 @@ import MyFoods from './components/MyFoods';
 import FoodForm from './components/FoodForm';
 import FoodDetail from './components/FoodDetail';
 import MapPage from './components/MapPage';
-import RankingPage from './components/RankingPage';
+import Community from './components/Community';
 import FoodReceive from './components/FoodReceive';
-import ImpactDashboard from './components/ImpactDashboard';
+import ActivityHistoryPage from './components/ActivityHistoryPage';
 import AdminDashboard from './components/AdminDashboard';
 import ListFood from './components/ListFood';
 import ManageUsers from './components/ManageUser';
@@ -95,7 +95,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path='/map' element={<MapPage />} />
-        <Route path='/ranking' element={<RankingPage />} />
+        <Route path='/community-overview' element={<Community />} />
         <Route path='/food-detail' element={<FoodDetail />} />
 
         {/* กลุ่มหน้าสำหรับคนยังไม่ได้ล็อกอิน (ถ้าล็อกอินแล้ว พิมพ์มาหน้าล็อกอินจะโดนดีดออก) */}
@@ -111,7 +111,7 @@ function App() {
           <Route path='/food-form' element={<FoodForm />} />
           <Route path='/food-detail' element={<FoodDetail />} />
           <Route path='/receive' element={<FoodReceive />} />
-          <Route path='/impact-dashboard' element={<ImpactDashboard />} />
+          <Route path='/activity-history' element={<ActivityHistoryPage />} />
           <Route path='/booking-detail' element={<BookingDetail />} />
         </Route>
 

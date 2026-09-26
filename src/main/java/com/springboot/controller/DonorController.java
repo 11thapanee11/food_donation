@@ -59,16 +59,4 @@ public class DonorController {
         return ResponseEntity.ok(ApiResponse.success("อัปเดตสถานะสำเร็จ"));
     }
 
-    @GetMapping("/check-status")
-    public ResponseEntity<ApiResponse<String>> checkDonorStatus(@RequestHeader("Authorization") String authHeader) {
-        User user = userService.authenticate(authHeader);
-        Donor donor = donorService.getDonorByUserId(user.getUserId());
-
-        if (donor != null && "deactivate".equalsIgnoreCase(donor.getDonorStatus())) {
-            throw new ApplicationException("สิทธิ์การบริจาคของคุณถูกระงับ ไม่สามารถเพิ่มรายการอาหารได้",
-                    HttpStatus.FORBIDDEN);
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("บัญชีใช้งานได้ปกติ"));
-    }
 }

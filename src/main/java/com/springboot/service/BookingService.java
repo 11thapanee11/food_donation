@@ -19,17 +19,15 @@ public class BookingService {
     private final UserRepository userRepository;
     private final RecipientRepository recipientRepository;
     private final NotificationService notificationService;
-    private final ImpactLogService impactLogService;
 
     public BookingService(FoodRepository foodRepository, BookingRepository bookingRepository,
             UserRepository userRepository, RecipientRepository recipientRepository,
-            NotificationService notificationService, ImpactLogService impactLogService) {
+            NotificationService notificationService) {
         this.foodRepository = foodRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.recipientRepository = recipientRepository;
         this.notificationService = notificationService;
-        this.impactLogService = impactLogService;
     }
 
     public Booking addBooking(BookingDto request, Recipient recipient) {
@@ -150,9 +148,6 @@ public class BookingService {
         }
 
         booking.setBookingStatus("completed");
-
-        double carbonSaved = impactLogService.calculateCarbonSaved(booking);
-        impactLogService.saveImpactLog(booking, carbonSaved);
 
         return bookingRepository.save(booking);
     }

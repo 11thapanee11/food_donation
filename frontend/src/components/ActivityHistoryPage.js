@@ -1,42 +1,46 @@
 import React, { useState, useMemo } from 'react';
 
-export default function ImpactDashboard() {
-    // สมมติข้อมูลจำลอง (Mock Data)
-    const [summary] = useState({
-        totalWeight: 68.5,
-        totalDonations: 14,
-        favoriteCategory: "อาหารกล่องพร้อมทาน",
-        peopleHelpedApprox: 135
-    });
+export default function ActivityHistoryPage() {
+    const [roleTab, setRoleTab] = useState("donate"); // 'donate' หรือ 'receive'
 
-    const [impactHistory] = useState([
+    const [donationHistory] = useState([
         {
             id: 1,
             date: "2026-05-18T11:30:00Z",
             name: "ข้าวกล่องกระเพราไก่ (ทำสดใหม่)",
             category: "อาหารพร้อมทาน",
-            weight: 5.5,
+            amountText: "25 กล่อง",
         },
         {
             id: 2,
             date: "2026-05-15T16:00:00Z",
             name: "ขนมปังและเบเกอรี่โฮมเมด",
             category: "เบเกอรี่ / ขนม",
-            weight: 3.0,
+            amountText: "3 กิโลกรัม",
         },
         {
             id: 3,
             date: "2026-05-10T14:20:00Z",
             name: "แกงเขียวหวานและข้าวสวย",
             category: "อาหารพร้อมทาน",
-            weight: 8.2,
+            amountText: "10 กล่อง",
+        }
+    ]);
+
+    const [receiveHistory] = useState([
+        {
+            id: 101,
+            date: "2026-05-20T12:00:00Z",
+            name: "ข้าวต้มหมูสับร้อนๆ",
+            category: "อาหารพร้อมทาน",
+            amountText: "2 ชุด",
         },
         {
-            id: 4,
-            date: "2026-05-02T10:00:00Z",
-            name: "ผลไม้สดตามฤดูกาล (มะม่วง/กล้วย)",
+            id: 102,
+            date: "2026-05-12T15:30:00Z",
+            name: "ชุดผลไม้รวมวิตามินซี",
             category: "ผลไม้",
-            weight: 4.5,
+            amountText: "1 แพ็ก",
         }
     ]);
 
@@ -44,11 +48,17 @@ export default function ImpactDashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [dateFilter, setDateFilter] = useState("all");
 
+    // เลือกชุดข้อมูลตาม Tab ที่กำลังเลือกอยู่
+    const currentList = roleTab === "donate" ? donationHistory : receiveHistory;
+
+    // คำนวณหมวดหมู่ที่บริจาคบ่อยที่สุด (ตัวอย่างอย่างง่าย)
+    const favoriteCategory = "อาหารพร้อมทาน";
+
     // ฟังก์ชันกรองข้อมูลตามช่วงเวลาและคำค้นหา
     const filteredHistory = useMemo(() => {
         const now = new Date();
 
-        return impactHistory.filter(item => {
+        return currentList.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
 
             const itemDate = new Date(item.date);
@@ -72,7 +82,7 @@ export default function ImpactDashboard() {
 
             return matchesSearch && matchesDate;
         }).sort((a, b) => new Date(b.date) - new Date(a.date));
-    }, [impactHistory, searchQuery, dateFilter]);
+    }, [currentList, searchQuery, dateFilter]);
 
     return (
         <div style={styles.container}>
@@ -81,11 +91,11 @@ export default function ImpactDashboard() {
             <div style={styles.welcomeCard}>
                 <div>
                     <span style={styles.miniTag}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>eco</span>
-                        สถิติการแบ่งปันของคุณ
+                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>favorite</span>
+                        กิจกรรมของคุณในระบบ
                     </span>
-                    <h2 style={styles.welcomeTitle}>ส่งต่อความสุข ลดขยะอาหารไปด้วยกัน</h2>
-                    <p style={styles.welcomeDesc}>ทุกชิ้นส่วนของอาหารที่คุณนำมาแบ่งปัน ช่วยสร้างประโยชน์และคุณค่าให้สังคมได้เสมอ</p>
+                    <h2 style={styles.welcomeTitle}>ส่งต่อความสุขและรับน้ำใจไมตรี</h2>
+                    <p style={styles.welcomeDesc}>ตรวจสอบประวัติการแบ่งปันอาหารและการรับมอบอาหารของคุณได้จากที่นี่</p>
                 </div>
                 <div style={styles.headerIconBox}>
                     <span className="material-symbols-outlined" style={{ fontSize: '36px', color: '#c084fc' }}>
@@ -94,67 +104,106 @@ export default function ImpactDashboard() {
                 </div>
             </div>
 
-            {/* ส่วนสถิติภาพรวม */}
+            {/* ส่วนสถิติภาพรวม 3 กรอบใหม่ */}
             <div style={styles.statsRow}>
-                <div style={styles.statCardPrimary}>
-                    <div style={styles.statIconBoxPrimary}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#FFFFFF' }}>scale</span>
+                {/* กรอบที่ 1: จำนวนรายการอาหารที่ลงบริจาค (โทนสีชมพูพาสเทล) */}
+                <div style={styles.statCardPink}>
+                    <div style={{ ...styles.statIconBox, backgroundColor: '#ffe0f1', color: '#fc6fbc' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>package_2</span>
                     </div>
                     <div>
-                        <p style={styles.statLabelPrimary}>น้ำหนักอาหารที่ช่วยลดขยะ</p>
-                        <h3 style={styles.statValuePrimary}>{summary.totalWeight.toFixed(1)} <span style={{ fontSize: '18px', fontWeight: '400' }}>กก.</span></h3>
+                        <p style={styles.statLabel}>รายการอาหารที่ลงบริจาค</p>
+                        <h3 style={{ ...styles.statValue, color: '#fc6fbc' }}>
+                            {donationHistory.length} <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal' }}>รายการ</span>
+                        </h3>
                     </div>
                 </div>
 
+                {/* กรอบที่ 2: บริจาคไปแล้วกี่ครั้ง (โทนสีฟ้าพาสเทล) */}
                 <div style={styles.statCardSky}>
                     <div style={{ ...styles.statIconBox, backgroundColor: '#e0f2fe', color: '#0284c7' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>card_giftcard</span>
                     </div>
                     <div>
-                        <p style={styles.statLabel}>แบ่งปันไปแล้ว</p>
-                        <h3 style={styles.statValue}>{summary.totalDonations} <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal' }}>ครั้ง</span></h3>
+                        <p style={styles.statLabel}>จำนวนครั้งที่บริจาค</p>
+                        <h3 style={{ ...styles.statValue, color: '#0369a1' }}>
+                            {/* สมมติว่ามีตัวแปรนับจำนวนครั้งรวม หรือนับจากจำนวนโพสต์ */}
+                            {donationHistory.length} <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal' }}>ครั้ง</span>
+                        </h3>
                     </div>
                 </div>
 
+                {/* กรอบที่ 3: หมวดหมู่ที่บริจาคบ่อยที่สุด */}
                 <div style={styles.statCardMint}>
                     <div style={{ ...styles.statIconBox, backgroundColor: '#dcfce7', color: '#059669' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>restaurant_menu</span>
                     </div>
                     <div>
-                        <p style={styles.statLabel}>หมวดหมู่ยอดฮิต</p>
-                        <h3 style={{ ...styles.statValue, fontSize: '16px', color: '#047857', marginTop: '4px' }}>{summary.favoriteCategory}</h3>
+                        <p style={styles.statLabel}>หมวดหมู่บริจาค/รับบริจาคบ่อย</p>
+                        <h3 style={{ fontSize: '15px', color: '#047857', marginTop: '4px', fontWeight: '700' }}>
+                            {favoriteCategory}
+                        </h3>
                     </div>
                 </div>
             </div>
 
-            {/* ส่วนรายการประวัติ พร้อมระบบค้นหาและฟิลเตอร์ช่วงเวลา */}
+            {/* ส่วนรายการประวัติ พร้อมปุ่มสลับ Tab และเครื่องมือค้นหา */}
             <div style={styles.feedSection}>
+
+                {/* ปุ่มสลับ Tab (ผู้บริจาค / ผู้รับบริจาค) */}
+                <div style={styles.roleTabContainer}>
+                    <button
+                        onClick={() => { setRoleTab("donate"); setSearchQuery(""); }}
+                        style={{
+                            ...styles.roleTabButton,
+                            backgroundColor: roleTab === "donate" ? "#9333ea" : "#f8fafc",
+                            color: roleTab === "donate" ? "#ffffff" : "#64748b",
+                            borderColor: roleTab === "donate" ? "#9333ea" : "#e2e8f0"
+                        }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>card_giftcard</span>
+                        ประวัติการบริจาคของฉัน ({donationHistory.length})
+                    </button>
+                    <button
+                        onClick={() => { setRoleTab("receive"); setSearchQuery(""); }}
+                        style={{
+                            ...styles.roleTabButton,
+                            backgroundColor: roleTab === "receive" ? "#9333ea" : "#f8fafc",
+                            color: roleTab === "receive" ? "#ffffff" : "#64748b",
+                            borderColor: roleTab === "receive" ? "#9333ea" : "#e2e8f0"
+                        }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>redeem</span>
+                        ประวัติการรับบริจาคของฉัน ({receiveHistory.length})
+                    </button>
+                </div>
+
                 <div style={styles.feedHeader}>
-                    <h3 style={styles.feedTitle}>ประวัติการแบ่งปันล่าสุด</h3>
-                    <span style={styles.feedCount}>แสดง {filteredHistory.length} จาก {impactHistory.length} รายการ</span>
+                    <h3 style={styles.feedTitle}>
+                        {roleTab === "donate" ? "รายการที่เคยบริจาค" : "รายการที่เคยขอรับ"}
+                    </h3>
+                    <span style={styles.feedCount}>แสดง {filteredHistory.length} จาก {currentList.length} รายการ</span>
                 </div>
 
                 {/* แถบเครื่องมือค้นหาและฟิลเตอร์ช่วงเวลา */}
                 <div style={styles.filterToolbar}>
-                    {/* ค้นหาด้วยชื่อ */}
                     <div style={styles.searchBox}>
                         <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#94a3b8' }}>search</span>
                         <input
                             type="text"
-                            placeholder="ค้นหารายการแบ่งปัน..."
+                            placeholder="ค้นหารายการ..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={styles.searchInput}
                         />
                     </div>
 
-                    {/* กรองตามช่วงเวลา */}
                     <div style={styles.filterGroup}>
                         <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#94a3b8' }}>calendar_today</span>
                         <select
                             value={dateFilter}
                             onChange={(e) => setDateFilter(e.target.value)}
-                            style={styles.selectInput}
+                            style={{ ...styles.selectInput, paddingRight: '30px' }}
                         >
                             <option value="all">ทั้งหมด</option>
                             <option value="7days">7 วันล่าสุด</option>
@@ -173,7 +222,7 @@ export default function ImpactDashboard() {
                                 <div style={styles.feedItemLeft}>
                                     <div style={styles.itemIconBox}>
                                         <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#9333ea' }}>
-                                            fastfood
+                                            {roleTab === 'donate' ? 'volunteer_activism' : 'redeem'}
                                         </span>
                                     </div>
                                     <div>
@@ -192,15 +241,17 @@ export default function ImpactDashboard() {
                                     </div>
                                 </div>
                                 <div style={styles.feedItemRight}>
-                                    <span style={styles.itemWeightLabel}>น้ำหนัก</span>
-                                    <span style={styles.itemWeightValue}>+{item.weight.toFixed(1)} กก.</span>
+                                    <span style={styles.itemWeightLabel}>
+                                        {roleTab === 'donate' ? 'จำนวนที่บริจาค' : 'จำนวนที่รับ'}
+                                    </span>
+                                    <span style={styles.itemWeightValue}>{item.amountText}</span>
                                 </div>
                             </div>
                         ))
                     ) : (
                         <div style={styles.emptyState}>
                             <span className="material-symbols-outlined" style={{ fontSize: '40px', color: '#cbd5e1', marginBottom: '8px' }}>search_off</span>
-                            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>ไม่พบรายการในช่วงเวลาที่คุณเลือก</p>
+                            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>ไม่พบประวัติรายการในช่วงเวลาที่คุณเลือก</p>
                         </div>
                     )}
                 </div>
@@ -218,7 +269,7 @@ const styles = {
         flexDirection: "column",
         gap: "24px",
         padding: "30px 20px",
-        fontFamily: "'Sarabun', sans-serif",
+        fontFamily: "'Prompt', sans-serif",
     },
     welcomeCard: {
         backgroundColor: "#faf5ff",
@@ -254,7 +305,7 @@ const styles = {
     welcomeTitle: {
         fontSize: "24px",
         fontWeight: "700",
-        color: "#6b21a8",
+        color: "#9333ea",
         margin: "0 0 6px 0",
     },
     welcomeDesc: {
@@ -292,13 +343,23 @@ const styles = {
         fontWeight: "500",
     },
     statValuePrimary: {
-        fontSize: "30px",
+        fontSize: "26px",
         fontWeight: "700",
         margin: 0,
     },
+    statCardPink: {
+        backgroundColor: "#fdf2f8",
+        border: "1.5px solid #fbcfe8",
+        borderRadius: "20px",
+        padding: "24px",
+        display: "flex",
+        alignItems: "center",
+        gap: "18px",
+        boxShadow: "0 4px 12px rgba(244, 114, 182, 0.05)",
+    },
     statCardSky: {
         backgroundColor: "#f0f9ff",
-        border: "1.5px solid #e0f2fe",
+        border: "1.5px solid #d7efff",
         borderRadius: "20px",
         padding: "24px",
         display: "flex",
@@ -332,7 +393,6 @@ const styles = {
     statValue: {
         fontSize: "26px",
         fontWeight: "700",
-        color: "#1e293b",
         margin: 0,
     },
     feedSection: {
@@ -341,6 +401,25 @@ const styles = {
         padding: "28px 36px",
         border: "1.5px solid #f1f5f9",
         boxShadow: "0 4px 15px rgba(0,0,0,0.02)",
+    },
+    roleTabContainer: {
+        display: "flex",
+        gap: "12px",
+        marginBottom: "24px",
+    },
+    roleTabButton: {
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
+        padding: "12px 20px",
+        borderRadius: "14px",
+        fontSize: "14px",
+        fontWeight: "600",
+        border: "1.5px solid",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
     },
     feedHeader: {
         display: "flex",
@@ -470,7 +549,7 @@ const styles = {
         marginBottom: "2px",
     },
     itemWeightValue: {
-        fontSize: "16px",
+        fontSize: "15px",
         fontWeight: "700",
         color: "#9333ea",
     },

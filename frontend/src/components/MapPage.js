@@ -69,7 +69,7 @@ const MapPage = () => {
 
     const categories = ["ทั้งหมด", "อาหารคาว", "อาหารหวาน", "เครื่องดื่ม", "ผลไม้/ผัก", "เบเกอรี่"];
 
-    // คำนวณหาพิกัดและข้อมูลของจุดที่มีการบริจาคหนาแน่นที่สุด
+    // คำนวณหาพิกัดและข้อมูลของจุดที่มีการบริจาคหนาแน่นที่สุด[cite: 4]
     const topHotspot = useMemo(() => {
         if (!foods || foods.length === 0) return null;
 
@@ -93,7 +93,7 @@ const MapPage = () => {
         return best;
     }, [foods]);
 
-    // ฟังก์ชันเลื่อนแผนที่ไปที่ตำแหน่งต่างๆ
+    // ฟังก์ชันเลื่อนแผนที่ไปที่ตำแหน่งต่างๆ[cite: 4]
     const panToLocation = (type) => {
         if (!mapInstanceRef.current) return;
         const view = mapInstanceRef.current.getView();
@@ -113,7 +113,7 @@ const MapPage = () => {
         }
     };
 
-    // 1. Geolocation
+    // 1. Geolocation[cite: 4]
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -137,7 +137,7 @@ const MapPage = () => {
         }
     }, []);
 
-    // 2. Fetch Foods API
+    // 2. Fetch Foods API[cite: 4]
     useEffect(() => {
         setIsPageLoading(true);
         const token = localStorage.getItem("accessToken");
@@ -168,7 +168,7 @@ const MapPage = () => {
             });
     }, []);
 
-    // 3. Init OpenLayers Map
+    // 3. Init OpenLayers Map[cite: 4]
     useEffect(() => {
         if (isPageLoading || !mapElement.current || mapInstanceRef.current) return;
 
@@ -184,8 +184,8 @@ const MapPage = () => {
 
         const overlay = new Overlay({
             element: tooltipContainerRef.current,
-            offset: [0, -12],
-            positioning: "bottom-center",
+            offset: [0, -15],
+            positioning: "top-center",
         });
         overlayRef.current = overlay;
 
@@ -229,7 +229,7 @@ const MapPage = () => {
             if (feature) {
                 const foodData = feature.get("foodData");
                 if (foodData && foodData.id) {
-                    navigate(`/food-detail/${foodData.id}`, {
+                    navigate("/food-detail", {
                         state: { id: foodData.id, fromPage: "/map" },
                     });
                 }
@@ -244,7 +244,7 @@ const MapPage = () => {
         };
     }, [isPageLoading]);
 
-    // 4. Filtering Logic
+    // 4. Filtering Logic[cite: 4]
     useEffect(() => {
         let result = [...foods];
 
@@ -310,7 +310,7 @@ const MapPage = () => {
         setFilteredFoods(result);
     }, [foods, selectedCategory, maxDistance, timeRangeFilter, userCoords]);
 
-    // 5. Render Markers
+    // 5. Render Markers[cite: 4]
     useEffect(() => {
         if (!vectorSourceRef.current) return;
 
@@ -347,13 +347,13 @@ const MapPage = () => {
             {/* Control Panel ด้านบน */}
             <div style={styles.filterControlPanel}>
 
-                {/* ปุ่มสลับมุมมองด่วน (ตำแหน่งปัจจุบัน vs จุดบริจาคหนาแน่นสุด) */}
+                {/* ปุ่มสลับมุมมองด่วน (ตำแหน่งปัจจุบัน vs จุดบริจาคหนาแน่นสุด)[cite: 4] */}
                 <div style={styles.quickFocusRow}>
                     <button
                         style={styles.focusBtn}
                         onClick={() => panToLocation("user")}
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "#0284c7" }}>my_location</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "#e40606" }}>my_location</span>
                         ตำแหน่งของฉัน
                     </button>
                     {topHotspot && (
@@ -368,13 +368,16 @@ const MapPage = () => {
                 </div>
 
                 <div style={styles.dropdownRow}>
-                    {/* ตัวกรองระยะทาง */}
+                    {/* ตัวกรองระยะทาง[cite: 4] */}
                     <div style={styles.selectGroup}>
-                        <label style={styles.selectLabel}>📍 ระยะทาง:</label>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#0284c7' }}>
+                            distance
+                        </span>
+                        <label style={styles.selectLabel}>ระยะทาง:</label>
                         <select
                             value={maxDistance}
                             onChange={(e) => setMaxDistance(e.target.value)}
-                            style={styles.selectInput}
+                            style={{ ...styles.selectInput, paddingRight: '30px' }}
                         >
                             <option value="all">ทุกระยะทาง</option>
                             <option value="1">ไม่เกิน 1 กม.</option>
@@ -384,13 +387,16 @@ const MapPage = () => {
                         </select>
                     </div>
 
-                    {/* ตัวกรองช่วงชั่วโมงรับของ */}
+                    {/* ตัวกรองช่วงชั่วโมงรับของ[cite: 4] */}
                     <div style={styles.selectGroup}>
-                        <label style={styles.selectLabel}>⏰ ช่วงเวลารับ:</label>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ea580c' }}>
+                            schedule
+                        </span>
+                        <label style={styles.selectLabel}>ช่วงเวลารับ:</label>
                         <select
                             value={timeRangeFilter}
                             onChange={(e) => setTimeRangeFilter(e.target.value)}
-                            style={styles.selectInput}
+                            style={{ ...styles.selectInput, paddingRight: '30px' }}
                         >
                             <option value="all">ทุกช่วงเวลา</option>
                             <option value="08-10">08:00 - 10:00 น.</option>
@@ -402,7 +408,7 @@ const MapPage = () => {
                     </div>
                 </div>
 
-                {/* แถบหมวดหมู่อาหาร */}
+                {/* แถบหมวดหมู่อาหาร[cite: 4] */}
                 <div style={styles.categoryChipsGroup}>
                     {categories.map((cat) => (
                         <button
@@ -421,49 +427,82 @@ const MapPage = () => {
                 </div>
             </div>
 
-            {/* แผนที่ */}
+            {/* แผนที่[cite: 4] */}
             <div ref={mapElement} style={styles.mapCanvas} />
 
-            {/* Hover Tooltip Card */}
+            {/* Hover Tooltip Card[cite: 4] */}
             <div ref={tooltipContainerRef} style={{ display: hoveredFood ? "block" : "none" }}>
                 {hoveredFood && (
-                    <div style={styles.hoverCard}>
-                        {hoveredFood.imageUrl && (
+                    <div
+                        style={styles.hoverCard}
+                        onClick={() => {
+                            navigate("/food-detail", {
+                                state: {
+                                    id: hoveredFood.id || hoveredFood.foodId,
+                                    fromPage: "/map"
+                                }
+                            });
+                        }}
+                    >
+                        {hoveredFood.foodImage ? (
                             <img
-                                src={hoveredFood.imageUrl}
+                                src={hoveredFood.foodImage.startsWith("http") ? hoveredFood.foodImage : `http://localhost:8082${hoveredFood.foodImage}`}
                                 alt={hoveredFood.foodName}
                                 style={styles.cardImg}
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                }}
                             />
+                        ) : (
+                            <div style={styles.cardImgPlaceholder}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '32px', color: '#cbd5e1' }}>image</span>
+                            </div>
                         )}
+
                         <div style={styles.cardContent}>
                             <h4 style={styles.cardTitle}>{hoveredFood.foodName}</h4>
 
                             {hoveredFood.expiryDate && (
                                 <p style={styles.cardExpiryText}>
-                                    ⏳ หมดอายุ: {hoveredFood.expiryDate}
+                                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#9333ea', verticalAlign: 'middle', marginRight: '6px' }}>schedule</span>
+                                    หมดอายุ: {new Date(hoveredFood.expiryDate).toLocaleDateString("th-TH", {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric"
+                                    })}
                                 </p>
                             )}
 
                             {hoveredFood.pickupTime && (
                                 <p style={styles.cardTimeText}>
-                                    ⏰ เวลารับ: {hoveredFood.pickupTime}
+                                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#0284c7', verticalAlign: 'middle', marginRight: '6px' }}>alarm</span>
+                                    เวลารับ: {hoveredFood.pickupTime}
                                 </p>
                             )}
 
                             {hoveredFood.locationName && (
-                                <p style={styles.cardSubText}>📍 {hoveredFood.locationName}</p>
+                                <p style={styles.cardSubText}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#db2777', verticalAlign: 'middle', marginRight: '6px' }}>location_on</span>
+                                    {hoveredFood.locationName}
+                                </p>
                             )}
+
                             {hoveredFood.calculatedDistance !== undefined && (
                                 <p style={styles.cardDistText}>
-                                    📏 {hoveredFood.calculatedDistance.toFixed(1)} กม. จากคุณ
+                                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#0284c7', verticalAlign: 'middle', marginRight: '6px' }}>near_me</span>
+                                    {hoveredFood.calculatedDistance.toFixed(1)} กม. จากคุณ
                                 </p>
                             )}
 
                             <div style={styles.cardFooter}>
                                 <span style={styles.cardQuantityBadge}>
-                                    📦 เหลือ {hoveredFood.quantity || 1} รายการ
+                                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#10b981', verticalAlign: 'middle', marginRight: '4px' }}>package_2</span>
+                                    เหลือ {hoveredFood.quantity || 1} รายการ
                                 </span>
-                                <span style={styles.clickHint}>แตะเพื่อจอง ➔</span>
+                                <span style={styles.clickHint}>
+                                    แตะเพื่อจอง
+                                    <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginLeft: '2px' }}>arrow_forward</span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -490,7 +529,7 @@ const styles = {
         top: "16px",
         left: "50%",
         transform: "translateX(-50%)",
-        zIndex: 1000,
+        zIndex: 10,
         display: "flex",
         flexDirection: "column",
         gap: "10px",
@@ -573,23 +612,35 @@ const styles = {
     hoverCard: {
         backgroundColor: "#ffffff",
         borderRadius: "16px",
-        padding: "10px",
+        padding: "12px",
         boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-        width: "210px",
-        pointerEvents: "none",
+        width: "230px",
+        pointerEvents: "auto",
         border: "1px solid #f1f5f9",
+        cursor: "pointer",
     },
     cardImg: {
         width: "100%",
-        height: "100px",
+        height: "110px",
         objectFit: "cover",
         borderRadius: "10px",
         marginBottom: "8px",
     },
+    cardImgPlaceholder: {
+        width: "100%",
+        height: "110px",
+        backgroundColor: "#f8fafc",
+        borderRadius: "10px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: "8px",
+        border: "1px dashed #e2e8f0",
+    },
     cardContent: {
         display: "flex",
         flexDirection: "column",
-        gap: "3px",
+        gap: "4px",
     },
     cardTitle: {
         margin: 0,
@@ -600,25 +651,33 @@ const styles = {
     cardExpiryText: {
         margin: 0,
         fontSize: "11px",
-        fontWeight: "600",
-        color: "#e11d48",
+        fontWeight: "500",
+        color: "#64748b",
+        display: "flex",
+        alignItems: "center",
     },
     cardTimeText: {
         margin: 0,
         fontSize: "11px",
-        color: "#059669",
+        color: "#64748b",
         fontWeight: "500",
+        display: "flex",
+        alignItems: "center",
     },
     cardSubText: {
         margin: 0,
         fontSize: "11px",
         color: "#64748b",
+        display: "flex",
+        alignItems: "center",
     },
     cardDistText: {
         margin: 0,
         fontSize: "11px",
-        fontWeight: "600",
-        color: "#c084fc",
+        fontWeight: "500",
+        color: "#64748b",
+        display: "flex",
+        alignItems: "center",
     },
     cardFooter: {
         display: "flex",
@@ -635,11 +694,15 @@ const styles = {
         fontWeight: "600",
         padding: "2px 8px",
         borderRadius: "10px",
+        display: "flex",
+        alignItems: "center",
     },
     clickHint: {
         fontSize: "10px",
         color: "#94a3b8",
         fontWeight: "500",
+        display: "flex",
+        alignItems: "center",
     },
     loadingContainer: {
         display: "flex",
