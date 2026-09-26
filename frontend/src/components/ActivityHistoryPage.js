@@ -156,9 +156,9 @@ export default function ActivityHistoryPage() {
                         onClick={() => { setRoleTab("donate"); setSearchQuery(""); }}
                         style={{
                             ...styles.roleTabButton,
-                            backgroundColor: roleTab === "donate" ? "#9333ea" : "#f8fafc",
+                            backgroundColor: roleTab === "donate" ? "#C084FC" : "#f8fafc",
                             color: roleTab === "donate" ? "#ffffff" : "#64748b",
-                            borderColor: roleTab === "donate" ? "#9333ea" : "#e2e8f0"
+                            borderColor: roleTab === "donate" ? "#C084FC" : "#e2e8f0"
                         }}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>card_giftcard</span>
@@ -168,9 +168,9 @@ export default function ActivityHistoryPage() {
                         onClick={() => { setRoleTab("receive"); setSearchQuery(""); }}
                         style={{
                             ...styles.roleTabButton,
-                            backgroundColor: roleTab === "receive" ? "#9333ea" : "#f8fafc",
+                            backgroundColor: roleTab === "receive" ? "#C084FC" : "#f8fafc",
                             color: roleTab === "receive" ? "#ffffff" : "#64748b",
-                            borderColor: roleTab === "receive" ? "#9333ea" : "#e2e8f0"
+                            borderColor: roleTab === "receive" ? "#C084FC" : "#e2e8f0"
                         }}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>redeem</span>
@@ -221,7 +221,7 @@ export default function ActivityHistoryPage() {
                             <div key={item.id} style={styles.feedItem}>
                                 <div style={styles.feedItemLeft}>
                                     <div style={styles.itemIconBox}>
-                                        <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#9333ea' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#b672fa' }}>
                                             {roleTab === 'donate' ? 'volunteer_activism' : 'redeem'}
                                         </span>
                                     </div>
@@ -295,7 +295,7 @@ const styles = {
         alignItems: "center",
         gap: "6px",
         backgroundColor: "#f3e8ff",
-        color: "#9333ea",
+        color: "#b672fa",
         padding: "4px 12px",
         borderRadius: "20px",
         fontSize: "13px",
@@ -305,7 +305,7 @@ const styles = {
     welcomeTitle: {
         fontSize: "24px",
         fontWeight: "700",
-        color: "#9333ea",
+        color: "#c084fc",
         margin: "0 0 6px 0",
     },
     welcomeDesc: {
@@ -525,7 +525,7 @@ const styles = {
     },
     itemCategory: {
         fontSize: "13px",
-        color: "#9333ea",
+        color: "#b672fa",
         backgroundColor: "#f3e8ff",
         padding: "2px 10px",
         borderRadius: "8px",
@@ -551,7 +551,7 @@ const styles = {
     itemWeightValue: {
         fontSize: "15px",
         fontWeight: "700",
-        color: "#9333ea",
+        color: "#b672fa",
     },
     emptyState: {
         textAlign: "center",
