@@ -79,6 +79,8 @@ public class ReportService {
         ReportDto dto = new ReportDto();
         dto.setReportId(report.getReportId());
         dto.setReason(report.getReportReason());
+
+        
         dto.setDescription(report.getReportDescription());
         dto.setReportDate(report.getReportDate());
         dto.setReportImage(report.getReportImage());

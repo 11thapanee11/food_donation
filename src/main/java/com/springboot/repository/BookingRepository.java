@@ -23,13 +23,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
         // หาน้ำหนักรวมจาก Booking เฉพาะรายการที่เป็นของ Donor คนนี้ และสถานะเป็น
         // 'COMPLETE' เท่านั้น
-        @Query("SELECT SUM(b.bookingWeightKg) FROM Booking b " +
+        @Query("SELECT SUM(b.bookingQuantity) FROM Booking b " +
                         "WHERE b.food.donor.userId = :donorId AND b.bookingStatus = 'COMPLETED'")
-        // @Query("SELECT SUM(b.bookingWeightKg) FROM Booking b " +
-        // "JOIN b.food f " +
-        // "JOIN f.donor d " +
-        // "WHERE d.userId = :donorId AND b.bookingStatus = 'COMPLETED'")
-        Double sumWeightByDonorIdAndComplete(@Param("donorId") Integer donorId);
+        Double sumQuantityByDonorIdAndComplete(@Param("donorId") Integer donorId);
 
         // นับจำนวนครั้งการบริจาคที่สำเร็จจริง (Count แถวข้อมูลที่สถานะเป็น
         // 'COMPLETE')
@@ -43,8 +39,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
         long countByBookingStatus(String status);
 
-        boolean existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(Integer recipientId, Integer foodId,List<String> statuses);
-        
+        boolean existsByRecipientUserIdAndFoodFoodIdAndBookingStatusIn(Integer recipientId, Integer foodId,
+                        List<String> statuses);
+
         // @Query("SELECT COUNT(b) > 0 FROM Booking b " +
         // "WHERE b.recipient.userId = :recipientId " +
         // "AND b.food.foodId = :foodId " +
@@ -58,4 +55,18 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         Double sumCompletedBookingUnits();
 
         boolean existsByFood_FoodIdAndRecipient_UserId(Integer foodId, Integer userId);
+
+        List<Booking> findByBookingStatusAndPickupDeadlineBefore(String bookingStatus, LocalDateTime dateTime);
+
+        // ดึงรายการจองล่าสุด 5 รายการแรกมาทำ Live Feed
+        @Query("SELECT b FROM Booking b ORDER BY b.bookingId DESC")
+        List<Booking> findLatestBookings();
+
+        @Query("SELECT FUNCTION('DATE_FORMAT', b.bookingDate, '%Y-%m') as monthKey, " +
+                        "COUNT(b.bookingId) as total, " +
+                        "SUM(CASE WHEN b.bookingStatus = 'completed' THEN 1 ELSE 0 END) as completed " +
+                        "FROM Booking b " +
+                        "GROUP BY FUNCTION('DATE_FORMAT', b.bookingDate, '%Y-%m') " +
+                        "ORDER BY monthKey ASC")
+        List<Object[]> getMonthlyBookingStatsRaw();
 }

@@ -4,13 +4,16 @@ import java.time.LocalDateTime;
 
 public class BookingDto {
     private Integer foodId;
-    private int quantity;
+    private double quantity;
+    private String unit;
 
     private Integer bookingId;
-    private Integer bookingUnit;
-    private Double bookingWeightKg;
+    private Double bookingQuantity;
+    private String bookingUnit;
+
     private LocalDateTime bookingDate;
     private Integer confirmationCode;
+    private LocalDateTime pickupDeadline;
     private String bookingStatus;
 
     public Integer getFoodId() {
@@ -21,11 +24,11 @@ public class BookingDto {
         this.foodId = foodId;
     }
 
-    public int getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
+    public void setQuantity(double quantity) {
         this.quantity = quantity;
     }
 
@@ -37,21 +40,20 @@ public class BookingDto {
         this.bookingId = bookingId;
     }
 
+    public Double getBookingQuantity() {
+        return bookingQuantity;
+    }
 
-    public Integer getBookingUnit() {
+    public void setBookingQuantity(Double bookingQuantity) {
+        this.bookingQuantity = bookingQuantity;
+    }
+
+    public String getBookingUnit() {
         return bookingUnit;
     }
 
-    public void setBookingUnit(Integer bookingUnit) {
+    public void setBookingUnit(String bookingUnit) {
         this.bookingUnit = bookingUnit;
-    }
-
-    public Double getBookingWeightKg() {
-        return bookingWeightKg;
-    }
-
-    public void setBookingWeightKg(Double bookingWeightKg) {
-        this.bookingWeightKg = bookingWeightKg;
     }
 
     public LocalDateTime getBookingDate() {
@@ -70,6 +72,14 @@ public class BookingDto {
         this.confirmationCode = confirmationCode;
     }
 
+    public LocalDateTime getPickupDeadline() {
+        return pickupDeadline;
+    }
+
+    public void setPickupDeadline(LocalDateTime pickupDeadline) {
+        this.pickupDeadline = pickupDeadline;
+    }
+
     public String getBookingStatus() {
         return bookingStatus;
     }
@@ -78,8 +88,12 @@ public class BookingDto {
         this.bookingStatus = bookingStatus;
     }
 
-    
-    
+    public String getUnit() {
+        return unit;
+    }
 
-    
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
 }

@@ -29,15 +29,28 @@ export default function ImpactDashboard() {
                     setStats(result.data);
                 }
 
-                // ข้อมูลจำลองสำหรับกราฟแนวโน้มรายเดือน
-                setMonthlyData([
-                    { month: 'ม.ค.', total: 50, completed: 42 },
-                    { month: 'ก.พ.', total: 65, completed: 58 },
-                    { month: 'มี.ค.', total: 80, completed: 72 },
-                    { month: 'เม.ย.', total: 95, completed: 88 },
-                    { month: 'พ.ค.', total: 120, completed: 110 },
-                    { month: 'มิ.ย.', total: 140, completed: 132 },
-                ]);
+                // 1. กำหนดรายชื่อเดือนทั้งหมดที่ต้องการให้แสดงบนกราฟ (เช่น ม.ค. ถึง ธ.ค.)
+                const allMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+                // 2. แปลงข้อมูลที่ Backend ส่งมา (เช่น ส่งมาเฉพาะเดือนที่มีข้อมูล) ให้เป็น Map เพื่อค้นหาง่าย
+                const rawMonthlyStats = result.data.monthlyStats || [];
+                const statsMap = {};
+                rawMonthlyStats.forEach(item => {
+                    // สมมติว่า Backend ส่งชื่อเดือนมาตรงกัน เช่น item.month คือ "ก.ย." หรือแปลงมาจาก Backend
+                    statsMap[item.month] = item;
+                });
+
+                // 3. วนลูปสร้างข้อมูลครบ 12 เดือน ถ้าเดือนไหนไม่มี ให้ใส่ค่า 0
+                const completeMonthlyData = allMonths.map(monthName => {
+                    if (statsMap[monthName]) {
+                        return statsMap[monthName]; // ถ้ามีข้อมูลจริงใช้อันเดิม
+                    } else {
+                        return { month: monthName, total: 0, completed: 0 }; // ถ้าไม่มี เซ็ตเป็น 0
+                    }
+                });
+
+                // 4. เซ็ตข้อมูลที่เติมเต็มแล้วเข้า State ของกราฟ
+                setMonthlyData(completeMonthlyData);
 
             } catch (err) {
                 console.error("Error fetching dashboard stats:", err);
@@ -92,7 +105,7 @@ export default function ImpactDashboard() {
                         <div>
                             <p style={styles.kpiLabel}>จำนวนรายการอาหารที่ร่วมแบ่งปัน</p>
                             <h3 style={{ ...styles.kpiValue, color: '#fc6fbc' }}>
-                                {stats.totalDonatedItems || 0} <span style={styles.kpiUnit}>รายการ</span>
+                                {stats.totalFoods || 0} <span style={styles.kpiUnit}>รายการ</span>
                             </h3>
                         </div>
                     </div>
@@ -104,7 +117,7 @@ export default function ImpactDashboard() {
                         <div>
                             <p style={styles.kpiLabel}>จำนวนครั้งที่มีการส่งมอบอาหาร</p>
                             <h3 style={{ ...styles.kpiValue, color: '#0369a1' }}>
-                                {stats.totalDonationTimes || 0} <span style={styles.kpiUnit}>ครั้ง</span>
+                                {stats.completed || 0} <span style={styles.kpiUnit}>ครั้ง</span>
                             </h3>
                         </div>
                     </div>

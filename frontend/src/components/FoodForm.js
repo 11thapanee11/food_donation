@@ -30,25 +30,24 @@ export default function FoodForm() {
         foodName: "",
         description: "",
         expiryDate: "",
-        unitWeightKg: "",
-        totalUnit: "",
-        remainingUnit: "",
+        quantity: "",
+        unit: "ชิ้น",
+        remainingQuantity: "",
         limitPerPerson: "",
+        locationName: "",
         address: "",
-        pickupDateStart: "",
-        pickupDateEnd: "",
         pickupStartTime: "",
         pickupEndTime: "",
-        latitude: "18.7883",
-        longitude: "98.9853",
-        foodStatus: "",
+        latitude: "18.8925",
+        longitude: "99.0142",
+        foodStatus: "available",
         foodCateId: "",
-        donorId: ""
+        donorUserId: ""
     });
 
     const [errors, setErrors] = useState({});
 
-    // State สำหรับจัดการ Custom Modal Popup (รองรับการปิดอัตโนมัติ)
+    // State สำหรับจัดการ Custom Modal Popup
     const [popup, setPopup] = useState({
         show: false,
         title: "",
@@ -63,7 +62,6 @@ export default function FoodForm() {
         setPopup({ show: false, title: "", message: "", type: "success", onConfirm: null, inputValue: "" });
     };
 
-    // ฟังก์ชันช่วยแสดง Popup แบบชั่วคราว (Auto-close) หรือแบบยืนยัน
     const showAutoPopup = (title, message, callback) => {
         setPopup({
             show: true,
@@ -80,40 +78,11 @@ export default function FoodForm() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setErrors((prev) => {
-            const newErrors = { ...prev, [name]: "" };
-            if (name === "expiryDate") {
-                delete newErrors.pickupDateEnd;
-                delete newErrors.pickupEndTime;
-            }
-            return newErrors;
-        });
-
-        if (name === "expiryDate" && value) {
-            const expiryDateObj = new Date(value);
-            expiryDateObj.setHours(expiryDateObj.getHours() - 4);
-
-            const year = expiryDateObj.getFullYear();
-            const month = String(expiryDateObj.getMonth() + 1).padStart(2, '0');
-            const date = String(expiryDateObj.getDate()).padStart(2, '0');
-            const endDateFormatted = `${year}-${month}-${date}`;
-
-            const hours = String(expiryDateObj.getHours()).padStart(2, '0');
-            const minutes = String(expiryDateObj.getMinutes()).padStart(2, '0');
-            const endTimeFormatted = `${hours}:${minutes}`;
-
-            setFormData((prev) => ({
-                ...prev,
-                expiryDate: value,
-                pickupDateEnd: endDateFormatted,
-                pickupEndTime: endTimeFormatted
-            }));
-        } else {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value
-            }));
-        }
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const fileInputRef = useRef(null);
@@ -148,35 +117,14 @@ export default function FoodForm() {
                 .then(resData => {
                     if (resData.success) {
                         const foodInfo = resData.data;
-                        const weightKg = Number(foodInfo.unitWeightKg) || 0;
-
-                        let calculatedQty = weightKg;
-                        let calculatedUnit = 'kg';
-
-                        if (weightKg > 0) {
-                            if (weightKg < 1) {
-                                calculatedQty = Math.round(weightKg / 0.001);
-                                calculatedUnit = 'g';
-                            } else {
-                                calculatedQty = weightKg;
-                                calculatedUnit = 'kg';
-                            }
-                        }
-
                         setFormData(prev => ({
                             ...prev,
                             ...foodInfo,
                             foodCateId: foodInfo.foodCateId,
                             fileImage: foodInfo.foodImage,
-                            inputQuantity: calculatedQty,
-                            selectedUnit: calculatedUnit,
-                            // ดึงพิกัดจากฐานข้อมูลมาอัปเดตอย่างถูกต้อง
                             latitude: foodInfo.latitude !== undefined && foodInfo.latitude !== null ? foodInfo.latitude : prev.latitude,
                             longitude: foodInfo.longitude !== undefined && foodInfo.longitude !== null ? foodInfo.longitude : prev.longitude
                         }));
-
-                        setInputQuantity(calculatedQty);
-                        setSelectedUnit(calculatedUnit);
                     }
                 })
                 .catch(err => console.error("Error fetching food details:", err));
@@ -184,45 +132,15 @@ export default function FoodForm() {
     };
 
     const UNIT_OPTIONS = [
-        { label: 'กิโลกรัม', value: 'kg', type: 'weight', factor: 1 },
-        { label: 'กรัม', value: 'g', type: 'weight', factor: 0.001 },
-        { label: 'ปอนด์', value: 'lb', type: 'weight', factor: 0.453592 },
-        { label: 'ลิตร', value: 'L', type: 'volume', factor: 1 },
-        { label: 'มิลลิลิตร', value: 'ml', type: 'volume', factor: 0.001 },
-        { label: 'ชิ้น', value: 'piece', type: 'count', defaultWeightKg: 0.1 },
-        { label: 'กล่อง / ถุง', value: 'box', type: 'count', defaultWeightKg: 0.35 },
-        { label: 'ขวด / กระป๋อง', value: 'bottle', type: 'count', defaultWeightKg: 0.5 },
-        { label: 'แพ็ค / โหล', value: 'pack', type: 'count', defaultWeightKg: 1.5 },
+        { label: 'ชิ้น', value: 'ชิ้น' },
+        { label: 'กิโลกรัม', value: 'กิโลกรัม' },
+        { label: 'แพ็ค', value: 'แพ็ค' },
+        { label: 'กล่อง', value: 'กล่อง' },
+        { label: 'ขวด', value: 'ขวด' },
+        { label: 'ซอง', value: 'ซอง' },
+        { label: 'ถุง', value: 'ถุง' },
+        { label: 'แผง', value: 'แผง' },
     ];
-    const [selectedUnit, setSelectedUnit] = useState('kg');
-    const [inputQuantity, setInputQuantity] = useState(formData.unitWeightKg || '');
-
-    const calculateKgValue = (qty, unitValue) => {
-        if (!qty || isNaN(qty) || qty <= 0) return 0;
-        const unitInfo = UNIT_OPTIONS.find(u => u.value === unitValue);
-        if (!unitInfo) return parseFloat(qty);
-
-        if (unitInfo.type === 'weight' || unitInfo.type === 'volume') {
-            return parseFloat(qty) * unitInfo.factor;
-        } else if (unitInfo.type === 'count') {
-            return parseFloat(qty) * unitInfo.defaultWeightKg;
-        }
-        return parseFloat(qty);
-    };
-
-    const handleQuantityChange = (e) => {
-        const val = e.target.value;
-        setInputQuantity(val);
-        const calculatedKg = calculateKgValue(val, selectedUnit);
-        handleChange({ target: { name: 'unitWeightKg', value: calculatedKg } });
-    };
-
-    const handleUnitSelectChange = (e) => {
-        const newUnit = e.target.value;
-        setSelectedUnit(newUnit);
-        const calculatedKg = calculateKgValue(inputQuantity, newUnit);
-        handleChange({ target: { name: 'unitWeightKg', value: calculatedKg } });
-    };
 
     const isExpired = formData.foodStatus === 'expired' || formData.foodStatus === 'disable';
 
@@ -240,7 +158,7 @@ export default function FoodForm() {
         loadFoodData();
     }, [foodId, isEditMode]);
 
-    // OpenLayers Map Integration (Google Maps XYZ Layer) พร้อมหมุดรูปภาพ
+    // OpenLayers Map Integration
     const mapElementRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const vectorSourceRef = useRef(null);
@@ -248,54 +166,8 @@ export default function FoodForm() {
     useEffect(() => {
         if (!mapElementRef.current || currentStep !== 3) return;
 
-        if (!mapInstanceRef.current) {
-            vectorSourceRef.current = new VectorSource();
-            const vectorLayer = new VectorLayer({
-                source: vectorSourceRef.current
-            });
-
-            const googleLayer = new TileLayer({
-                source: new XYZ({
-                    url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-                }),
-            });
-
-            const initialLon = Number(formData.longitude) || 98.9853;
-            const initialLat = Number(formData.latitude) || 18.7883;
-
-            const map = new Map({
-                target: mapElementRef.current,
-                layers: [googleLayer, vectorLayer],
-                view: new View({
-                    center: fromLonLat([initialLon, initialLat]),
-                    zoom: 15
-                })
-            });
-
-            map.on('click', (event) => {
-                if (!isEditable) return;
-                const clickedCoord = toLonLat(event.coordinate);
-                setFormData(prev => ({
-                    ...prev,
-                    longitude: clickedCoord[0],
-                    latitude: clickedCoord[1]
-                }));
-                setErrors(prev => ({ ...prev, location: "" }));
-            });
-
-            mapInstanceRef.current = map;
-        } else {
-            mapInstanceRef.current.setTarget(mapElementRef.current);
-            mapInstanceRef.current.updateSize();
-        }
-    }, [currentStep, isEditable]);
-
-    // อัปเดตตำแหน่งหมุดรูปทรง Pin บนแผนที่ทุกครั้งที่พิกัดเปลี่ยนแปลงหรือเปลี่ยนสเต็ป
-    useEffect(() => {
-        if (!mapElementRef.current || currentStep !== 3) return;
-
-        const lon = Number(formData.longitude) || 98.9853;
-        const lat = Number(formData.latitude) || 18.7883;
+        const lon = Number(formData.longitude) || 99.0142;
+        const lat = Number(formData.latitude) || 18.8925;
 
         if (!mapInstanceRef.current) {
             vectorSourceRef.current = new VectorSource();
@@ -336,7 +208,6 @@ export default function FoodForm() {
             mapInstanceRef.current.getView().setCenter(fromLonLat([lon, lat]));
         }
 
-        // วาดหรืออัปเดตหมุด Pin สีแดง
         if (vectorSourceRef.current) {
             vectorSourceRef.current.clear();
             const markerFeature = new Feature({
@@ -376,7 +247,7 @@ export default function FoodForm() {
                     }));
                     setErrors((prev) => ({ ...prev, location: "" }));
                 },
-                (error) => {
+                () => {
                     setPopup({
                         show: true,
                         title: "ไม่สามารถเข้าถึงตำแหน่งได้",
@@ -390,7 +261,6 @@ export default function FoodForm() {
         }
     };
 
-    // ฟังก์ชันจัดการการลบรายการอาหาร (DELETE)
     const handleDeleteFood = async (targetId) => {
         setPopup({
             show: true,
@@ -479,20 +349,11 @@ export default function FoodForm() {
             );
         }
 
-        if (isEditable) {
-            return (
-                <button type="submit" style={styles.submitBtn}>
-                    บันทึกการแก้ไข
-                </button>
-            );
-        }
-
         return null;
     };
 
     const handleNextStep = (e) => {
         if (e) e.preventDefault();
-
         const newErrors = {};
 
         if (currentStep === 1) {
@@ -506,9 +367,19 @@ export default function FoodForm() {
         } else if (currentStep === 2) {
             if (!formData.foodName) newErrors.foodName = "กรุณากรอกข้อมูล";
             if (!formData.foodCateId) newErrors.foodCateId = "กรุณากรอกข้อมูล";
-            if (!formData.expiryDate) newErrors.expiryDate = "กรุณากรอกข้อมูล";
-            if (!formData.unitWeightKg) newErrors.unitWeightKg = "กรุณากรอกข้อมูล";
-            if (!formData.totalUnit) newErrors.totalUnit = "กรุณากรอกข้อมูล";
+
+            if (!formData.expiryDate) {
+                newErrors.expiryDate = "กรุณากรอกข้อมูล";
+            } else {
+                const nowPlus24H = new Date().getTime() + (24 * 60 * 60 * 1000);
+                const selectedExpiry = new Date(formData.expiryDate).getTime();
+                if (selectedExpiry < nowPlus24H) {
+                    newErrors.expiryDate = "วันหมดอายุต้องมากกว่าเวลาปัจจุบันอย่างน้อย 24 ชั่วโมง";
+                }
+            }
+
+            if (!formData.quantity) newErrors.quantity = "กรุณากรอกข้อมูล";
+            if (!formData.unit) newErrors.unit = "กรุณากรอกข้อมูล";
             if (!formData.limitPerPerson) newErrors.limitPerPerson = "กรุณากรอกข้อมูล";
         }
 
@@ -527,39 +398,27 @@ export default function FoodForm() {
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+
         const token = localStorage.getItem("accessToken");
-
-        const newErrors = {};
-        if (!formData.address) newErrors.address = "กรุณากรอกข้อมูล";
-        if (!formData.pickupDateStart) newErrors.pickupDateStart = "กรุณากรอกข้อมูล";
-        if (!formData.pickupDateEnd) newErrors.pickupDateEnd = "กรุณากรอกข้อมูล";
-        if (!formData.pickupStartTime) newErrors.pickupStartTime = "กรุณากรอกข้อมูล";
-        if (!formData.pickupEndTime) newErrors.pickupEndTime = "กรุณากรอกข้อมูล";
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
 
         const data = new FormData();
         if (imageFile) data.append("fileImage", imageFile);
 
-        data.append("foodName", formData.foodName);
-        data.append("description", formData.description);
-        data.append("expiryDate", formData.expiryDate);
-        data.append("unitWeightKg", Number.parseFloat(formData.unitWeightKg));
-        data.append("totalUnit", Number.parseInt(formData.totalUnit, 10));
-        data.append("address", formData.address);
-        data.append("pickupDateStart", formData.pickupDateStart);
-        data.append("pickupDateEnd", formData.pickupDateEnd);
-        data.append("pickupStartTime", formData.pickupStartTime);
-        data.append("pickupEndTime", formData.pickupEndTime);
-        data.append("limitPerPerson", Number.parseInt(formData.limitPerPerson, 10));
-        data.append("latitude", Number.parseFloat(formData.latitude));
-        data.append("longitude", Number.parseFloat(formData.longitude));
-        data.append("foodCateId", Number.parseInt(formData.foodCateId, 10));
-        data.append("foodStatus", formData.foodStatus);
+        data.append("foodName", formData.foodName || "");
+        data.append("description", formData.description || "");
+        data.append("expiryDate", formData.expiryDate || "");
+        data.append("quantity", Number.parseFloat(formData.quantity) || 0);
+        data.append("unit", formData.unit || "ชิ้น");
+        data.append("locationName", formData.locationName || "");
+        data.append("address", formData.address || "");
+        data.append("pickupStartTime", formData.pickupStartTime || "");
+        data.append("pickupEndTime", formData.pickupEndTime || "");
+        data.append("limitPerPerson", Number.parseInt(formData.limitPerPerson, 10) || 1);
+        data.append("latitude", Number.parseFloat(formData.latitude) || 0);
+        data.append("longitude", Number.parseFloat(formData.longitude) || 0);
+        data.append("foodCateId", Number.parseInt(formData.foodCateId, 10) || 0);
+        data.append("foodStatus", formData.foodStatus || "available");
 
         const targetUrl = isEditMode
             ? `http://localhost:8082/foods/${foodId}`
@@ -581,7 +440,14 @@ export default function FoodForm() {
             .then((result) => {
                 if (result.success) {
                     const successTitle = isEditMode ? "แก้ไขรายการสำเร็จ!" : "สร้างรายการสำเร็จ!";
-                    showAutoPopup(successTitle, "ระบบได้บันทึกข้อมูลรายการอาหารของคุณเรียบร้อยแล้ว", () => navigate("/my-foods"));
+                    showAutoPopup(successTitle, "ระบบได้บันทึกข้อมูลรายการอาหารของคุณเรียบร้อยแล้ว", () => {
+                        if (isEditMode) {
+                            setIsEditable(false);
+                            loadFoodData();
+                        } else {
+                            navigate("/my-foods");
+                        }
+                    });
                 } else {
                     throw new Error(result.message || "เกิดข้อผิดพลาด");
                 }
@@ -725,38 +591,58 @@ export default function FoodForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} noValidate>
+
+                    {isEditMode && (
+                        <div style={styles.step1HeaderRow}>
+                            {!isExpired && (
+                                <button
+                                    type="button"
+                                    style={{
+                                        ...styles.confirmDeliveryBtn,
+                                        ...((isEditable || formData.foodStatus === 'closed') ? {
+                                            backgroundColor: '#d1d5db',
+                                            color: '#9ca3af',
+                                            cursor: 'not-allowed',
+                                            opacity: 0.7
+                                        } : {})
+                                    }}
+                                    onClick={(isEditable || formData.foodStatus === 'closed') ? undefined : handleConfirmDelivery}
+                                    disabled={isEditable || formData.foodStatus === 'closed'}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
+                                    ยืนยันการส่งมอบ
+                                </button>
+                            )}
+
+                            <div style={styles.topRightControls}>
+                                {!isEditable ? (
+                                    <>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); setIsEditable(true); }} style={styles.editBtn}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                                            แก้ไข
+                                        </button>
+                                        <button type="button" onClick={() => handleDeleteFood(formData.id || foodId)} style={styles.deleteBtn}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
+                                            ลบ
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div style={{ display: "flex", gap: "8px" }}>
+                                        <button type="button" onClick={() => setIsEditable(false)} style={styles.cancelEditCardBtn}>
+                                            ยกเลิกการแก้ไข
+                                        </button>
+                                        <button type="submit" onClick={handleSubmit} style={{ ...styles.cancelEditCardBtn, color: '#fff', backgroundColor: '#C084FC' }}>
+                                            บันทึกการแก้ไข
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Stage 1: รูปภาพอาหาร พร้อมสถานะอาหาร และปุ่มยืนยันการส่งมอบอาหาร */}
                     {currentStep === 1 && (
                         <>
-                            <div style={styles.step1HeaderRow}>
-                                {isEditMode && !isExpired && formData.foodStatus !== 'closed' && (
-                                    <button type="button" style={styles.confirmDeliveryBtn} onClick={handleConfirmDelivery}>
-                                        <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
-                                        ยืนยันการส่งมอบ
-                                    </button>
-                                )}
-                                <div style={styles.topRightControls}>
-                                    {isEditMode && !isExpired && (
-                                        !isEditable ? (
-                                            <>
-                                                <button type="button" onClick={(e) => { e.preventDefault(); setIsEditable(true); }} style={styles.editBtn}>
-                                                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
-                                                    แก้ไข
-                                                </button>
-                                                <button type="button" onClick={() => handleDeleteFood(formData.id || foodId)} style={styles.deleteBtn}>
-                                                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
-                                                    ลบ
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button type="button" onClick={() => setIsEditable(false)} style={styles.cancelEditCardBtn}>
-                                                ยกเลิกการแก้ไข
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                            </div>
-
                             <div style={styles.cardSection}>
                                 <div style={styles.step1HeaderRow}>
                                     <h3 style={{ ...styles.cardSectionTitle, borderBottom: "none", marginBottom: 0 }}>
@@ -855,44 +741,67 @@ export default function FoodForm() {
                                 />
                             </div>
 
+                            {/* แยกวันหมดอายุออกมาอยู่แถวเดี่ยวเต็มความกว้าง */}
+                            {(() => {
+                                const now = new Date();
+                                now.setTime(now.getTime() + (24 * 60 * 60 * 1000)); // บวกเพิ่ม 24 ชั่วโมง
+
+                                const year = now.getFullYear();
+                                const month = String(now.getMonth() + 1).padStart(2, '0');
+                                const day = String(now.getDate()).padStart(2, '0');
+                                const hours = String(now.getHours()).padStart(2, '0');
+                                const minutes = String(now.getMinutes()).padStart(2, '0');
+
+                                const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                                return (
+                                    <div style={styles.inputGroupFull}>
+                                        <label style={styles.label}>วันหมดอายุ <span style={styles.requiredStar}>*</span></label>
+                                        <input
+                                            type="datetime-local"
+                                            name="expiryDate"
+                                            value={formData.expiryDate}
+                                            disabled={isEditMode}
+                                            min={minDateTime}
+                                            style={{
+                                                ...styles.inputField,
+                                                borderColor: errors.expiryDate ? "#EF4444" : "#E2E8F0",
+                                                backgroundColor: errors.expiryDate ? "#FEF2F2" : "#F8FAFC",
+                                                color: isEditMode ? "#94A3B8" : "#1E293B"
+                                            }}
+                                            onChange={handleChange}
+                                        />
+                                        {errors.expiryDate && <span style={styles.errorText}>{errors.expiryDate}</span>}
+                                    </div>
+                                );
+                            })()}
+
                             <div style={styles.row}>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>วันหมดอายุ <span style={styles.requiredStar}>*</span></label>
-                                    <input
-                                        type="datetime-local"
-                                        name="expiryDate"
-                                        value={formData.expiryDate}
-                                        disabled={isEditMode}
-                                        style={{
-                                            ...styles.inputField,
-                                            borderColor: errors.expiryDate ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.expiryDate ? "#FEF2F2" : "#F8FAFC",
-                                            color: isEditMode ? "#94A3B8" : "#1E293B"
-                                        }}
-                                        onChange={handleChange}
-                                    />
-                                    {errors.expiryDate && <span style={styles.errorText}>{errors.expiryDate}</span>}
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>น้ำหนัก/ปริมาณต่อหน่วย <span style={styles.requiredStar}>*</span></label>
+                                    <label style={styles.label}>จำนวนที่บริจาค<span style={styles.requiredStar}>*</span></label>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <input
                                             type="number"
-                                            value={inputQuantity}
+                                            name="quantity"
+                                            value={formData.quantity}
                                             placeholder="จำนวน"
                                             disabled={!isEditable}
                                             style={{
                                                 ...styles.inputField,
                                                 flex: 1,
-                                                borderColor: errors.unitWeightKg ? "#EF4444" : "#E2E8F0",
-                                                backgroundColor: errors.unitWeightKg ? "#FEF2F2" : "#F8FAFC",
+                                                borderColor: errors.quantity ? "#EF4444" : "#E2E8F0",
+                                                backgroundColor: errors.quantity ? "#FEF2F2" : "#F8FAFC",
                                                 color: !isEditable ? "#94A3B8" : "#1E293B"
                                             }}
-                                            onChange={handleQuantityChange}
+                                            onChange={handleChange}
                                         />
                                         <select
-                                            value={selectedUnit}
-                                            onChange={handleUnitSelectChange}
+                                            name="unit"
+                                            value={formData.unit}
+                                            onChange={(e) => {
+                                                handleChange(e);
+                                                // อัปเดตหน่วยให้สอดคล้องกันโดยอัตโนมัติ (หากต้องการ)
+                                            }}
                                             disabled={!isEditable}
                                             style={{
                                                 ...styles.inputField,
@@ -906,45 +815,32 @@ export default function FoodForm() {
                                             ))}
                                         </select>
                                     </div>
-                                    {errors.unitWeightKg && <span style={styles.errorText}>{errors.unitWeightKg}</span>}
+                                    {errors.quantity && <span style={styles.errorText}>{errors.quantity}</span>}
                                 </div>
-                            </div>
 
-                            <div style={styles.row}>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>จำนวนชุดที่บริจาคทั้งหมด <span style={styles.requiredStar}>*</span></label>
-                                    <input
-                                        type="number"
-                                        name="totalUnit"
-                                        value={formData.totalUnit}
-                                        placeholder="เช่น 10"
-                                        disabled={!isEditable}
-                                        style={{
-                                            ...styles.inputField,
-                                            borderColor: errors.totalUnit ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.totalUnit ? "#FEF2F2" : "#F8FAFC",
-                                            color: !isEditable ? "#94A3B8" : "#1E293B"
-                                        }}
-                                        onChange={handleChange}
-                                    />
-                                    {errors.totalUnit && <span style={styles.errorText}>{errors.totalUnit}</span>}
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>จำนวนจำกัดต่อคน <span style={styles.requiredStar}>*</span></label>
-                                    <input
-                                        type="number"
-                                        name="limitPerPerson"
-                                        value={formData.limitPerPerson}
-                                        placeholder="เช่น 2"
-                                        disabled={!isEditable}
-                                        style={{
-                                            ...styles.inputField,
-                                            borderColor: errors.limitPerPerson ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.limitPerPerson ? "#FEF2F2" : "#F8FAFC",
-                                            color: !isEditable ? "#94A3B8" : "#1E293B"
-                                        }}
-                                        onChange={handleChange}
-                                    />
+                                    <label style={styles.label}>จำนวนจำกัดการรับต่อคน <span style={styles.requiredStar}>*</span></label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <input
+                                            type="number"
+                                            name="limitPerPerson"
+                                            value={formData.limitPerPerson}
+                                            placeholder="เช่น 2"
+                                            disabled={!isEditable}
+                                            style={{
+                                                ...styles.inputField,
+                                                flex: 1,
+                                                borderColor: errors.limitPerPerson ? "#EF4444" : "#E2E8F0",
+                                                backgroundColor: errors.limitPerPerson ? "#FEF2F2" : "#F8FAFC",
+                                                color: !isEditable ? "#94A3B8" : "#1E293B"
+                                            }}
+                                            onChange={handleChange}
+                                        />
+                                        {/* แสดงหน่วยต่อท้ายอัตโนมัติตามช่องจำนวนบริจาคด้านซ้าย */}
+                                        <span style={{ fontSize: "14px", fontWeight: "600", color: !isEditable ? "#94A3B8" : "#64748B", minWidth: "40px" }}>
+                                            {formData.unit || "ชิ้น"}
+                                        </span>
+                                    </div>
                                     {errors.limitPerPerson && <span style={styles.errorText}>{errors.limitPerPerson}</span>}
                                 </div>
                             </div>
@@ -956,64 +852,53 @@ export default function FoodForm() {
                         <div style={styles.cardSection}>
                             <h3 style={styles.cardSectionTitle}>สถานที่และเวลารับอาหาร</h3>
 
-                            <div style={styles.inputGroupFull}>
-                                <label style={styles.label}>สถานที่รับอาหาร <span style={styles.requiredStar}>*</span></label>
-                                <input
-                                    name="address"
-                                    value={formData.address}
-                                    placeholder="ระบุสถานที่นัดรับ หรือที่อยู่"
-                                    disabled={!isEditable}
-                                    style={{
-                                        ...styles.inputField,
-                                        borderColor: errors.address ? "#EF4444" : "#E2E8F0",
-                                        backgroundColor: errors.address ? "#FEF2F2" : "#F8FAFC",
-                                        color: !isEditable ? "#94A3B8" : "#1E293B"
-                                    }}
-                                    onChange={handleChange}
-                                />
-                                {errors.address && <span style={styles.errorText}>{errors.address}</span>}
-                            </div>
-
                             <div style={styles.row}>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>วันที่เริ่มรับได้ <span style={styles.requiredStar}>*</span></label>
+                                    <label style={styles.label}>ชื่อสถานที่นัดรับ <span style={styles.requiredStar}>*</span></label>
                                     <input
-                                        type="date"
-                                        name="pickupDateStart"
-                                        value={formData.pickupDateStart}
+                                        name="locationName"
+                                        value={formData.locationName}
+                                        placeholder="เช่น หอพักโซน A หน้ามหาวิทยาลัย"
                                         disabled={!isEditable}
                                         style={{
                                             ...styles.inputField,
-                                            borderColor: errors.pickupDateStart ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.pickupDateStart ? "#FEF2F2" : "#F8FAFC",
+                                            borderColor: errors.locationName ? "#EF4444" : "#E2E8F0",
+                                            backgroundColor: errors.locationName ? "#FEF2F2" : "#F8FAFC",
                                             color: !isEditable ? "#94A3B8" : "#1E293B"
                                         }}
                                         onChange={handleChange}
                                     />
-                                    {errors.pickupDateStart && <span style={styles.errorText}>{errors.pickupDateStart}</span>}
+                                    {errors.locationName && <span style={styles.errorText}>{errors.locationName}</span>}
                                 </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>วันที่สิ้นสุดการรับ <span style={styles.requiredStar}>*</span></label>
-                                    <input
-                                        type="date"
-                                        name="pickupDateEnd"
-                                        value={formData.pickupDateEnd}
-                                        disabled={!isEditable}
-                                        style={{
-                                            ...styles.inputField,
-                                            borderColor: errors.pickupDateEnd ? "#EF4444" : "#E2E8F0",
-                                            backgroundColor: errors.pickupDateEnd ? "#FEF2F2" : "#F8FAFC",
-                                            color: !isEditable ? "#94A3B8" : "#1E293B"
-                                        }}
-                                        onChange={handleChange}
-                                    />
-                                    {errors.pickupDateEnd && <span style={styles.errorText}>{errors.pickupDateEnd}</span>}
-                                </div>
+                            </div>
+                            <div style={{
+                                backgroundColor: "#fff9f5",
+                                border: "1.5px solid #ffdfd5",
+                                borderRadius: "14px",
+                                padding: "14px 16px",
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "10px",
+                                marginTop: "16px",
+                                marginBottom: "5px"
+                            }}>
+                                <span className="material-symbols-outlined" style={{ color: "#ff8851", fontSize: "20px", marginTop: "1px" }}>
+                                    info
+                                </span>
+                                <p style={{
+                                    fontSize: "13px",
+                                    color: "#475569",
+                                    margin: 0,
+                                    lineHeight: "1.6",
+                                    fontWeight: "500",
+                                }}>
+                                    ช่วงเวลานี้จะเปิดให้ผู้รับมารับของบริจาคตามรอบประจำวัน ท่านสามารถปรับเปลี่ยนสถานะรายการได้ตามความสะดวกในภายหลัง
+                                </p>
                             </div>
 
                             <div style={styles.row}>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>เวลาเริ่มรับ <span style={styles.requiredStar}>*</span></label>
+                                    <label style={styles.label}>เวลาเริ่มการนัดรับ <span style={styles.requiredStar}>*</span></label>
                                     <input
                                         type="time"
                                         name="pickupStartTime"
@@ -1030,7 +915,7 @@ export default function FoodForm() {
                                     {errors.pickupStartTime && <span style={styles.errorText}>{errors.pickupStartTime}</span>}
                                 </div>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>เวลาสิ้นสุดรับ <span style={styles.requiredStar}>*</span></label>
+                                    <label style={styles.label}>เวลาสิ้นสุดการนัดรับ <span style={styles.requiredStar}>*</span></label>
                                     <input
                                         type="time"
                                         name="pickupEndTime"

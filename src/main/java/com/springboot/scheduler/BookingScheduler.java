@@ -30,14 +30,37 @@ public class BookingScheduler {
     @EventListener(ApplicationReadyEvent.class)
     public void checkExpiredFoodBookingOnStartup() {
         log.info("ระบบสตาร์ทเครื่อง: ตรวจสอบสถานะการจองอาหารย้อนหลัง...");
-        clearExpiredFoodBookings(); // สั่งให้ไปทำงานที่ฟังก์ชันหลักเช่นกัน
+        // clearExpiredFoodBookings(); // สั่งให้ไปทำงานที่ฟังก์ชันหลักเช่นกัน
+        clearExpiredBookings();
     }
 
+    // @Scheduled(cron = "0 */5 * * * *")
+    // public void clearExpiredFoodBookings() {
+    //     LocalDateTime now = LocalDateTime.now();
+
+    //     List<Booking> stuckBookings = bookingRepository.findByBookingStatusAndFood_ExpiryDateBefore("pending", now);
+
+    //     if (!stuckBookings.isEmpty()) {
+    //         for (Booking booking : stuckBookings) {
+    //             booking.setBookingStatus("cancelled");
+    //             bookingRepository.save(booking);
+
+    //             Food food = booking.getFood();
+    //             if (food != null) {
+    //                 food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingQuantity());
+    //                 foodRepository.save(food);
+    //             }
+    //         }
+    //         log.info("เคลียร์รายการจองที่อาหารหมดอายุไปแล้วจำนวน: {} รายการ", stuckBookings.size());
+    //     }
+    // }
+
     @Scheduled(cron = "0 */5 * * * *")
-    public void clearExpiredFoodBookings() {
+    public void clearExpiredBookings() {
         LocalDateTime now = LocalDateTime.now();
 
-        List<Booking> stuckBookings = bookingRepository.findByBookingStatusAndFood_ExpiryDateBefore("pending", now);
+        // ค้นหาการจองที่สถานะเป็น pending และเลยเวลา pickupDeadline ไปแล้ว
+        List<Booking> stuckBookings = bookingRepository.findByBookingStatusAndPickupDeadlineBefore("pending", now);
 
         if (!stuckBookings.isEmpty()) {
             for (Booking booking : stuckBookings) {
@@ -46,11 +69,11 @@ public class BookingScheduler {
 
                 Food food = booking.getFood();
                 if (food != null) {
-                    food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingUnit());
+                    food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingQuantity());
                     foodRepository.save(food);
                 }
             }
-            log.info("เคลียร์รายการจองที่อาหารหมดอายุไปแล้วจำนวน: {} รายการ", stuckBookings.size());
+            log.info("เคลียร์รายการจองที่เกินเวลารับสินค้าและไม่มารับจำนวน: {} รายการ", stuckBookings.size());
         }
     }
 }

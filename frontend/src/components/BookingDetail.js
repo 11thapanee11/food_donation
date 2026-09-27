@@ -12,6 +12,18 @@ export default function BookingDetail() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
+    // State สำหรับ Modal รายงานปัญหา
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState("EXPIRED");
+    const [reportDetail, setReportDetail] = useState("");
+    const [submittingReport, setSubmittingReport] = useState(false);
+
+    // State สำหรับ Modal รีวิว
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [ratingScore, setRatingScore] = useState(5);
+    const [reviewComment, setReviewComment] = useState("");
+    const [submittingReview, setSubmittingReview] = useState(false);
+
     // Alert Modal State (Custom Popup)
     const [alertModal, setAlertModal] = useState({
         show: false,
@@ -39,8 +51,9 @@ export default function BookingDetail() {
             .then((res) => res.json())
             .then(async (resData) => {
                 if (resData.success) {
-                    const bookingData = resData.data;
+                    let bookingData = resData.data;
 
+                    // 1. ดึงข้อมูลอาหารเพิ่มเติม (ถ้ามี)
                     const targetFoodId = bookingData.foodId || bookingData.food?.foodId || bookingData.food?.id;
                     if (targetFoodId) {
                         try {
@@ -54,6 +67,28 @@ export default function BookingDetail() {
                         } catch (foodErr) {
                             console.error("ไม่สามารถดึงข้อมูลอาหารได้:", foodErr);
                         }
+                    }
+
+                    // 2. เรียกเช็คสถานะรีวิวด้วย API ที่มีอยู่
+                    try {
+                        const reviewCheckRes = await fetch(`${BASE_URL}/reviews/check/${bookingId}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const reviewCheckData = await reviewCheckRes.json();
+                        bookingData.hasReviewed = reviewCheckData.success && reviewCheckData.data != null;
+                    } catch (e) {
+                        bookingData.hasReviewed = false;
+                    }
+
+                    // 3. เรียกเช็คสถานะรายงานด้วย API ที่มีอยู่
+                    try {
+                        const reportCheckRes = await fetch(`${BASE_URL}/reports/check/${bookingId}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const reportCheckData = await reportCheckRes.json();
+                        bookingData.hasReported = reportCheckData.success && reportCheckData.data === true;
+                    } catch (e) {
+                        bookingData.hasReported = false;
                     }
 
                     setBooking(bookingData);
@@ -117,6 +152,85 @@ export default function BookingDetail() {
         );
     };
 
+    // ฟังก์ชันส่งรายงานปัญหา
+    const handleSubmitReport = () => {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        setSubmittingReport(true);
+        fetch(`${BASE_URL}/reports`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                bookingId: bookingId,
+                reason: reportReason,
+                detail: reportDetail
+            })
+        })
+            .then(res => res.json())
+            .then(resData => {
+                setShowReportModal(false);
+                setReportDetail("");
+                if (resData.success || resData) {
+                    showAlert("ส่งรายงานสำเร็จ", "เจ้าหน้าที่ได้รับเรื่องร้องเรียนของคุณแล้ว จะทำการตรวจสอบโดยเร็วที่สุด", "success");
+                    fetchBookingDetail(); // โหลดข้อมูลใหม่เพื่ออัปเดตสถานะปุ่ม
+                } else {
+                    showAlert("เกิดข้อผิดพลาด", resData.message || "ไม่สามารถส่งรายงานได้", "error");
+                }
+            })
+            .catch(() => {
+                setShowReportModal(false);
+                showAlert("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", "error");
+            })
+            .finally(() => setSubmittingReport(false));
+    };
+
+    // ฟังก์ชันส่งรีวิว
+    const handleSubmitReview = () => {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        const targetFoodId = booking?.foodId || booking?.food?.foodId || booking?.food?.id;
+        if (!targetFoodId) {
+            showAlert("เกิดข้อผิดพลาด", "ไม่พบรหัสอาหารสำหรับรีวิว", "error");
+            return;
+        }
+
+        setSubmittingReview(true);
+        fetch(`${BASE_URL}/reviews`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                foodId: targetFoodId,
+                bookingId: bookingId,
+                ratingScore: ratingScore,
+                reviewComment: reviewComment
+            })
+        })
+            .then(res => res.json())
+            .then(resData => {
+                setShowReviewModal(false);
+                setReviewComment("");
+                if (resData.success || resData) {
+                    showAlert("รีวิวสำเร็จ", "ขอบคุณสำหรับการประเมินและรีวิวอาหารบริจาคค่ะ", "success");
+                    fetchBookingDetail(); // โหลดข้อมูลใหม่เพื่ออัปเดตสถานะปุ่ม
+                } else {
+                    showAlert("เกิดข้อผิดพลาด", resData.message || "ไม่สามารถบันทึกรีวิวได้", "error");
+                }
+            })
+            .catch(() => {
+                setShowReviewModal(false);
+                showAlert("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", "error");
+            })
+            .finally(() => setSubmittingReview(false));
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -144,8 +258,9 @@ export default function BookingDetail() {
         </div>
     );
 
-    const isPending = booking.bookingStatus === "pending" || booking.bookingStatus === "BOOKED" || booking.status === "pending" || booking.status === "BOOKED";
-    const isCompleted = booking.bookingStatus === "RECEIVED" || booking.status === "RECEIVED";
+    const statusValue = (booking.bookingStatus || booking.status || "").toLowerCase();
+    const isPending = statusValue === "pending" || statusValue === "booked";
+    const isCompleted = statusValue === "completed" || statusValue === "received";
 
     const foodInfo = booking.food || {};
     const foodName = foodInfo.foodName || booking.foodName || "รายการอาหาร";
@@ -158,7 +273,7 @@ export default function BookingDetail() {
     const latitude = foodInfo.latitude || booking.latitude;
     const longitude = foodInfo.longitude || booking.longitude;
     const donorName = foodInfo.donorName || booking.donorName || "ผู้บริจาคใจดี";
-    const donorPhone = foodInfo.donorPhone || booking.donorPhone;
+    const donorPhone = foodInfo.donorPhoneNum || booking.donorPhone;
 
     const googleMapEmbedUrl = latitude && longitude
         ? `https://maps.google.com/maps?q=${latitude},${longitude}&z=16&output=embed`
@@ -170,7 +285,6 @@ export default function BookingDetail() {
 
     return (
         <div style={styles.pageBg}>
-            {/* Header ปรับความกว้างให้เท่ากับคอนเทนต์ด้านล่าง (1080px) */}
             <div style={styles.topBarWrapper}>
                 <div style={styles.topBar}>
                     <button
@@ -185,10 +299,9 @@ export default function BookingDetail() {
             </div>
 
             <div style={styles.container}>
-                {/* Asymmetric Sidebar Layout (35% / 65%) */}
                 <div style={styles.layoutGrid}>
 
-                    {/* ฝั่งซ้าย: เน้นแสดงรหัสการรับบริจาคและสถานะให้เด่นชัด */}
+                    {/* ฝั่งซ้าย: Sidebar สถานะ รหัส และปุ่มกระทำ */}
                     <div style={styles.sidebarColumn}>
                         <div style={styles.stickyCard}>
                             <div style={{ textAlign: "center", marginBottom: "20px" }}>
@@ -205,7 +318,6 @@ export default function BookingDetail() {
                                 </div>
                             </div>
 
-                            {/* เน้นรหัสการรับบริจาคให้ใหญ่และเด่นชัด */}
                             <div style={styles.codeHighlightBox}>
                                 <span style={{ fontSize: "12px", color: "#9333ea", fontWeight: "700", marginBottom: "4px", display: "block" }}>
                                     รหัสรับบริจาค
@@ -224,7 +336,6 @@ export default function BookingDetail() {
 
                             <div style={styles.divider} />
 
-                            {/* ปุ่มจัดการสถานะ (เอาปุ่มกลับออกเพราะมีปุ่มลูกศรด้านบนแล้ว) */}
                             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                                 {isPending && (
                                     <button
@@ -238,20 +349,40 @@ export default function BookingDetail() {
 
                                 {isCompleted && (
                                     <button
-                                        onClick={() => navigate(`/review/${bookingId}`, { state: { booking } })}
-                                        style={styles.primaryBtn}
+                                        onClick={() => setShowReviewModal(true)}
+                                        disabled={booking.hasReviewed}
+                                        style={{
+                                            ...styles.primaryBtn,
+                                            backgroundColor: booking.hasReviewed ? "#cbd5e1" : "#c084fc",
+                                            cursor: booking.hasReviewed ? "not-allowed" : "pointer",
+                                            boxShadow: booking.hasReviewed ? "none" : "0 4px 14px rgba(192, 132, 252, 0.35)"
+                                        }}
                                     >
-                                        ให้คะแนนและรีวิว
+                                        {booking.hasReviewed ? "รีวิวรายการนี้แล้ว" : "ให้คะแนนและรีวิว"}
                                     </button>
                                 )}
+
+                                <button
+                                    onClick={() => setShowReportModal(true)}
+                                    disabled={booking.hasReported}
+                                    style={{
+                                        ...styles.reportBtn,
+                                        backgroundColor: booking.hasReported ? "#f8fafc" : "#fff1f2",
+                                        color: booking.hasReported ? "#94a3b8" : "#e11d48",
+                                        borderColor: booking.hasReported ? "#e2e8f0" : "#fecdd3",
+                                        cursor: booking.hasReported ? "not-allowed" : "pointer"
+                                    }}
+                                >
+                                    <i className="material-icons-outlined" style={{ fontSize: "16px" }}>flag</i>
+                                    {booking.hasReported ? "รายงานปัญหาแล้ว" : "รายงานปัญหาการรับบริจาค"}
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* ฝั่งขวา: Main Content (รายละเอียดอาหาร, ผู้บริจาค, และแผนที่) */}
+                    {/* ฝั่งขวา: Main Content */}
                     <div style={styles.mainContentColumn}>
 
-                        {/* 1. Food Summary Card */}
                         <div style={styles.card}>
                             <h3 style={styles.cardTitle}>
                                 <i className="material-icons-outlined" style={{ color: "#c084fc" }}>restaurant</i>
@@ -271,7 +402,7 @@ export default function BookingDetail() {
                                         {foodName}
                                     </h4>
                                     <div style={{ fontSize: "13px", color: "#64748b" }}>
-                                        จำนวนที่รับ: <span style={{ fontWeight: "700", color: "#c084fc", fontSize: "15px" }}>{booking.quantity || booking.bookingUnit || 1}</span> ชิ้น
+                                        จำนวนที่รับ: <span style={{ fontWeight: "700", color: "#c084fc", fontSize: "15px" }}>{booking.bookingQuantity || 1} {booking.bookingUnit || "ชิ้น"}</span>
                                     </div>
                                     {unitWeightKg > 0 && (
                                         <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
@@ -292,7 +423,6 @@ export default function BookingDetail() {
                             </div>
                         </div>
 
-                        {/* 2. Donor Contact Card */}
                         <div style={styles.card}>
                             <h3 style={styles.cardTitle}>
                                 <i className="material-icons-outlined" style={{ color: "#c084fc" }}>person</i>
@@ -323,7 +453,6 @@ export default function BookingDetail() {
                             </div>
                         </div>
 
-                        {/* 3. Pickup Location Card */}
                         <div style={styles.card}>
                             <h3 style={styles.cardTitle}>
                                 <i className="material-icons-outlined" style={{ color: "#38bdf8" }}>location_on</i>
@@ -358,6 +487,129 @@ export default function BookingDetail() {
 
                 </div>
             </div>
+
+            {/* --- Modal รีวิวและให้คะแนน --- */}
+            {showReviewModal && (
+                <div style={styles.centerModalBackdrop} onClick={() => setShowReviewModal(false)}>
+                    <div style={styles.centerModalCard} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+                            <div style={{ ...styles.modalHeaderIcon, backgroundColor: "#faf5ff", border: "1px solid #e9d5ff" }}>
+                                <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#c084fc" }}>star</i>
+                            </div>
+                            <h3 style={{ margin: "12px 0 4px 0", fontSize: "18px", color: "#334155", fontWeight: "700" }}>
+                                ให้คะแนนและรีวิว
+                            </h3>
+                            <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                                แบ่งปันความประทับใจเกี่ยวกับรายการอาหารนี้
+                            </p>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "center", gap: "8px", margin: "16px 0" }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                    key={star}
+                                    onClick={() => setRatingScore(star)}
+                                    style={{
+                                        fontSize: "28px",
+                                        cursor: "pointer",
+                                        color: star <= ratingScore ? "#fbbf24" : "#cbd5e1"
+                                    }}
+                                >
+                                    ★
+                                </span>
+                            ))}
+                        </div>
+
+                        <div style={{ marginBottom: "20px", textAlign: "left" }}>
+                            <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "6px" }}>
+                                ความคิดเห็นเพิ่มเติม
+                            </label>
+                            <textarea
+                                rows="3"
+                                placeholder="เขียนรีวิวของคุณที่นี่..."
+                                value={reviewComment}
+                                onChange={(e) => setReviewComment(e.target.value)}
+                                style={styles.textAreaInput}
+                            />
+                        </div>
+
+                        <div style={{ display: "flex", gap: "12px" }}>
+                            <button style={styles.cancelBtn} onClick={() => setShowReviewModal(false)}>
+                                ยกเลิก
+                            </button>
+                            <button
+                                style={styles.confirmBtn}
+                                onClick={handleSubmitReview}
+                                disabled={submittingReview}
+                            >
+                                {submittingReview ? "กำลังส่ง..." : "ส่งรีวิว"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Modal รายงานปัญหา --- */}
+            {showReportModal && (
+                <div style={styles.centerModalBackdrop} onClick={() => setShowReportModal(false)}>
+                    <div style={styles.centerModalCard} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+                            <div style={{ ...styles.modalHeaderIcon, backgroundColor: "#fff1f2", border: "1px solid #fecdd3" }}>
+                                <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#f43f5e" }}>flag</i>
+                            </div>
+                            <h3 style={{ margin: "12px 0 4px 0", fontSize: "18px", color: "#334155", fontWeight: "700" }}>
+                                แจ้งปัญหาการรับบริจาค
+                            </h3>
+                            <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                                ระบุปัญหาที่คุณพบเพื่อให้เจ้าหน้าที่ตรวจสอบ
+                            </p>
+                        </div>
+
+                        <div style={{ marginBottom: "14px", textAlign: "left" }}>
+                            <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "6px" }}>
+                                หัวข้อปัญหา
+                            </label>
+                            <select
+                                value={reportReason}
+                                onChange={(e) => setReportReason(e.target.value)}
+                                style={styles.selectInput}
+                            >
+                                <option value="EXPIRED">อาหารหมดอายุ</option>
+                                <option value="SPOILED">อาหารมีกลิ่นและสภาพผิดปกติ</option>
+                                <option value="NOT_MATCH">รายละเอียดอาหารไม่ตรงกับความเป็นจริง</option>
+                                <option value="HYGIENE_ISSUE">ปัญหาด้านความสะอาดหรือบรรจุภัณฑ์ชำรุดเสียหาย</option>
+                                <option value="OTHER">ปัญหาอื่นๆ ทั่วไป</option>
+                            </select>
+                        </div>
+
+                        <div style={{ marginBottom: "20px", textAlign: "left" }}>
+                            <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "6px" }}>
+                                รายละเอียดเพิ่มเติม
+                            </label>
+                            <textarea
+                                rows="3"
+                                placeholder="อธิบายรายละเอียดเพิ่มเติม..."
+                                value={reportDetail}
+                                onChange={(e) => setReportDetail(e.target.value)}
+                                style={styles.textAreaInput}
+                            />
+                        </div>
+
+                        <div style={{ display: "flex", gap: "12px" }}>
+                            <button style={styles.cancelBtn} onClick={() => setShowReportModal(false)}>
+                                ยกเลิก
+                            </button>
+                            <button
+                                style={{ ...styles.confirmBtn, backgroundColor: "#f43f5e" }}
+                                onClick={handleSubmitReport}
+                                disabled={submittingReport}
+                            >
+                                {submittingReport ? "กำลังส่ง..." : "ส่งรายงาน"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Custom Alert Modal */}
             {alertModal.show && (
@@ -429,9 +681,9 @@ const styles = {
         top: 0,
         zIndex: 10,
         maxWidth: "1080px",
-        margin: "0 auto", // จัดให้อยู่กึ่งกลางจอ
-        borderRadius: "0 0 20px 20px", // ทำขอบโค้งด้านล่าง
-        boxShadow: "0 4px 12px rgba(192, 132, 252, 0.05)", // เพิ่มเงานิดๆ ให้ดูมีมิติ
+        margin: "0 auto",
+        borderRadius: "0 0 20px 20px",
+        boxShadow: "0 4px 12px rgba(192, 132, 252, 0.05)",
         boxSizing: "border-box"
     },
     topBar: {
@@ -633,6 +885,21 @@ const styles = {
         cursor: "pointer",
         boxShadow: "0 4px 14px rgba(192, 132, 252, 0.35)"
     },
+    reportBtn: {
+        width: "100%",
+        padding: "12px",
+        borderRadius: "14px",
+        backgroundColor: "#fff1f2",
+        color: "#e11d48",
+        border: "1px solid #fecdd3",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "6px"
+    },
     secondaryBtn: {
         width: "100%",
         padding: "12px",
@@ -643,6 +910,27 @@ const styles = {
         fontSize: "14px",
         fontWeight: "600",
         cursor: "pointer"
+    },
+    selectInput: {
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: "12px",
+        border: "1px solid #cbd5e1",
+        backgroundColor: "#f8fafc",
+        fontSize: "13px",
+        color: "#334155",
+        boxSizing: "border-box",
+    },
+    textAreaInput: {
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: "12px",
+        border: "1px solid #cbd5e1",
+        backgroundColor: "#f8fafc",
+        fontSize: "13px",
+        color: "#334155",
+        boxSizing: "border-box",
+        resize: "vertical",
     },
     loading: {
         textAlign: "center",
@@ -689,11 +977,11 @@ const styles = {
     cancelBtn: {
         flex: 1, padding: "12px", borderRadius: "14px",
         border: "1.5px solid #cbd5e1", backgroundColor: "#ffffff",
-        color: "#64748b", fontWeight: "600", cursor: "pointer"
+        color: "#64748b", fontWeight: "600", cursor: "pointer",
     },
     confirmBtn: {
         flex: 1.5, padding: "12px", borderRadius: "14px",
         border: "none", backgroundColor: "#c084fc",
-        color: "#ffffff", fontWeight: "700", cursor: "pointer"
+        color: "#ffffff", fontWeight: "700", cursor: "pointer",
     }
 };

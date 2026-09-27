@@ -19,7 +19,7 @@ export default function Navbar() {
 
     const [openDropdown, setOpenDropdown] = useState(false);
     const [openNotifications, setOpenNotifications] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State สำหรับควบคุมการเปิด-ปิดเมนวมือถือ
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
 
@@ -415,7 +415,7 @@ export default function Navbar() {
                                 <>
                                     <Link to="/receive" style={getChipStyle(isReceiveActive)}>รับบริจาค</Link>
                                     <Link to="/my-foods" style={getChipStyle(isMyFoodsActive)}>บริจาคของฉัน</Link>
-                                    <Link to="/activity-history" style={getChipStyle(isActivityHistoryActive)}>สถิติการแบ่งปัน</Link>
+                                    {/* <Link to="/activity-history" style={getChipStyle(isActivityHistoryActive)}>สถิติการแบ่งปัน</Link> */}
                                 </>
                             )}
                         </>
@@ -548,7 +548,8 @@ export default function Navbar() {
                                                         >
                                                             <img src={iconMap[n.type]} alt={n.type} style={{ width: "18px", height: "18px" }} />
                                                         </div>
-                                                        <div style={{ flex: 1 }}>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            {/* หัวข้อแจ้งเตือน */}
                                                             <p
                                                                 style={{
                                                                     margin: 0,
@@ -559,9 +560,23 @@ export default function Navbar() {
                                                             >
                                                                 {headerMap[n.type]}
                                                             </p>
+
+                                                            {/* ข้อความรายละเอียด */}
                                                             <p style={{ margin: "3px 0", fontSize: "0.8rem", color: theme.textMuted, lineHeight: "1.3" }}>
                                                                 {n.message}
                                                             </p>
+
+                                                            {/* วันที */}
+                                                            <span style={{ fontSize: "0.7rem", color: theme.textMuted, display: "block", marginTop: "2px", opacity: 0.8 }}>
+                                                                {(() => {
+                                                                    const rawDate = n.date;
+                                                                    if (!rawDate) return "";
+                                                                    const parsedDate = new Date(rawDate);
+                                                                    return !isNaN(parsedDate)
+                                                                        ? parsedDate.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })
+                                                                        : rawDate;
+                                                                })()}
+                                                            </span>
                                                         </div>
                                                     </button>
                                                 );

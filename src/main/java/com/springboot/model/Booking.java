@@ -12,17 +12,20 @@ public class Booking {
     @Column(name = "booking_id")
     private Integer bookingId;
 
-    @Column(name = "booking_unit", nullable = false)
-    private Integer bookingUnit;
+    @Column(name = "booking_quantity", nullable = false)
+    private Double bookingQuantity;
 
-    @Column(name = "booking_weight_kg", nullable = false)
-    private Double bookingWeightKg;
+    @Column(name = "booking_unit", nullable = false, length = 45)
+    private String bookingUnit;
 
     @Column(name = "booking_date", nullable = false)
     private LocalDateTime bookingDate;
 
     @Column(name = "confirmation_code", nullable = false, length = 6)
     private Integer confirmationCode;
+
+    @Column(name = "pickup_deadline", nullable = false)
+    private LocalDateTime pickupDeadline;
 
     @Column(name = "booking_status", nullable = false, length = 45)
     private String bookingStatus = "pending";
@@ -45,20 +48,20 @@ public class Booking {
         this.bookingId = bookingId;
     }
 
-    public Integer getBookingUnit() {
+    public Double getBookingQuantity() {
+        return bookingQuantity;
+    }
+
+    public void setBookingQuantity(Double bookingQuantity) {
+        this.bookingQuantity = bookingQuantity;
+    }
+
+    public String getBookingUnit() {
         return bookingUnit;
     }
 
-    public void setBookingUnit(Integer bookingUnit) {
+    public void setBookingUnit(String bookingUnit) {
         this.bookingUnit = bookingUnit;
-    }
-
-    public Double getBookingWeightKg() {
-        return bookingWeightKg;
-    }
-
-    public void setBookingWeightKg(Double bookingWeightKg) {
-        this.bookingWeightKg = bookingWeightKg;
     }
 
     public LocalDateTime getBookingDate() {
@@ -75,6 +78,14 @@ public class Booking {
 
     public void setConfirmationCode(Integer confirmationCode) {
         this.confirmationCode = confirmationCode;
+    }
+
+    public LocalDateTime getPickupDeadline() {
+        return pickupDeadline;
+    }
+
+    public void setPickupDeadline(LocalDateTime pickupDeadline) {
+        this.pickupDeadline = pickupDeadline;
     }
 
     public String getBookingStatus() {
@@ -101,14 +112,4 @@ public class Booking {
         this.recipient = recipient;
     }
 
-    // public User getRecipient() {
-    //     return recipient;
-    // }
-
-    // public void setRecipient(User recipient) {
-    //     this.recipient = recipient;
-    // }
-
-    
 }
-

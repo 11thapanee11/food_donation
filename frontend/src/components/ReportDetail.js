@@ -288,14 +288,8 @@ export default function ReportDetail() {
                             </h3>
                             <div style={styles.metaBody}>
                                 <div style={styles.metaRow}>
-                                    <span style={styles.metaLabel}>จำนวนที่ขอรับ :</span>
-                                    <span style={styles.metaValue}>{report.bookingDetail?.bookingUnit || 0} หน่วย</span>
-                                </div>
-                                <div style={styles.metaRow}>
-                                    <span style={styles.metaLabel}>น้ำหนักที่ขอรับ :</span>
-                                    <span style={styles.metaValue}>
-                                        {report.bookingDetail?.bookingWeightKg ? Number(report.bookingDetail.bookingWeightKg).toFixed(2) : '0.00'} กิโลกรัม
-                                    </span>
+                                    <span style={styles.metaLabel}>จำนวนที่รับบริจาค :</span>
+                                    <span style={styles.metaValue}>{report.bookingDetail?.bookingQuantity|| 0} {report.bookingDetail?.bookingUnit || "ชิ้น"}</span>
                                 </div>
                                 <div style={styles.metaRow}>
                                     <span style={styles.metaLabel}>วันที่ทำการขอรับ :</span>
@@ -339,16 +333,8 @@ export default function ReportDetail() {
                                     <div>
                                         <div style={styles.infoLabel}>จำนวนหน่วย (คงเหลือ / ทั้งหมด)</div>
                                         <div style={styles.infoValue}>
-                                            <span style={{ color: '#9333EA', fontWeight: 'bold' }}>{report.foodDetail?.remainingUnit}</span> / {report.foodDetail?.totalUnit} หน่วย
+                                            <span style={{ color: '#9333EA', fontWeight: 'bold' }}>{report.foodDetail?.remainingQuantity}</span> / {report.foodDetail?.quantity} หน่วย
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div style={styles.infoRow}>
-                                    <span className="material-symbols-outlined" style={styles.icon}>scale</span>
-                                    <div>
-                                        <div style={styles.infoLabel}>น้ำหนักต่อหน่วย</div>
-                                        <div style={styles.infoValue}>{report.foodDetail?.unitWeightKg} กิโลกรัม</div>
                                     </div>
                                 </div>
 
@@ -361,23 +347,24 @@ export default function ReportDetail() {
                                 </div>
 
                                 <div style={styles.infoRow}>
-                                    <span className="material-symbols-outlined" style={styles.icon}>location_on</span>
-                                    <div>
-                                        <div style={styles.infoLabel}>สถานที่รับอาหาร</div>
-                                        <div style={styles.infoValue}>{report.foodDetail?.address}</div>
-                                    </div>
-                                </div>
-
-                                <div style={styles.infoRow}>
                                     <span className="material-symbols-outlined" style={styles.icon}>access_time</span>
                                     <div>
                                         <div style={styles.infoLabel}>ช่วงเวลารับอาหาร</div>
                                         <div style={styles.infoValue}>
-                                            {formatPickupDate(report.foodDetail?.pickupDateStart)} - {formatPickupDate(report.foodDetail?.pickupDateEnd)} <br />
                                             เวลา {formatPickupTime(report.foodDetail?.pickupStartTime)} - {formatPickupTime(report.foodDetail?.pickupEndTime)} น.
                                         </div>
                                     </div>
                                 </div>
+
+                                <div style={styles.infoRow}>
+                                    <span className="material-symbols-outlined" style={styles.icon}>location_on</span>
+                                    <div>
+                                        <div style={styles.infoLabel}>สถานที่รับอาหาร</div>
+                                        <div style={styles.infoValue}>{report.foodDetail?.locationName}</div>
+                                    </div>
+                                </div>
+
+                                
                             </div>
                         </div>
                     </div>

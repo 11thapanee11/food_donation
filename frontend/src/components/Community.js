@@ -1,17 +1,30 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function CommunityImpactPage() {
-    const [impactData] = useState({
-        totalDonations: 1420,
-        activeDonors: 2483,
-        pickupLocations: 156,
-        recentActivities: [
-            { id: 1, text: "ร้าน Green Valley ส่งมอบอาหารพร้อมทาน 25 มื้อ", location: "ย่านใจกลางเมือง", time: "2 นาทีที่แล้ว" },
-            { id: 2, text: "ร้าน Happy Bakery แบ่งปันเบเกอรี่อบสดใหม่", location: "เขตเหนือ", time: "15 นาทีที่แล้ว" },
-            { id: 3, text: "คุณสมชาย ส่งมอบอาหารสดและวัตถุดิบ 15 ชุด", location: "ตลาดตะวันตก", time: "1 ชั่วโมงที่แล้ว" },
-            { id: 4, text: "ร้านกาแฟชิวชิว ส่งมอบเบเกอรี่เหลือประจำวัน", location: "โซน ม.เชียงใหม่", time: "2 ชั่วโมงที่แล้ว" },
-        ]
+    const [impactData, setImpactData] = useState({
+        totalDonations: 0,
+        activeDonors: 0,
+        pickupLocations: 0,
+        recentActivities: []
     });
+    const [loading, setLoading] = useState(true);
+
+    const BASE_URL = "http://localhost:8082";
+
+    useEffect(() => {
+        // ดึงข้อมูลสถิติและกิจกรรมจาก Backend
+        fetch(`${BASE_URL}/community/impact`)
+            .then((res) => res.json())
+            .then((resData) => {
+                if (resData.success && resData.data) {
+                    setImpactData(resData.data);
+                }
+            })
+            .catch((err) => {
+                console.error("Fetch Community Impact Error:", err);
+            })
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
         <div style={styles.fullWidthWrapper}>
@@ -34,53 +47,50 @@ export default function CommunityImpactPage() {
                 {/* Stat Cards Grid */}
                 <div style={styles.statsGrid}>
 
-                    {/* 1. ยอดการแบ่งปันทั้งหมด (สี #C084FC) */}
+                    {/* 1. ยอดการแบ่งปันทั้งหมด */}
                     <div style={{ ...styles.statCard, borderColor: "#E9D5FF" }}>
                         <div style={styles.cardHeader}>
                             <div style={{ ...styles.iconBadge, backgroundColor: "#FAF5FF", color: "#C084FC" }}>
                                 <span className="material-symbols-outlined">volunteer_activism</span>
                             </div>
-                            <span style={{ ...styles.trendTag, color: "#C084FC" }}>↗ +23% เดือนนี้</span>
                         </div>
                         <div style={styles.cardBody}>
                             <span style={styles.cardLabel}>ยอดการแบ่งปันทั้งหมด</span>
                             <h2 style={{ ...styles.cardValue, color: "#C084FC" }}>
-                                {impactData.totalDonations.toLocaleString()}{" "}
+                                {loading ? "..." : (impactData.totalDonations || 0).toLocaleString()}{" "}
                                 <span style={{ fontSize: "18px", fontWeight: "700" }}>ครั้ง</span>
                             </h2>
                             <p style={styles.cardDescription}>จำนวนครั้งที่มีการส่งมอบอาหารสำเร็จ</p>
                         </div>
                     </div>
 
-                    {/* 2. ผู้ร่วมส่งต่อสายบุญ (สี #38BDF8) */}
+                    {/* 2. ผู้ร่วมส่งต่อ */}
                     <div style={{ ...styles.statCard, borderColor: "#BAE6FD" }}>
                         <div style={styles.cardHeader}>
                             <div style={{ ...styles.iconBadge, backgroundColor: "#F0F9FF", color: "#38BDF8" }}>
                                 <span className="material-symbols-outlined">group</span>
                             </div>
-                            <span style={{ ...styles.trendTag, color: "#38BDF8" }}>↗ +8% เดือนนี้</span>
                         </div>
                         <div style={styles.cardBody}>
-                            <span style={styles.cardLabel}>ผู้ร่วมส่งต่อสายบุญ</span>
+                            <span style={styles.cardLabel}>ผู้ร่วมแบ่งปัน</span>
                             <h2 style={{ ...styles.cardValue, color: "#38BDF8" }}>
-                                {impactData.activeDonors.toLocaleString()}
+                                {loading ? "..." : (impactData.activeDonors || 0).toLocaleString()}
                             </h2>
                             <p style={styles.cardDescription}>ร้านค้าและบุคคลที่ร่วมบริจาคอาหาร</p>
                         </div>
                     </div>
 
-                    {/* 3. จุดรับ-ส่งมอบอาหาร (สี #34D399) */}
+                    {/* 3. จุดรับ-ส่งมอบอาหาร */}
                     <div style={{ ...styles.statCard, borderColor: "#A7F3D0" }}>
                         <div style={styles.cardHeader}>
                             <div style={{ ...styles.iconBadge, backgroundColor: "#ECFDF5", color: "#34D399" }}>
                                 <span className="material-symbols-outlined">location_on</span>
                             </div>
-                            <span style={{ ...styles.trendTag, color: "#34D399" }}>↗ +12% เดือนนี้</span>
                         </div>
                         <div style={styles.cardBody}>
                             <span style={styles.cardLabel}>จุดรับ-ส่งมอบอาหาร</span>
                             <h2 style={{ ...styles.cardValue, color: "#34D399" }}>
-                                {impactData.pickupLocations.toLocaleString()}
+                                {loading ? "..." : (impactData.pickupLocations || 0).toLocaleString()}
                             </h2>
                             <p style={styles.cardDescription}>พื้นที่แบ่งปันอาหารกระจายทั่วเมือง</p>
                         </div>
@@ -105,25 +115,31 @@ export default function CommunityImpactPage() {
                     </div>
 
                     <div style={styles.feedList}>
-                        {impactData.recentActivities.map((act) => (
-                            <div key={act.id} style={styles.feedItem}>
-                                <div style={styles.feedDot} />
-                                <div style={{ flex: 1 }}>
-                                    <p style={styles.feedText}>{act.text}</p>
-                                    <div style={styles.feedMeta}>
-                                        <span style={styles.metaWithIcon}>
-                                            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>location_on</span>
-                                            {act.location}
-                                        </span>
-                                        <span>•</span>
-                                        <span style={styles.metaWithIcon}>
-                                            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>schedule</span>
-                                            {act.time}
-                                        </span>
+                        {loading ? (
+                            <p style={{ textAlign: "center", color: "#94A3B8", padding: "20px 0" }}>กำลังโหลดข้อมูล...</p>
+                        ) : impactData.recentActivities && impactData.recentActivities.length > 0 ? (
+                            impactData.recentActivities.map((act) => (
+                                <div key={act.id} style={styles.feedItem}>
+                                    <div style={styles.feedDot} />
+                                    <div style={{ flex: 1 }}>
+                                        <p style={styles.feedText}>{act.text}</p>
+                                        <div style={styles.feedMeta}>
+                                            <span style={styles.metaWithIcon}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>location_on</span>
+                                                {act.location}
+                                            </span>
+                                            <span>•</span>
+                                            <span style={styles.metaWithIcon}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>schedule</span>
+                                                {act.time}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <p style={{ textAlign: "center", color: "#94A3B8", padding: "20px 0" }}>ยังไม่มีกิจกรรมล่าสุดในระบบ</p>
+                        )}
                     </div>
                 </div>
 
@@ -212,10 +228,6 @@ const styles = {
         alignItems: "center",
         justifyContent: "center",
     },
-    trendTag: {
-        fontSize: "12px",
-        fontWeight: "700",
-    },
     cardBody: {
         display: "flex",
         flexDirection: "column",
@@ -250,7 +262,7 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: "14px",
-        marginBottom: "24px",
+        marginBottom: "0px",
         paddingBottom: "16px",
         borderBottom: "1px solid #F8FAFC",
     },

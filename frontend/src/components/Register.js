@@ -136,8 +136,7 @@ function Register() {
                     show: true,
                     type: 'success',
                     title: 'สมัครสมาชิกสำเร็จ',
-                    message: result.message || "สร้างบัญชีเรียบร้อยแล้ว กำลังนำคุณไปยังหน้าเข้าสู่ระบบ",
-                    showBtn: true
+                    message: "สร้างบัญชีเรียบร้อยแล้ว กำลังนำคุณไปยังหน้าเข้าสู่ระบบ...",
                 });
                 setTimeout(() => {
                     navigate("/login");

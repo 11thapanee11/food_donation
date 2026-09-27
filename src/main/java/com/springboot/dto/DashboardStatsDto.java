@@ -6,7 +6,6 @@ public class DashboardStatsDto {
     // --- ฟิลด์เดิมที่มีอยู่แล้ว ---
     private Long totalUsers;
     private Long totalFoods;
-    private Double totalCarbon;
     private Long completed;
     private Long pending;
     private Long cancelled;
@@ -20,6 +19,8 @@ public class DashboardStatsDto {
     private Double totalFoodWeight;
     private Long totalBookings;
     private List<CategoryStatDto> categories;
+
+    private List<MonthlyStatDto> monthlyStats;
 
     // Default Constructor
     public DashboardStatsDto() {
@@ -80,14 +81,6 @@ public class DashboardStatsDto {
 
     public void setTotalFoods(Long totalFoods) {
         this.totalFoods = totalFoods;
-    }
-
-    public Double getTotalCarbon() {
-        return totalCarbon;
-    }
-
-    public void setTotalCarbon(Double totalCarbon) {
-        this.totalCarbon = totalCarbon;
     }
 
     public Long getCompleted() {
@@ -178,4 +171,14 @@ public class DashboardStatsDto {
     public void setCategories(List<CategoryStatDto> categories) {
         this.categories = categories;
     }
+
+    public List<MonthlyStatDto> getMonthlyStats() {
+        return monthlyStats;
+    }
+
+    public void setMonthlyStats(List<MonthlyStatDto> monthlyStats) {
+        this.monthlyStats = monthlyStats;
+    }
+
+    
 }

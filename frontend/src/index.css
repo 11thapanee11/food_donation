@@ -104,6 +104,8 @@ textarea {
   /* เพิ่มเติมเพื่อให้ดูคลีนขึ้น */
   outline: none;
   /* เอาเส้นขอบสีดำ/ฟ้า เวลาคลิกออก */
+
+  font-family: "Noto Sans Thai", sans-serif;
 }
 
 /*input number*/

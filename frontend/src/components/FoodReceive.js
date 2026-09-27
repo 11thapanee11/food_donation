@@ -7,6 +7,7 @@ export default function FoodReceiveOptimized() {
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState([]);
     const [activeTab, setActiveTab] = useState('current'); // 'current' | 'history'
+    const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'completed' | 'cancelled'
 
     const [isMobile, setIsMobile] = useState(
         typeof window !== 'undefined' ? window.innerWidth <= 768 : false
@@ -68,7 +69,14 @@ export default function FoodReceiveOptimized() {
 
     // แยกรายการตามสถานะ
     const currentBookings = bookings.filter(b => b.bookingStatus === 'pending');
-    const historyBookings = bookings.filter(b => b.bookingStatus === 'completed' || b.bookingStatus === 'cancelled');
+    
+    // กรองประวัติรายการจองตามสถานะที่เลือกในตัวกรองย่อย
+    const historyBookings = bookings.filter(b => {
+        const isHistory = b.bookingStatus === 'completed' || b.bookingStatus === 'cancelled';
+        if (!isHistory) return false;
+        if (historyFilter === 'all') return true;
+        return b.bookingStatus === historyFilter;
+    });
 
     // ฟอร์แมตวันที่ & เวลา
     const formatDateShort = (dateString) => {
@@ -85,15 +93,10 @@ export default function FoodReceiveOptimized() {
         return `${d} (${t} น.)`;
     };
 
-    const formatPickupTime = (timeString) => {
-        if (!timeString) return "-";
-        return timeString.substring(0, 5);
-    };
-
     const STATUS_CONFIG = {
-        pending: { text: "รอรับอาหาร", color: "#B45309", bgColor: "#FFFBEB", borderColor: "#FDE68A" },
-        completed: { text: "รับบริจาคสำเร็จ", color: "#047857", bgColor: "#ECFDF5", borderColor: "#A7F3D0" },
-        cancelled: { text: "ยกเลิกแล้ว", color: "#B91C1C", bgColor: "#FEF2F2", borderColor: "#FECACA" }
+        pending: { text: "รอรับบริจาค", color: "#B45309", bgColor: "#FFFBEB", borderColor: "#FDE68A" },
+        completed: { text: "เสร็จสิ้น", color: "#047857", bgColor: "#ECFDF5", borderColor: "#A7F3D0" },
+        cancelled: { text: "ยกเลิก", color: "#B91C1C", bgColor: "#FEF2F2", borderColor: "#FECACA" }
     };
 
     {/* ==================== 1. Render สำหรับ Tab: รายการจอง ( Active Grid ) ==================== */}
@@ -126,32 +129,31 @@ export default function FoodReceiveOptimized() {
                                 <h3 style={styles.foodNameGrid}>{food?.foodName}</h3>
 
                                 <div style={styles.infoListActive}>
-                                    {/* เน้นสถานที่นัดรับและเวลาที่ต้องไปรับ */}
                                     <div style={styles.infoItem}>
                                         <span className="material-symbols-outlined" style={styles.iconStyle}>pin_drop</span>
                                         <span style={styles.infoText}>
-                                            สถานที่รับ: <strong>{booking.donor?.pickupLocation}</strong>
+                                            สถานที่รับ: <strong>{food?.locationName}</strong>
                                         </span>
                                     </div>
 
                                     <div style={styles.infoItem}>
                                         <span className="material-symbols-outlined" style={styles.iconStyle}>schedule</span>
                                         <span style={styles.infoText}>
-                                            ช่วงเวลารับ: {formatDateShort(food?.pickupDateStart)} ({formatPickupTime(food?.pickupStartTime)}-{formatPickupTime(food?.pickupEndTime)} น.)
+                                            กำหนดรับภายใน: {formatDateTime(booking.pickupDeadline)}
                                         </span>
                                     </div>
 
                                     <div style={styles.infoItem}>
                                         <span className="material-symbols-outlined" style={styles.iconStyle}>inventory_2</span>
                                         <span style={styles.infoText}>
-                                            จำนวนที่รับ: <strong style={{ color: "#C084FC" }}>{booking.bookingUnit} ชุด</strong>
+                                            จำนวนที่รับ: <strong style={{ color: "#C084FC" }}>{booking.bookingQuantity} {booking.bookingUnit}</strong>
                                         </span>
                                     </div>
 
                                     <div style={styles.infoItem}>
-                                        <span className="material-symbols-outlined" style={{ ...styles.iconStyle, color: "#94A3B8" }}>calendar_today</span>
+                                        <span className="material-symbols-outlined" style={{ ...styles.iconStyle, color: "#C084FC" }}>calendar_today</span>
                                         <span style={{ ...styles.infoText, color: "#64748B" }}>
-                                            วันที่ทำการจอง: {formatDateTime(booking.bookingDate)}
+                                            วันที่ทำรายการ: {formatDateTime(booking.bookingDate)}
                                         </span>
                                     </div>
                                 </div>
@@ -159,7 +161,7 @@ export default function FoodReceiveOptimized() {
                                 <button
                                     type="button"
                                     style={styles.actionBtnPrimary}
-                                    onClick={() => navigate("/booking-detail", { state: { id: booking.bookingId || booking.id, fromPage: '/receive', } })}
+                                    onClick={() => navigate("/booking-detail", { state: { id: booking.bookingId || booking.id, fromPage: '/receive' } })}
                                 >
                                     <span>ดูรายละเอียดนัดรับ</span>
                                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>chevron_right</span>
@@ -174,52 +176,92 @@ export default function FoodReceiveOptimized() {
 
     {/* ==================== 2. Render สำหรับ Tab: ประวัติรายการจอง ( History List ) ==================== */}
     const renderHistoryBookings = () => {
-        if (historyBookings.length === 0) {
-            return (
-                <div style={styles.emptyCard}>
-                    <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "#CBD5E1" }}>history</span>
-                    <p style={styles.emptyText}>ยังไม่มีประวัติการรับอาหาร</p>
-                </div>
-            );
-        }
-
         return (
-            <div style={styles.historyListContainer}>
-                {[...historyBookings].reverse().map((booking) => {
-                    const food = booking.food;
-                    const status = STATUS_CONFIG[booking.bookingStatus] || STATUS_CONFIG.completed;
+            <div>
+                {/* ตัวกรองสถานะย่อยในประวัติ */}
+                <div style={styles.filterSubContainer}>
+                    <button
+                        type="button"
+                        onClick={() => setHistoryFilter('all')}
+                        style={{
+                            ...styles.filterChip,
+                            backgroundColor: historyFilter === 'all' ? '#C084FC' : '#FFFFFF',
+                            color: historyFilter === 'all' ? '#FFFFFF' : '#64748B',
+                            borderColor: historyFilter === 'all' ? '#C084FC' : '#E2E8F0',
+                        }}
+                    >
+                        ทั้งหมด
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setHistoryFilter('completed')}
+                        style={{
+                            ...styles.filterChip,
+                            backgroundColor: historyFilter === 'completed' ? '#18a04c' : '#FFFFFF',
+                            color: historyFilter === 'completed' ? '#FFFFFF' : '#64748B',
+                            borderColor: historyFilter === 'completed' ? '#18a04c' : '#E2E8F0',
+                        }}
+                    >
+                        เสร็จสิ้น
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setHistoryFilter('cancelled')}
+                        style={{
+                            ...styles.filterChip,
+                            backgroundColor: historyFilter === 'cancelled' ? '#f52626' : '#FFFFFF',
+                            color: historyFilter === 'cancelled' ? '#FFFFFF' : '#64748B',
+                            borderColor: historyFilter === 'cancelled' ? '#fa7070' : '#E2E8F0',
+                        }}
+                    >
+                        ยกเลิก
+                    </button>
+                </div>
 
-                    return (
-                        <div key={booking.id} style={styles.historyRow}>
-                            <img src={`${BASE_URL}${food?.foodImage}`} alt={food?.foodName} style={styles.historyThumb} />
-                            
-                            <div style={styles.historyMainInfo}>
-                                <div style={styles.historyHeaderRow}>
-                                    <h4 style={styles.historyFoodName}>{food?.foodName}</h4>
-                                    <span style={{ ...styles.statusBadgeCompact, backgroundColor: status.bgColor, color: status.color, border: `1px solid ${status.borderColor}` }}>
-                                        {status.text}
-                                    </span>
+                {historyBookings.length === 0 ? (
+                    <div style={styles.emptyCard}>
+                        <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "#CBD5E1" }}>history</span>
+                        <p style={styles.emptyText}>ไม่พบประวัติการรับอาหารตามเงื่อนไขที่เลือก</p>
+                    </div>
+                ) : (
+                    <div style={styles.historyListContainer}>
+                        {[...historyBookings].reverse().map((booking) => {
+                            const food = booking.food;
+                            const status = STATUS_CONFIG[booking.bookingStatus] || STATUS_CONFIG.completed;
+
+                            return (
+                                <div key={booking.id} style={styles.historyRow}>
+                                    <img src={`${BASE_URL}${food?.foodImage}`} alt={food?.foodName} style={styles.historyThumb} />
+                                    
+                                    <div style={styles.historyMainInfo}>
+                                        <div style={styles.historyHeaderRow}>
+                                            <h4 style={styles.historyFoodName}>{food?.foodName}</h4>
+                                            <span style={{ ...styles.statusBadgeCompact, backgroundColor: status.bgColor, color: status.color, border: `1px solid ${status.borderColor}` }}>
+                                                {status.text}
+                                            </span>
+                                        </div>
+
+                                        <div style={styles.historyMetaRow}>
+                                            <span>จองเมื่อ: {formatDateTime(booking.bookingDate)}</span>
+                                            <span>•</span>
+                                            <span>จำนวน: {booking.bookingQuantity} {booking.bookingUnit} </span>
+                                            <span>•</span>
+                                            <span>ผู้บริจาค: {booking.donor?.donorName}</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        style={styles.historyBtn}
+                                        onClick={() => navigate('/booking-detail', { state: { id: booking.bookingId, fromPage: '/receive', bookingStatus: booking.bookingStatus } })}
+                                    >
+                                        ดูรายละเอียด
+                                    </button>
                                 </div>
-
-                                <div style={styles.historyMetaRow}>
-                                    <span>จองเมื่อ: {formatDateTime(booking.bookingDate)}</span>
-                                    <span>•</span>
-                                    <span>จำนวน: {booking.bookingUnit} ชุด</span>
-                                    <span>•</span>
-                                    <span>ผู้บริจาค: {booking.donor?.donorName}</span>
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                style={styles.historyBtn}
-                                onClick={() => navigate('/food-detail', { state: { id: booking.bookingId, fromPage: '/receive', bookingStatus: booking.bookingStatus } })}
-                            >
-                                ดูประวัติ
-                            </button>
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         );
     };
@@ -320,6 +362,20 @@ const styles = {
         padding: "2px 6px",
         marginLeft: "6px",
     },
+    filterSubContainer: {
+        display: "flex",
+        gap: "10px",
+        marginBottom: "16px",
+    },
+    filterChip: {
+        padding: "6px 14px",
+        borderRadius: "20px",
+        fontSize: "13px",
+        fontWeight: "600",
+        cursor: "pointer",
+        border: "1px solid",
+        transition: "all 0.2s ease",
+    },
     gridContainer: {
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))",
@@ -386,7 +442,6 @@ const styles = {
         justifyContent: "center",
         gap: "4px",
     },
-    // Styles สำหรับ History Rows
     historyListContainer: { display: "flex", flexDirection: "column", gap: "12px" },
     historyRow: {
         backgroundColor: "#FFFFFF",

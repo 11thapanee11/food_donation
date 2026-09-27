@@ -17,7 +17,7 @@ public class FoodDto {
 
     private Double quantity;
     private String unit;
-    private Integer remainingQuantity;
+    private Double remainingQuantity;
     private String locationName;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -30,7 +30,7 @@ public class FoodDto {
     @JsonFormat(pattern = "HH:mm")
     private LocalTime pickupEndTime;
 
-    private Integer limitPerPerson;
+    private Double limitPerPerson;
     private Double latitude;
     private Double longitude;
     private String foodStatus;
@@ -86,11 +86,11 @@ public class FoodDto {
         this.unit = unit;
     }
 
-    public Integer getRemainingQuantity() {
+    public Double getRemainingQuantity() {
         return remainingQuantity;
     }
 
-    public void setRemainingQuantity(Integer remainingQuantity) {
+    public void setRemainingQuantity(Double remainingQuantity) {
         this.remainingQuantity = remainingQuantity;
     }
 
@@ -134,11 +134,11 @@ public class FoodDto {
         this.pickupEndTime = pickupEndTime;
     }
 
-    public Integer getLimitPerPerson() {
+    public Double getLimitPerPerson() {
         return limitPerPerson;
     }
 
-    public void setLimitPerPerson(Integer limitPerPerson) {
+    public void setLimitPerPerson(Double limitPerPerson) {
         this.limitPerPerson = limitPerPerson;
     }
 

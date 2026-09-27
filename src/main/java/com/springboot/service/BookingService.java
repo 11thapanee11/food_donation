@@ -2,6 +2,7 @@ package com.springboot.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.format.annotation.DurationFormat.Unit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -30,38 +31,38 @@ public class BookingService {
         this.notificationService = notificationService;
     }
 
-    // public Booking addBooking(BookingDto request, Recipient recipient) {
-    //     if (request.getFoodId() == null) {
-    //         throw new ApplicationException("foodId เป็นค่าว่าง ไม่สามารถทำการจองได้", HttpStatus.BAD_REQUEST);
-    //     }
+    public Booking addBooking(BookingDto request, Recipient recipient) {
+        if (request.getFoodId() == null) {
+            throw new ApplicationException("foodId เป็นค่าว่าง ไม่สามารถทำการจองได้", HttpStatus.BAD_REQUEST);
+        }
 
-    //     Food food = foodRepository.findById(request.getFoodId())
-    //             .orElseThrow(() -> new ApplicationException("ไม่พบรายการอาหาร", HttpStatus.NOT_FOUND));
+        Food food = foodRepository.findById(request.getFoodId())
+                .orElseThrow(() -> new ApplicationException("ไม่พบรายการอาหาร", HttpStatus.NOT_FOUND));
 
-    //     if (food.getRemainingQuantity() < request.getQuantity()) {
-    //         throw new ApplicationException("จำนวนอาหารที่เหลือไม่เพียงพอสำหรับการจอง", HttpStatus.BAD_REQUEST);
-    //     }
+        if (food.getRemainingQuantity() < request.getQuantity()) {
+            throw new ApplicationException("จำนวนอาหารที่เหลือไม่เพียงพอสำหรับการจอง", HttpStatus.BAD_REQUEST);
+        }
 
-    //     food.setRemainingQuantity(food.getRemainingQuantity() - request.getQuantity());
-    //     foodRepository.save(food);
+        food.setRemainingQuantity(food.getRemainingQuantity() - request.getQuantity());
+        foodRepository.save(food);
 
-    //     Integer generatedCode = generateConfirmationCode();
-    //     Double totalWeight = food.getUnitWeightKg() * request.getQuantity();
+        Integer generatedCode = generateConfirmationCode();
 
-    //     Booking booking = new Booking();
-    //     booking.setBookingUnit(request.getQuantity());
-    //     booking.setBookingWeightKg(totalWeight);
-    //     booking.setBookingDate(LocalDateTime.now());
-    //     booking.setConfirmationCode(generatedCode);
-    //     booking.setBookingStatus("pending");
-    //     booking.setFood(food);
-    //     booking.setRecipient(recipient);
+        Booking booking = new Booking();
+        booking.setBookingQuantity(request.getQuantity());
+        booking.setBookingUnit(request.getUnit());
+        booking.setBookingDate(LocalDateTime.now());
+        booking.setConfirmationCode(generatedCode);
+        booking.setPickupDeadline(LocalDateTime.now().plusHours(4));
+        booking.setBookingStatus("pending");
+        booking.setFood(food);
+        booking.setRecipient(recipient);
 
-    //     Booking savedBooking = bookingRepository.save(booking);
-    //     notificationService.createBookingNotification(savedBooking);
+        Booking savedBooking = bookingRepository.save(booking);
+        notificationService.createBookingNotification(savedBooking);
 
-    //     return savedBooking;
-    // }
+        return savedBooking;
+    }
 
     private static final Random random = new Random();
 
@@ -81,9 +82,10 @@ public class BookingService {
                 .map(booking -> {
                     BookingDto dto = new BookingDto();
                     dto.setBookingId(booking.getBookingId());
+                    dto.setBookingQuantity(booking.getBookingQuantity());
                     dto.setBookingUnit(booking.getBookingUnit());
-                    dto.setBookingWeightKg(booking.getBookingWeightKg());
                     dto.setBookingDate(booking.getBookingDate());
+                    dto.setPickupDeadline(booking.getPickupDeadline());
                     dto.setConfirmationCode(booking.getConfirmationCode());
                     dto.setBookingStatus(booking.getBookingStatus());
                     dto.setFoodId(booking.getFood().getFoodId());
@@ -100,9 +102,10 @@ public class BookingService {
         BookingDto dto = new BookingDto();
         dto.setBookingId(booking.getBookingId());
         dto.setBookingUnit(booking.getBookingUnit());
-        dto.setBookingWeightKg(booking.getBookingWeightKg());
+        dto.setBookingQuantity(booking.getBookingQuantity());
         dto.setBookingDate(booking.getBookingDate());
         dto.setConfirmationCode(booking.getConfirmationCode());
+        dto.setPickupDeadline(booking.getPickupDeadline());
         dto.setBookingStatus(booking.getBookingStatus());
 
         if (booking.getFood() != null) {
@@ -127,7 +130,7 @@ public class BookingService {
         }
 
         Food food = booking.getFood();
-        food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingUnit());
+        food.setRemainingQuantity(food.getRemainingQuantity() + booking.getBookingQuantity());
         foodRepository.save(food);
     }
 

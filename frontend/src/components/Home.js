@@ -422,7 +422,7 @@ export default function Home() {
                                                 <div style={styles.infoLine}>
                                                     <i className="material-icons-outlined" style={styles.iconStyle}>access_time</i>
                                                     <div style={styles.infoTextGroup}>
-                                                        <span style={styles.labelSpan}>เวลารับของ</span>
+                                                        <span style={styles.labelSpan}>เวลารับอาหาร</span>
                                                         <span style={styles.valueSpan}>{food.pickupStartTime} - {food.pickupEndTime} น.</span>
                                                     </div>
                                                 </div>
@@ -432,9 +432,9 @@ export default function Home() {
                                             <div style={styles.infoLine}>
                                                 <i className="material-icons-outlined" style={styles.iconStyle}>inventory_2</i>
                                                 <div style={styles.infoTextGroup}>
-                                                    <span style={styles.labelSpan}>คงเหลือ / ทั้งหมด</span>
+                                                    <span style={styles.labelSpan}>คงเหลือ</span>
                                                     <span style={styles.highlightBadge}>
-                                                        {food.remainingQuantity} / {food.quantity} {unitName}
+                                                        {food.remainingQuantity} {unitName}
                                                     </span>
                                                 </div>
                                             </div>

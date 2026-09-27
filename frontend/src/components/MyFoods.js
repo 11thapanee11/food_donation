@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from 'jwt-decode';
-import Swal from 'sweetalert2';
 
 export default function ListDonorFood() {
     const navigate = useNavigate();
 
     const [userId, setUserId] = useState(null);
     const [myFoods, setMyFoods] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("all");
+    const [selectedCategory, setSelectedCategory] = useState("all");
 
     const [isMobile, setIsMobile] = useState(
         typeof window !== 'undefined' ? window.innerWidth <= 768 : false
@@ -38,6 +39,17 @@ export default function ListDonorFood() {
             setUserId(null);
         }
 
+        // โหลดข้อมูลหมวดหมู่
+        fetch(`${BASE_URL}/food-categories`, {
+            headers: { "Content-Type": "application/json" }
+        })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData.success) setCategories(resData.data);
+            })
+            .catch(err => console.error("Error fetching categories:", err));
+
+        // โหลดข้อมูลรายการบริจาค
         fetch(`${BASE_URL}/foods/my-donations`, {
             headers: {
                 "Authorization": `Bearer ${token}`
@@ -121,45 +133,15 @@ export default function ListDonorFood() {
         }
     };
 
-    const handleCreateClick = async () => {
-        const token = localStorage.getItem("accessToken");
-
-        try {
-            const response = await fetch(`${BASE_URL}/donor/check-status`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            });
-
-            const resData = await response.json();
-
-            if (response.status === 404 || resData.isFirstTime) {
-                navigate("/food-form");
-                return;
-            }
-
-            if (response.status === 403 || !response.ok || !resData.success) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'ไม่สามารถสร้างบริจาคได้',
-                    text: resData.message || 'บัญชีของคุณไม่สามารถทำการบริจาคได้ในขณะนี้',
-                    confirmButtonColor: '#C084FC'
-                });
-                return;
-            }
-
-            navigate("/food-form");
-        } catch (error) {
-            console.error("Check Status Error:", error);
-            alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ กรุณาลองใหม่อีกครั้ง");
-        }
+    const handleCreateClick = () => {
+        navigate("/food-form");
     };
 
     const filteredFoods = myFoods.filter((food) => {
-        if (activeTab === "all") return true;
-        return food.foodStatus === activeTab;
+        const matchesTab = activeTab === "all" || food.foodStatus === activeTab;
+        const foodCatId = food.foodCategory?.foodCateId || food.foodCateId;
+        const matchesCategory = selectedCategory === "all" || String(foodCatId) === String(selectedCategory);
+        return matchesTab && matchesCategory;
     });
 
     const renderContent = () => {
@@ -169,13 +151,12 @@ export default function ListDonorFood() {
                 <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "#C084FC" }}>
                     inventory_2
                 </span>
-                <p style={styles.emptyText}>ยังไม่มีรายการอาหารที่คุณลงบริจาค</p>
-                <button style={styles.emptyBtn} onClick={handleCreateClick}>+ สร้างการบริจาคแรกของคุณ</button>
+                <p style={styles.emptyText}>ยังไม่มีรายการที่คุณลงบริจาค</p>
             </div>
         );
 
         if (filteredFoods.length === 0) {
-            return <p style={styles.emptyText}>ไม่พบรายการในหมวดหมู่นี้</p>;
+            return <p style={styles.emptyText}>ไม่พบรายการในเงื่อนไขที่เลือก</p>;
         }
 
         return (
@@ -188,9 +169,16 @@ export default function ListDonorFood() {
                         borderColor: "#CBD5E1"
                     };
 
+                    const categoryObj = categories.find(c =>
+                        String(c.foodCateId || c.id || c.categoryId) === String(food.foodCateId || food.categoryId || food.category?.id)
+                    );
+                    const categoryName = food.foodCategory?.foodCateName || food.foodCategory?.name || "ไม่ระบุหมวดหมู่";
+
+                    console.log("Food Data:", food);
+                    console.log("Categories List:", categories);
+
                     return (
                         <div key={food.foodId} style={styles.gridCard}>
-                            {/* ส่วนรูปภาพ + Badge ลอยบนภาพ */}
                             <div style={styles.cardImageContainer}>
                                 <img
                                     src={`${BASE_URL}${food.foodImage}`}
@@ -209,30 +197,34 @@ export default function ListDonorFood() {
                                 </span>
                             </div>
 
-                            {/* รายละเอียดในการ์ด */}
                             <div style={styles.cardContent}>
-                                <h3 style={styles.foodNameGrid}>{food.foodName}</h3>
-
-                                <div style={styles.infoList}>
-                                    <div style={styles.infoItem}>
-                                        <span className="material-symbols-outlined" style={styles.iconStyle}>inventory</span>
-                                        <span style={styles.infoText}>
-                                            คงเหลือ <strong style={{ color: "#C084FC" }}>{food.remainingUnit}</strong> / ทั้งหมด {food.totalUnit} ชุด
-                                        </span>
+                                <div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                        <h3 style={styles.foodNameGrid}>{food.foodName}</h3>
+                                        <span style={styles.categoryBadge}>{categoryName}</span>
                                     </div>
 
-                                    <div style={styles.infoItem}>
-                                        <span className="material-symbols-outlined" style={styles.iconStyle}>event</span>
-                                        <span style={styles.infoText}>
-                                            หมดอายุ: {formatExpiryDate(food.expiryDate)}
-                                        </span>
-                                    </div>
+                                    <div style={styles.infoList}>
+                                        <div style={styles.infoItem}>
+                                            <span className="material-symbols-outlined" style={styles.iconStyle}>inventory</span>
+                                            <span style={styles.infoText}>
+                                                คงเหลือ <strong style={{ color: "#C084FC" }}>{food.remainingQuantity}</strong> / ทั้งหมด {food.quantity} {food.unit}
+                                            </span>
+                                        </div>
 
-                                    <div style={styles.infoItem}>
-                                        <span className="material-symbols-outlined" style={styles.iconStyle}>schedule</span>
-                                        <span style={styles.infoText}>
-                                            รับได้: {formatPickupDate(food.pickupDateStart)} - {formatPickupDate(food.pickupDateEnd)} ({formatPickupTime(food.pickupStartTime)}-{formatPickupTime(food.pickupEndTime)} น.)
-                                        </span>
+                                        <div style={styles.infoItem}>
+                                            <span className="material-symbols-outlined" style={styles.iconStyle}>event</span>
+                                            <span style={styles.infoText}>
+                                                หมดอายุ: {formatExpiryDate(food.expiryDate)}
+                                            </span>
+                                        </div>
+
+                                        <div style={styles.infoItem}>
+                                            <span className="material-symbols-outlined" style={styles.iconStyle}>schedule</span>
+                                            <span style={styles.infoText}>
+                                                รับได้: {formatPickupTime(food.pickupStartTime)}-{formatPickupTime(food.pickupEndTime)} น.
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -266,9 +258,9 @@ export default function ListDonorFood() {
                 >
                     <div>
                         <h1 style={{ ...styles.title, fontSize: isMobile ? "24px" : "28px" }}>
-                            รายการอาหารบริจาคของฉัน
+                            รายการบริจาคของฉัน
                         </h1>
-                        <p style={styles.subtitle}>จัดการรายการอาหารและติดตามสถานะการส่งมอบของคุณ</p>
+                        <p style={styles.subtitle}>จัดการรายการและติดตามสถานะการส่งมอบของคุณ</p>
                     </div>
 
                     <button
@@ -283,32 +275,65 @@ export default function ListDonorFood() {
                     </button>
                 </div>
 
-                {/* Filter Tabs */}
-                <div style={styles.tabsContainer}>
-                    {[
-                        { key: "all", label: "ทั้งหมด" },
-                        { key: "available", label: "เปิดรับบริจาค" },
-                        { key: "closed", label: "ปิดการรับบริจาค" },
-                        { key: "expired", label: "หมดอายุ" }
-                    ].map((tab) => (
-                        <button
-                            key={tab.key}
+                {/* Filter Row: Tabs (ซ้าย) & Category Dropdown (ขวา) */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
+                    {/* Filter Tabs (สถานะ) */}
+                    <div style={{ ...styles.tabsContainer, marginBottom: 0 }}>
+                        {[
+                            { key: "all", label: "ทั้งหมด" },
+                            { key: "available", label: "เปิดรับบริจาค" },
+                            { key: "closed", label: "ปิดการรับบริจาค" },
+                            { key: "expired", label: "หมดอายุ" }
+                        ].map((tab) => (
+                            <button
+                                key={tab.key}
+                                style={{
+                                    padding: "8px 18px",
+                                    borderRadius: "20px",
+                                    cursor: "pointer",
+                                    whiteSpace: "nowrap",
+                                    outline: "none",
+                                    backgroundColor: activeTab === tab.key ? "#C084FC" : "#FFFFFF",
+                                    color: activeTab === tab.key ? "#FFFFFF" : "#64748B",
+                                    border: activeTab === tab.key ? "1px solid #C084FC" : "1px solid #E9D5FF",
+                                    fontWeight: activeTab === tab.key ? "600" : "500",
+                                }}
+                                onClick={() => setActiveTab(tab.key)}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Filter Category (Dropdown หมวดหมู่) */}
+                    <div>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
                             style={{
-                                padding: "8px 18px",
-                                borderRadius: "20px",
-                                cursor: "pointer",
-                                whiteSpace: "nowrap",
+                                padding: "8px 30px 8px 14px",
+                                borderRadius: "16px",
+                                border: "1px solid #E9D5FF",
+                                color: '#64748B',
+                                backgroundColor: "#FFFFFF",
+                                fontSize: "13px",
                                 outline: "none",
-                                backgroundColor: activeTab === tab.key ? "#C084FC" : "#FFFFFF",
-                                color: activeTab === tab.key ? "#FFFFFF" : "#64748B",
-                                border: activeTab === tab.key ? "1px solid #C084FC" : "1px solid #E9D5FF",
-                                fontWeight: activeTab === tab.key ? "600" : "500",
+                                cursor: "pointer",
+                                fontFamily: "inherit"
                             }}
-                            onClick={() => setActiveTab(tab.key)}
                         >
-                            {tab.label}
-                        </button>
-                    ))}
+                            <option value="all">หมวดหมู่ทั้งหมด</option>
+                            {categories.map((cat) => {
+                                const catId = cat.foodCateId || cat.id;
+                                const catName = cat.foodCateName || cat.name;
+                                return (
+                                    <option key={catId} value={String(catId)}>
+                                        {catName}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                    </div>
                 </div>
 
                 {/* Content */}
@@ -366,29 +391,8 @@ const styles = {
     tabsContainer: {
         display: "flex",
         gap: "8px",
-        marginBottom: "24px",
         overflowX: "auto",
         paddingBottom: "4px",
-    },
-    tabBtn: {
-        padding: "8px 18px",
-        borderRadius: "20px",
-        border: "1px solid #E9D5FF",
-        backgroundColor: "#FFFFFF",
-        color: "#64748B",
-        fontSize: "14px",
-        fontWeight: "500",
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        outline: "none",
-
-    },
-    activeTabBtn: {
-        backgroundColor: "#C084FC",
-        color: "#FFFFFF",
-        borderColor: "#C084FC",
-        fontWeight: "600",
-        outline: "none",
     },
     gridContainer: {
         display: "grid",
@@ -426,6 +430,14 @@ const styles = {
         fontWeight: "600",
         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
     },
+    categoryBadge: {
+        fontSize: "11px",
+        backgroundColor: "#F3E8FF",
+        color: "#9333EA",
+        padding: "2px 8px",
+        borderRadius: "8px",
+        fontWeight: "600",
+    },
     cardContent: {
         padding: "16px",
         display: "flex",
@@ -437,7 +449,7 @@ const styles = {
         fontSize: "18px",
         fontWeight: "700",
         color: "#1E293B",
-        margin: "0 0 12px 0",
+        margin: "0",
     },
     infoList: {
         display: "flex",
@@ -493,16 +505,5 @@ const styles = {
         color: "#64748B",
         fontSize: "15px",
         margin: 0,
-    },
-    emptyBtn: {
-        backgroundColor: "#C084FC",
-        color: "#FFFFFF",
-        border: "none",
-        borderRadius: "12px",
-        padding: "10px 20px",
-        fontSize: "14px",
-        fontWeight: "600",
-        cursor: "pointer",
-        marginTop: "8px",
     },
 };

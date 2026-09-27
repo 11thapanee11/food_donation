@@ -11,6 +11,7 @@ import java.util.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.File;
+import com.springboot.util.JwtUtil;
 
 @RestController
 
@@ -20,36 +21,59 @@ public class FoodController {
     private final UserService userService;
     private final BookingService bookingService;
     private final DonorService donorService;
+    private final JwtUtil jwtUtil;
 
     public FoodController(FoodService foodService, UserService userService, BookingService bookingService,
-            DonorService donorService) {
+            DonorService donorService, JwtUtil jwtUtil) {
         this.foodService = foodService;
         this.userService = userService;
         this.bookingService = bookingService;
         this.donorService = donorService;
+        this.jwtUtil = jwtUtil;
+    }
+
+    private Integer extractUserIdSafely(String authHeader) {
+        if (authHeader == null || authHeader.trim().isEmpty() || !authHeader.startsWith("Bearer ")) {
+            return null; // เป็น Guest
+        }
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String idStr = jwtUtil.extractUserId(token);
+            if (jwtUtil.validateToken(token, idStr)) {
+                return Integer.parseInt(idStr);
+            }
+        } catch (Exception e) {
+            // ละเว้น Error กรณี Token หมดอายุหรือปลอมแปลง เพื่อให้ทำงานต่อได้ในฐานะ Guest
+        }
+        return null;
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FoodDto>>> getAllFoods(@RequestHeader("Authorization") String authHeader) {
-        User user = userService.authenticate(authHeader);
-        List<FoodDto> foods = foodService.getAllFoods(user.getUserId());
+    public ResponseEntity<ApiResponse<List<FoodDto>>> getAllFoods(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        Integer currentUserId = extractUserIdSafely(authHeader);
+        List<FoodDto> foods = foodService.getAllFoods(currentUserId);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารทั้งหมดสำเร็จ", foods));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<FoodDto>> getFoodById(@PathVariable Integer id,
-            @RequestHeader("Authorization") String authHeader) {
-        User user = userService.authenticate(authHeader);
-        FoodDto foodDto = foodService.getFoodById(id, user.getUserId());
+    public ResponseEntity<ApiResponse<FoodDto>> getFoodById(
+            @PathVariable Integer id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        Integer currentUserId = extractUserIdSafely(authHeader);
+        FoodDto foodDto = foodService.getFoodById(id, currentUserId);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารสำเร็จ", foodDto));
     }
 
     @GetMapping("/category/{id}")
     public ResponseEntity<ApiResponse<List<FoodDto>>> getFoodsByCategory(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable("id") Integer categoryId) {
-        User user = userService.authenticate(authHeader);
-        List<FoodDto> foods = foodService.getFoodsByCategory(categoryId, user.getUserId());
+
+        Integer currentUserId = extractUserIdSafely(authHeader);
+        List<FoodDto> foods = foodService.getFoodsByCategory(categoryId, currentUserId);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลอาหารตามหมวดหมู่สำเร็จ", foods));
     }
 

@@ -17,12 +17,12 @@ export default function FoodDetail() {
     const [reserveQuantity, setReserveQuantity] = useState(1);
     const [submitting, setSubmitting] = useState(false);
 
-    // State สำหรับการแสดงผล Alert Custom Popup (ใช้แทน SweetAlert2)
+    // State สำหรับการแสดงผล Alert Custom Popup
     const [alertModal, setAlertModal] = useState({
         show: false,
         title: "",
         message: "",
-        type: "info", // "info" | "success" | "error"
+        type: "info",
         confirmText: "ตกลง",
         cancelText: null,
         onConfirm: null
@@ -68,7 +68,6 @@ export default function FoodDetail() {
         const token = localStorage.getItem("accessToken");
         const isValidToken = token && token !== "null" && token !== "undefined";
 
-        // ดึงข้อมูลอาหารพร้อมส่ง Authorization ไปด้วยเพื่อให้ Backend เช็คสถานะ hasUserBooked ได้ทันที
         fetch(`${BASE_URL}/foods/${incomingId}`, {
             headers: isValidToken ? { "Authorization": `Bearer ${token}` } : {}
         })
@@ -86,8 +85,8 @@ export default function FoodDetail() {
     useEffect(() => {
         if (incomingId) {
             const token = localStorage.getItem("accessToken");
-            const headers = (token && token !== "null" && token !== "undefined") 
-                ? { "Authorization": `Bearer ${token}` } 
+            const headers = (token && token !== "null" && token !== "undefined")
+                ? { "Authorization": `Bearer ${token}` }
                 : {};
 
             fetch(`${BASE_URL}/reviews/food/${incomingId}`, { headers })
@@ -98,6 +97,45 @@ export default function FoodDetail() {
                 .catch(err => console.error("Error:", err));
         }
     }, [incomingId]);
+
+    // ฟังก์ชันตรวจสอบสถานะและเงื่อนไขเวลาในการกดรับอาหาร
+    const getBookingStatus = () => {
+        if (!food) return { canBook: false, text: 'กำลังโหลด...' };
+
+        if (food.remainingQuantity <= 0) {
+            return { canBook: false, text: 'รายการนี้หมดแล้ว' };
+        }
+
+        if (food.isCurrentByUserBooked) {
+            return { canBook: false, text: 'คุณได้ทำการจองรายการนี้แล้ว' };
+        }
+
+        // ตรวจสอบเงื่อนไขช่วงเวลาการรับของ
+        if (food.pickupStartTime && food.pickupEndTime) {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const [startH, startM] = food.pickupStartTime.substring(0, 5).split(':').map(Number);
+            const [endH, endM] = food.pickupEndTime.substring(0, 5).split(':').map(Number);
+            const startMinutes = startH * 60 + startM;
+            const endMinutes = endH * 60 + endM;
+
+            // เช็คว่าไม่อยู่ในช่วงเวลารับของ
+            if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
+                return { canBook: false, text: 'ไม่อยู่ในช่วงเวลารับของบริจาค' };
+            }
+
+            // เช็คกรณีเหลือเวลาน้อยกว่าหรือเท่ากับ 4 ชั่วโมง (240 นาที) ก่อนถึงเวลาปิดรอบ
+            const remainingMinutesToClose = endMinutes - currentMinutes;
+            if (remainingMinutesToClose <= 240 && remainingMinutesToClose >= 0) {
+                return { canBook: false, text: 'ปิดรับบริจาคเนื่องจากใกล้เวลาสิ้นสุด (น้อยกว่า 4 ชม.)' };
+            }
+        }
+
+        return { canBook: true, text: 'กดรับอาหารบริจาค' };
+    };
+
+    const bookingStatus = getBookingStatus();
 
     const totalReviews = reviews.length;
     const averageRating = totalReviews > 0
@@ -110,7 +148,6 @@ export default function FoodDetail() {
         return `${date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })} (${date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.)`;
     };
 
-    // เปิดการจองหรือแสดง Alert ให้ Login
     const handleOpenReserveModal = () => {
         const token = localStorage.getItem("accessToken");
         if (!token || token === "undefined" || token === "null") {
@@ -130,7 +167,6 @@ export default function FoodDetail() {
         setShowReserveModal(true);
     };
 
-    // ยืนยันการจอง
     const handleConfirmBooking = () => {
         const token = localStorage.getItem("accessToken");
         if (!token || token === "undefined" || token === "null") return;
@@ -145,7 +181,7 @@ export default function FoodDetail() {
             .then(resData => {
                 setShowReserveModal(false);
                 if (resData.success) {
-                    const newBookingId = resData.data?.id; 
+                    const newBookingId = resData.data?.id;
                     setAlertModal({
                         show: true,
                         title: "จองสำเร็จ!",
@@ -252,7 +288,7 @@ export default function FoodDetail() {
                         color: food.remainingQuantity > 0 ? "#10b981" : "#f43f5e",
                         border: food.remainingQuantity > 0 ? "1px solid #a7f3d0" : "1px solid #fecdd3"
                     }}>
-                        {food.remainingQuantity > 0 ? `เหลือในระบบ ${food.remainingQuantity} ชิ้น` : "หมดแล้ว"}
+                        {food.remainingQuantity > 0 ? `คงเหลือ ${food.remainingQuantity} ${food.unit || "ชิ้น"}` : "หมดแล้ว"}
                     </span>
                 </div>
 
@@ -264,25 +300,34 @@ export default function FoodDetail() {
                         <i className="material-icons-outlined" style={{ color: "#c084fc" }}>person</i>
                     </div>
                     <div>
-                        <div style={{ fontSize: "11px", color: "#64748b" }}>แบ่งปันโดย</div>
+                        <div style={{ fontSize: "11px", color: "#64748b" }}>ผู้บริจาค</div>
                         <div style={{ fontWeight: "600", color: "#334155", fontSize: "14px" }}>{food.donorName || "ผู้บริจาคใจดี"}</div>
                     </div>
                 </div>
 
-                {/* Key Specifications Grid */}
+                {/* Specifications Grid */}
                 <div style={styleOne.specGrid}>
                     <div style={styleOne.specItem}>
                         <i className="material-icons-outlined" style={{ color: "#f472b6" }}>schedule</i>
                         <div>
-                            <span style={styleOne.specLabel}>หมดอายุ</span>
+                            <span style={styleOne.specLabel}>วันหมดอายุ</span>
                             <span style={styleOne.specValue}>{formatExpiryDate(food.expiryDate)}</span>
                         </div>
                     </div>
                     <div style={styleOne.specItem}>
-                        <i className="material-icons-outlined" style={{ color: "#38bdf8" }}>scale</i>
+                        <i className="material-icons-outlined" style={{ color: "#a855f7" }}>person_outline</i>
                         <div>
-                            <span style={styleOne.specLabel}>น้ำหนัก/หน่วย</span>
-                            <span style={styleOne.specValue}>{food.unitWeightKg || "0.00"} Kg</span>
+                            <span style={styleOne.specLabel}>จำกัดการรับต่อคน</span>
+                            <span style={styleOne.specValue}>สูงสุด {food.limitPerPerson || 1} {food.unit || "ชิ้น"}</span>
+                        </div>
+                    </div>
+                    <div style={{ ...styleOne.specItem, gridColumn: "span 2" }}>
+                        <i className="material-icons-outlined" style={{ color: "#3b82f6" }}>access_time</i>
+                        <div>
+                            <span style={styleOne.specLabel}>ช่วงเวลารับของบริจาค</span>
+                            <span style={styleOne.specValue}>
+                                {food.pickupStartTime ? food.pickupStartTime.substring(0, 5) : "-"} - {food.pickupEndTime ? food.pickupEndTime.substring(0, 5) : "-"} น.
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -291,9 +336,10 @@ export default function FoodDetail() {
                 <div style={styleOne.sectionCard}>
                     <h3 style={styleOne.sectionTitle}>
                         <i className="material-icons-outlined" style={{ color: "#38bdf8" }}>location_on</i>
-                        สถานที่รับอาหาร
+                        สถานที่นัดรับอาหาร
                     </h3>
-                    <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 12px 0" }}>{food.address || "ไม่ระบุที่อยู่"}</p>
+                    <p style={{ fontSize: "14px", color: "#334155", padding: "0px 6px" }}>{food.locationName || "ไม่ระบุชื่อสถานที่"}</p>
+
                     {googleMapEmbedUrl && (
                         <iframe
                             title="food-map"
@@ -360,35 +406,40 @@ export default function FoodDetail() {
                     </div>
                 </div>
 
-                {/* Bottom Main Action Button */}
-                {(!isOwner && !isFromManage) && (
-                    <button
-                        onClick={handleOpenReserveModal}
-                        disabled={food?.isCurrentByUserBooked || food.remainingQuantity <= 0}
-                        style={{
-                            ...styleOne.mainCtaBtn,
-                            backgroundColor: (food?.isCurrentByUserBooked || food.remainingQuantity <= 0) ? "#cbd5e1" : "#c084fc",
-                            boxShadow: (food?.isCurrentByUserBooked || food.remainingQuantity <= 0) ? "none" : "0 4px 14px rgba(192, 132, 252, 0.35)",
-                            cursor: (food?.isCurrentByUserBooked || food.remainingQuantity <= 0) ? "not-allowed" : "pointer"
-                        }}
-                    >
-                        {food?.isCurrentByUserBooked ? 'คุณได้ทำการจองรายการนี้แล้ว' : food.remainingQuantity <= 0 ? 'รายการนี้หมดแล้ว' : 'กดรับอาหารบริจาค'}
-                    </button>
-                )}
             </div>
 
-            {/* --- 1. RESERVATION POPUP MODAL (หน้าต่างเลือกจำนวน) --- */}
+            {/* --- Sticky Bottom Action Bar (แถบปุ่มลอยติดขอบล่างจอ) --- */}
+            {(!isOwner && !isFromManage) && (
+                <div style={styleOne.stickyBottomBar}>
+                    <div style={{ maxWidth: "680px", margin: "0 auto", width: "100%" }}>
+                        <button
+                            onClick={handleOpenReserveModal}
+                            disabled={!bookingStatus.canBook}
+                            style={{
+                                ...styleOne.mainCtaBtn,
+                                backgroundColor: !bookingStatus.canBook ? "#cbd5e1" : "#c084fc",
+                                boxShadow: !bookingStatus.canBook ? "none" : "0 4px 16px rgba(192, 132, 252, 0.4)",
+                                cursor: !bookingStatus.canBook ? "not-allowed" : "pointer"
+                            }}
+                        >
+                            {bookingStatus.text}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* --- 1. RESERVATION POPUP MODAL --- */}
             {showReserveModal && (
                 <div style={styleOne.centerModalBackdrop} onClick={() => setShowReserveModal(false)}>
                     <div style={styleOne.centerModalCard} onClick={(e) => e.stopPropagation()}>
                         <div style={{ textAlign: "center", marginBottom: "16px" }}>
                             <div style={styleOne.modalHeaderIcon}>
-                                <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#c084fc" }}>shopping_basket</i>
+                                <i className="material-icons-outlined" style={{ fontSize: "28px", color: "#c084fc" }}>volunteer_activism</i>
                             </div>
                             <h3 style={{ margin: "12px 0 4px 0", fontSize: "20px", color: "#334155", fontWeight: "700" }}>
-                                ยืนยันรับอาหารบริจาค
+                                ยืนยันการขอรับบริจาค
                             </h3>
-                            <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                            <p style={{ margin: 0, fontSize: "14px", color: "#64748b", fontWeight: "500" }}>
                                 {food.foodName}
                             </p>
                         </div>
@@ -397,10 +448,32 @@ export default function FoodDetail() {
                             <i className="material-icons-outlined" style={{ fontSize: "20px", color: "#38bdf8" }}>info</i>
                             <div style={{ textAlign: "left" }}>
                                 <div style={{ fontSize: "12px", color: "#0284c7", fontWeight: "600" }}>
-                                    สามารถจองได้สูงสุด <span style={{ fontSize: "15px", fontWeight: "800", color: "#0369a1" }}>{maxLimit}</span> ชิ้น
+                                    สิทธิ์ในการรับ: สูงสุด <span style={{ fontSize: "15px", fontWeight: "800", color: "#0369a1" }}>{maxLimit}</span> {food.unit || "ชิ้น"}
                                 </div>
                                 <div style={{ fontSize: "11px", color: "#38bdf8" }}>
-                                    (คงเหลือในระบบ {food.remainingQuantity} ชิ้น • จำกัด {food.limitPerPerson || 1} ชิ้น/คน)
+                                    (คงเหลือ {food.remainingQuantity} {food.unit || "ชิ้น"} • จำกัด {food.limitPerPerson || 1} {food.unit || "ชิ้น"}/คน)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{
+                            backgroundColor: "#fffbeb",
+                            border: "1px solid #fde68a",
+                            borderRadius: "16px",
+                            padding: "12px 16px",
+                            marginTop: "12px",
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "12px",
+                            textAlign: "left"
+                        }}>
+                            <i className="material-icons-outlined" style={{ fontSize: "19px", color: "#d97706", flexShrink: 0, marginTop: "1px" }}>schedule</i>
+                            <div>
+                                <div style={{ fontSize: "12px", color: "#b45309", fontWeight: "700", marginBottom: "2px" }}>
+                                    เงื่อนไขสำคัญในการรับสิ่งของ
+                                </div>
+                                <div style={{ fontSize: "11px", color: "#92400e", lineHeight: "1.5" }}>
+                                    โปรดมารับอาหารภายในช่วงเวลาที่กำหนด หากไม่มารับตามกำหนด ระบบจะทำการยกเลิกโดยอัตโนมัติ
                                 </div>
                             </div>
                         </div>
@@ -444,7 +517,7 @@ export default function FoodDetail() {
                                                 border: reserveQuantity === qty ? "1px solid #c084fc" : "1px solid #e2e8f0"
                                             }}
                                         >
-                                            {qty} ชิ้น
+                                            {qty} {food.unit || "ชิ้น"}
                                         </button>
                                     ))}
                                 </div>
@@ -525,7 +598,7 @@ const styleOne = {
     pageBg: {
         background: "linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)",
         minHeight: "100vh",
-        paddingBottom: "40px"
+        paddingBottom: "100px"
     },
     loading: {
         textAlign: "center",
@@ -567,9 +640,37 @@ const styleOne = {
     barTrack: { flex: 1, height: "6px", backgroundColor: "#e2e8f0", borderRadius: "3px", overflow: "hidden" },
     barFill: { height: "100%", backgroundColor: "#fbbf24", borderRadius: "3px" },
     reviewBubble: { backgroundColor: "#f8fafc", padding: "12px 14px", borderRadius: "14px", marginTop: "10px", border: "1px solid #f1f5f9" },
-    mainCtaBtn: { width: "100%", padding: "14px", borderRadius: "16px", backgroundColor: "#c084fc", color: "#fff", border: "none", fontSize: "16px", fontWeight: "700", cursor: "pointer", marginTop: "12px", transition: "all 0.2s ease" },
 
-    // Custom Pop-up Styles
+    stickyBottomBar: {
+        width: "100%",
+        maxWidth: "680px",
+        margin: "0 auto",
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(12px)",
+        padding: "16px 20px",
+        boxShadow: "0 -4px 20px rgba(192, 132, 252, 0.15)",
+        borderTop: "1px solid rgba(241, 245, 249, 0.8)",
+        borderTopLeftRadius: "20px",
+        borderTopRightRadius: "20px"
+    },
+    mainCtaBtn: {
+        width: "100%",
+        padding: "14px",
+        borderRadius: "16px",
+        backgroundColor: "#c084fc",
+        color: "#fff",
+        border: "none",
+        fontSize: "16px",
+        fontWeight: "700",
+        cursor: "pointer",
+        transition: "all 0.2s ease"
+    },
+
     centerModalBackdrop: {
         position: "fixed", inset: 0, zIndex: 999,
         backgroundColor: "rgba(51, 65, 85, 0.45)", backdropFilter: "blur(8px)",

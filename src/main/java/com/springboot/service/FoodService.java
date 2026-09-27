@@ -85,6 +85,7 @@ public class FoodService {
         if (foods.isEmpty()) {
             throw new ApplicationException("ไม่พบข้อมูลอาหาร", HttpStatus.NOT_FOUND);
         }
+        
         return foods.stream().map(food -> mapToDto(food, currentUserId)).toList();
     }
 
@@ -112,7 +113,7 @@ public class FoodService {
         food.setUnit(foodDto.getUnit());
 
         // แปลง quantity (Double) เป็น remainingQuantity (Integer) สำหรับค่าเริ่มต้น
-        int initialRemaining = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
+        double initialRemaining = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
         food.setRemainingQuantity(initialRemaining);
 
         food.setDescription(foodDto.getDescription());
@@ -164,18 +165,18 @@ public class FoodService {
         }
 
         // การจัดการจำนวน
-        int oldTotal = food.getQuantity() != null ? food.getQuantity().intValue() : 0;
-        int currentRemaining = food.getRemainingQuantity() != null ? food.getRemainingQuantity() : 0;
-        int reservedUnit = oldTotal - currentRemaining;
-        int newTotal = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
+        double oldTotal = food.getQuantity() != null ? food.getQuantity().intValue() : 0;
+        double currentRemaining = food.getRemainingQuantity() != null ? food.getRemainingQuantity() : 0;
+        double reservedUnit = oldTotal - currentRemaining;
+        double newTotal = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
 
         if (newTotal < reservedUnit) {
             throw new ApplicationException("ไม่สามารถปรับลดจำนวนทั้งหมดเป็น " + newTotal +
                     " เนื่องจากมีผู้จองอาหารไปแล้ว " + reservedUnit, HttpStatus.BAD_REQUEST);
         }
 
-        int totalDifference = newTotal - oldTotal;
-        int newRemaining = currentRemaining + totalDifference;
+        double totalDifference = newTotal - oldTotal;
+        double newRemaining = currentRemaining + totalDifference;
 
         // บันทึกจำนวนลง Entity
         food.setFoodName(foodDto.getFoodName());
