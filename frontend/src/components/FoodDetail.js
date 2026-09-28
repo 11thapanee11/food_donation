@@ -12,7 +12,8 @@ export default function FoodDetail() {
     const [food, setFood] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // State สำหรับการจอง
+    // State สำหรับการจองและการแจ้งเตือนเวลา
+    const [hasShownWarning, setHasShownWarning] = useState(false);
     const [showReserveModal, setShowReserveModal] = useState(false);
     const [reserveQuantity, setReserveQuantity] = useState(1);
     const [submitting, setSubmitting] = useState(false);
@@ -120,15 +121,25 @@ export default function FoodDetail() {
             const startMinutes = startH * 60 + startM;
             const endMinutes = endH * 60 + endM;
 
-            // เช็คว่าไม่อยู่ในช่วงเวลารับของ
-            if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
-                return { canBook: false, text: 'ไม่อยู่ในช่วงเวลารับของบริจาค' };
+            if (currentMinutes < startMinutes) {
+                return { canBook: false, text: 'ยังไม่ถึงช่วงเวลารับของบริจาค' };
+            }
+            if (currentMinutes > endMinutes) {
+                return { canBook: false, text: 'หมดเวลารับของบริจาคสำหรับวันนี้แล้ว' };
             }
 
-            // เช็คกรณีเหลือเวลาน้อยกว่าหรือเท่ากับ 4 ชั่วโมง (240 นาที) ก่อนถึงเวลาปิดรอบ
             const remainingMinutesToClose = endMinutes - currentMinutes;
-            if (remainingMinutesToClose <= 240 && remainingMinutesToClose >= 0) {
-                return { canBook: false, text: 'ปิดรับบริจาคเนื่องจากใกล้เวลาสิ้นสุด (น้อยกว่า 4 ชม.)' };
+
+            if (remainingMinutesToClose <= 240 && remainingMinutesToClose > 0) {
+                const hoursLeft = Math.floor(remainingMinutesToClose / 60);
+                const minsLeft = remainingMinutesToClose % 60;
+
+                return {
+                    canBook: true,
+                    hoursLeft,
+                    minsLeft,
+                    text: 'กดรับอาหารบริจาค'
+                };
             }
         }
 
@@ -136,6 +147,22 @@ export default function FoodDetail() {
     };
 
     const bookingStatus = getBookingStatus();
+
+    // เด้ง Popup แจ้งเตือนอัตโนมัติเมื่อเข้าเงื่อนไขใกล้หมดเวลา (และไม่ใช่เจ้าของ / ยังไม่ได้จอง / ยังไม่เคยแสดงผล)
+    useEffect(() => {
+        if (food && !isOwner && !food.isCurrentByUserBooked && !hasShownWarning && bookingStatus && bookingStatus.hoursLeft !== undefined) {
+            setHasShownWarning(true);
+            setAlertModal({
+                show: true,
+                title: "ใกล้หมดเวลารับของ",
+                message: `รายการนี้ใกล้ถึงเวลาปิดรับบริจาคแล้ว (เหลือเวลาอีก ${bookingStatus.hoursLeft} ชม. ${bookingStatus.minsLeft} นาที) โปรดรีบไปรับอาหารหรือติดต่อผู้บริจาคก่อนหมดเวลา`,
+                type: "info",
+                confirmText: "รับทราบ",
+                cancelText: null,
+                onConfirm: null
+            });
+        }
+    }, [food, isOwner, bookingStatus, hasShownWarning]);
 
     const totalReviews = reviews.length;
     const averageRating = totalReviews > 0
@@ -175,7 +202,11 @@ export default function FoodDetail() {
         fetch(`${BASE_URL}/bookings`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-            body: JSON.stringify({ foodId: incomingId, quantity: reserveQuantity })
+            body: JSON.stringify({
+                foodId: incomingId,
+                quantity: reserveQuantity,
+                unit: food?.unit
+            })
         })
             .then(res => res.json())
             .then(resData => {
@@ -577,9 +608,11 @@ export default function FoodDetail() {
                                         boxShadow: alertModal.type === 'error' ? '0 4px 14px rgba(244, 63, 94, 0.35)' : '0 4px 14px rgba(192, 132, 252, 0.35)'
                                     }}
                                     onClick={() => {
-                                        const action = alertModal.onConfirm;
                                         setAlertModal(prev => ({ ...prev, show: false }));
-                                        if (action) action();
+
+                                        if (typeof alertModal.onConfirm === 'function') {
+                                            alertModal.onConfirm();
+                                        }
                                     }}
                                 >
                                     {alertModal.confirmText}

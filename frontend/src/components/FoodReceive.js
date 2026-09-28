@@ -36,8 +36,8 @@ export default function FoodReceiveOptimized() {
                     const bookingsWithFood = await Promise.all(
                         bookingsData.map(async (booking, index) => {
                             const donorInfo = {
-                                donorName: index % 2 === 0 ? "ร้าน Happy Bakery" : "คุณสมชาย แบ่งปัน",
-                                pickupLocation: index % 2 === 0 ? "ซอยพหลโยธิน 34" : "คอนโด ABC ชั้น 1"
+                                donorName: booking.donorName || booking.food?.donorName || "ไม่ระบุชื่อผู้บริจาค",
+                                pickupLocation: booking.locationName || booking.food?.locationName || "ไม่ระบุสถานที่"
                             };
 
                             try {
@@ -45,10 +45,15 @@ export default function FoodReceiveOptimized() {
                                     headers: { "Authorization": `Bearer ${token}` }
                                 });
                                 const foodData = await foodRes.json();
+                                const fetchedFood = foodRes.ok ? (foodData.data || foodData) : null;
+
                                 return {
                                     ...booking,
-                                    donor: donorInfo,
-                                    food: foodRes.ok ? (foodData.data || foodData) : null
+                                    donor: {
+                                        ...donorInfo,
+                                        donorName: fetchedFood?.donorName || donorInfo.donorName
+                                    },
+                                    food: fetchedFood
                                 };
                             } catch (e) {
                                 return { ...booking, donor: donorInfo, food: null };
@@ -69,7 +74,7 @@ export default function FoodReceiveOptimized() {
 
     // แยกรายการตามสถานะ
     const currentBookings = bookings.filter(b => b.bookingStatus === 'pending');
-    
+
     // กรองประวัติรายการจองตามสถานะที่เลือกในตัวกรองย่อย
     const historyBookings = bookings.filter(b => {
         const isHistory = b.bookingStatus === 'completed' || b.bookingStatus === 'cancelled';
@@ -90,7 +95,7 @@ export default function FoodReceiveOptimized() {
         const date = new Date(dateString);
         const d = date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
         const t = date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
-        return `${d} (${t} น.)`;
+        return `${d} เวลา ${t} น.`;
     };
 
     const STATUS_CONFIG = {
@@ -99,7 +104,7 @@ export default function FoodReceiveOptimized() {
         cancelled: { text: "ยกเลิก", color: "#B91C1C", bgColor: "#FEF2F2", borderColor: "#FECACA" }
     };
 
-    {/* ==================== 1. Render สำหรับ Tab: รายการจอง ( Active Grid ) ==================== */}
+    {/* ==================== 1. Render สำหรับ Tab: รายการจอง ( Active Grid ) ==================== */ }
     const renderCurrentBookings = () => {
         if (currentBookings.length === 0) {
             return (
@@ -174,7 +179,7 @@ export default function FoodReceiveOptimized() {
         );
     };
 
-    {/* ==================== 2. Render สำหรับ Tab: ประวัติรายการจอง ( History List ) ==================== */}
+    {/* ==================== 2. Render สำหรับ Tab: ประวัติรายการจอง ( History List ) ==================== */ }
     const renderHistoryBookings = () => {
         return (
             <div>
@@ -225,41 +230,43 @@ export default function FoodReceiveOptimized() {
                     </div>
                 ) : (
                     <div style={styles.historyListContainer}>
-                        {[...historyBookings].reverse().map((booking) => {
-                            const food = booking.food;
-                            const status = STATUS_CONFIG[booking.bookingStatus] || STATUS_CONFIG.completed;
+                        {[...historyBookings]
+                            .sort((a, b) => b.bookingDate - a.bookingDate) // หรือเทียบจากวันที่ bookingDate
+                            .map((booking) => {
+                                const food = booking.food;
+                                const status = STATUS_CONFIG[booking.bookingStatus] || STATUS_CONFIG.completed;
 
-                            return (
-                                <div key={booking.id} style={styles.historyRow}>
-                                    <img src={`${BASE_URL}${food?.foodImage}`} alt={food?.foodName} style={styles.historyThumb} />
-                                    
-                                    <div style={styles.historyMainInfo}>
-                                        <div style={styles.historyHeaderRow}>
-                                            <h4 style={styles.historyFoodName}>{food?.foodName}</h4>
-                                            <span style={{ ...styles.statusBadgeCompact, backgroundColor: status.bgColor, color: status.color, border: `1px solid ${status.borderColor}` }}>
-                                                {status.text}
-                                            </span>
+                                return (
+                                    <div key={booking.id} style={styles.historyRow}>
+                                        <img src={`${BASE_URL}${food?.foodImage}`} alt={food?.foodName} style={styles.historyThumb} />
+
+                                        <div style={styles.historyMainInfo}>
+                                            <div style={styles.historyHeaderRow}>
+                                                <h4 style={styles.historyFoodName}>{food?.foodName}</h4>
+                                                <span style={{ ...styles.statusBadgeCompact, backgroundColor: status.bgColor, color: status.color, border: `1px solid ${status.borderColor}` }}>
+                                                    {status.text}
+                                                </span>
+                                            </div>
+
+                                            <div style={styles.historyMetaRow}>
+                                                <span>จองเมื่อ: {formatDateTime(booking.bookingDate)}</span>
+                                                <span>•</span>
+                                                <span>จำนวน: {booking.bookingQuantity} {booking.bookingUnit} </span>
+                                                <span>•</span>
+                                                <span>ผู้บริจาค: {booking.donor?.donorName}</span>
+                                            </div>
                                         </div>
 
-                                        <div style={styles.historyMetaRow}>
-                                            <span>จองเมื่อ: {formatDateTime(booking.bookingDate)}</span>
-                                            <span>•</span>
-                                            <span>จำนวน: {booking.bookingQuantity} {booking.bookingUnit} </span>
-                                            <span>•</span>
-                                            <span>ผู้บริจาค: {booking.donor?.donorName}</span>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            style={styles.historyBtn}
+                                            onClick={() => navigate('/booking-detail', { state: { id: booking.bookingId, fromPage: '/receive', bookingStatus: booking.bookingStatus } })}
+                                        >
+                                            ดูรายละเอียด
+                                        </button>
                                     </div>
-
-                                    <button
-                                        type="button"
-                                        style={styles.historyBtn}
-                                        onClick={() => navigate('/booking-detail', { state: { id: booking.bookingId, fromPage: '/receive', bookingStatus: booking.bookingStatus } })}
-                                    >
-                                        ดูรายละเอียด
-                                    </button>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
                     </div>
                 )}
             </div>
@@ -269,7 +276,7 @@ export default function FoodReceiveOptimized() {
     return (
         <div style={styles.fullWidthWrapper}>
             <div style={{ ...styles.container, padding: isMobile ? "20px 16px" : "36px 20px" }}>
-                
+
                 {/* Header Section */}
                 <div style={styles.header}>
                     <h1 style={{ ...styles.title, fontSize: isMobile ? "24px" : "28px" }}>

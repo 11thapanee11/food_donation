@@ -120,7 +120,7 @@ export default function ListDonorFood() {
             borderColor: "#E2E8F0"
         },
         disable: {
-            text: "ซ่อนการแสดงผล",
+            text: "ถูกปิดการแสดงผล",
             color: "#B91C1C",
             bgColor: "#FEF2F2",
             borderColor: "#FECACA"
@@ -283,7 +283,8 @@ export default function ListDonorFood() {
                             { key: "all", label: "ทั้งหมด" },
                             { key: "available", label: "เปิดรับบริจาค" },
                             { key: "closed", label: "ปิดการรับบริจาค" },
-                            { key: "expired", label: "หมดอายุ" }
+                            { key: "expired", label: "หมดอายุ" },
+                            { key: "disable", label: "ถูกปิดการแสดงผล" }
                         ].map((tab) => (
                             <button
                                 key={tab.key}

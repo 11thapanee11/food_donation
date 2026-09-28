@@ -32,7 +32,7 @@ public class ReportController {
     public ResponseEntity<ApiResponse<String>> addReport(
             @RequestHeader("Authorization") String authHeader,
             @ModelAttribute ReportDto dto,
-            @RequestParam(value = "report_image", required = false) MultipartFile image) {
+            @RequestParam(value = "fileImage", required = false) MultipartFile image) {
 
         if (dto.getBookingId() == null) {
             throw new ApplicationException("ไม่สามารถบันทึกข้อมูลได้", HttpStatus.BAD_REQUEST);

@@ -62,17 +62,20 @@ export default function FoodForm() {
         setPopup({ show: false, title: "", message: "", type: "success", onConfirm: null, inputValue: "" });
     };
 
-    const showAutoPopup = (title, message, callback) => {
+    const showAutoPopup = (title, message, type = "success", callback) => {
         setPopup({
             show: true,
             title,
             message,
-            type: "success",
+            type: type,
             onConfirm: null
         });
         setTimeout(() => {
-            closePopup();
-            if (callback) callback();
+            setPopup(prev => ({ ...prev, show: false }));
+            setTimeout(() => {
+                closePopup();
+                if (callback) callback();
+            }, 300);
         }, 1500);
     };
 
@@ -252,7 +255,7 @@ export default function FoodForm() {
                         show: true,
                         title: "ไม่สามารถเข้าถึงตำแหน่งได้",
                         message: "กรุณาเปิดสิทธิ์การใช้งานตำแหน่งในเบราว์เซอร์ของคุณ",
-                        type: "success",
+                        type: "error",
                         onConfirm: closePopup
                     });
                 },
@@ -279,7 +282,7 @@ export default function FoodForm() {
                     });
                     const resData = await response.json();
                     if (resData.success) {
-                        showAutoPopup("ลบรายการสำเร็จ", "รายการอาหารของคุณถูกลบเรียบร้อยแล้ว", () => navigate("/my-foods"));
+                        showAutoPopup("ลบรายการสำเร็จ", "รายการอาหารของคุณถูกลบเรียบร้อยแล้ว", "success", () => navigate("/my-foods"));
                     } else {
                         throw new Error(resData.message || "ไม่สามารถลบได้");
                     }
@@ -309,7 +312,13 @@ export default function FoodForm() {
             inputPlaceholder: "กรอกรหัส 6 หลัก...",
             onConfirm: (code) => {
                 if (!code || code.length !== 6 || isNaN(code)) {
-                    alert("กรุณากรอกรหัสตัวเลข 6 หลักให้ถูกต้อง");
+                    setPopup({
+                        show: true,
+                        title: "ข้อมูลไม่ถูกต้อง",
+                        message: "กรุณากรอกรหัสตัวเลข 6 หลักให้ครบถ้วน",
+                        type: "error",
+                        onConfirm: closePopup
+                    });
                     return;
                 }
                 closePopup();
@@ -324,7 +333,7 @@ export default function FoodForm() {
                     .then(res => res.json())
                     .then(resData => {
                         if (resData.success) {
-                            showAutoPopup("ส่งมอบสำเร็จ!", "ระบบบันทึกประวัติการส่งมอบเรียบร้อยแล้ว");
+                            showAutoPopup("ส่งมอบสำเร็จ!", "ระบบบันทึกประวัติการส่งมอบเรียบร้อยแล้ว", "success");
                         } else {
                             throw new Error(resData.message || "รหัสไม่ถูกต้อง");
                         }
@@ -354,6 +363,14 @@ export default function FoodForm() {
 
     const handleNextStep = (e) => {
         if (e) e.preventDefault();
+
+        // ถ้าไม่ได้อยู่ในโหมดแก้ไข ให้ข้ามการตรวจฟิลด์แล้วไปสเต็ปถัดไปได้เลย
+        if (!isEditable) {
+            setErrors({});
+            setCurrentStep((prev) => Math.min(prev + 1, 3));
+            return;
+        }
+
         const newErrors = {};
 
         if (currentStep === 1) {
@@ -440,7 +457,7 @@ export default function FoodForm() {
             .then((result) => {
                 if (result.success) {
                     const successTitle = isEditMode ? "แก้ไขรายการสำเร็จ!" : "สร้างรายการสำเร็จ!";
-                    showAutoPopup(successTitle, "ระบบได้บันทึกข้อมูลรายการอาหารของคุณเรียบร้อยแล้ว", () => {
+                    showAutoPopup(successTitle, "ระบบได้บันทึกข้อมูลรายการอาหารของคุณเรียบร้อยแล้ว", "success", () => {
                         if (isEditMode) {
                             setIsEditable(false);
                             loadFoodData();
@@ -800,7 +817,6 @@ export default function FoodForm() {
                                             value={formData.unit}
                                             onChange={(e) => {
                                                 handleChange(e);
-                                                // อัปเดตหน่วยให้สอดคล้องกันโดยอัตโนมัติ (หากต้องการ)
                                             }}
                                             disabled={!isEditable}
                                             style={{
@@ -836,7 +852,6 @@ export default function FoodForm() {
                                             }}
                                             onChange={handleChange}
                                         />
-                                        {/* แสดงหน่วยต่อท้ายอัตโนมัติตามช่องจำนวนบริจาคด้านซ้าย */}
                                         <span style={{ fontSize: "14px", fontWeight: "600", color: !isEditable ? "#94A3B8" : "#64748B", minWidth: "40px" }}>
                                             {formData.unit || "ชิ้น"}
                                         </span>
@@ -892,7 +907,7 @@ export default function FoodForm() {
                                     lineHeight: "1.6",
                                     fontWeight: "500",
                                 }}>
-                                    ช่วงเวลานี้จะเปิดให้ผู้รับมารับของบริจาคตามรอบประจำวัน ท่านสามารถปรับเปลี่ยนสถานะรายการได้ตามความสะดวกในภายหลัง
+                                    ช่วงเวลานี้จะเปิดให้ผู้รับมารับอาหารบริจาคตามรอบประจำวัน ท่านสามารถปรับเปลี่ยนสถานะรายการได้ตามความสะดวกในภายหลัง
                                 </p>
                             </div>
 
@@ -978,6 +993,18 @@ export default function FoodForm() {
                 <div style={styles.modalOverlay}>
                     <div style={styles.modalCard}>
                         <div style={styles.modalHeader}>
+                            <div style={{
+                                ...styles.modalHeaderIcon,
+                                backgroundColor: popup.type === 'success' ? '#f0fdf4' : popup.type === 'error' ? '#fff1f2' : '#faf5ff',
+                                border: popup.type === 'success' ? '1px solid #bbf7d0' : popup.type === 'error' ? '1px solid #fecdd3' : '1px solid #e9d5ff'
+                            }}>
+                                <span className="material-symbols-outlined" style={{
+                                    fontSize: "28px",
+                                    color: popup.type === 'success' ? '#10b981' : popup.type === 'error' ? '#f43f5e' : '#c084fc'
+                                }}>
+                                    {popup.type === 'success' ? 'check_circle' : popup.type === 'error' ? 'error_outline' : popup.type === 'input' ? 'lock' : 'info'}
+                                </span>
+                            </div>
                             <h3 style={styles.modalTitle}>{popup.title}</h3>
                         </div>
                         <div style={styles.modalBody}>
@@ -990,24 +1017,31 @@ export default function FoodForm() {
                                     id="modalInputCode"
                                     style={styles.modalInput}
                                     autoFocus
+                                    onInput={(e) => {
+                                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                                    }}
                                 />
                             )}
                         </div>
-                        {(popup.type === "confirm" || popup.type === "input") && (
+                        {(popup.type === "confirm" || popup.type === "input" || popup.type === "error") && (
                             <div style={styles.modalFooter}>
-                                <button style={styles.modalCancelBtn} onClick={closePopup}>ยกเลิก</button>
+                                {popup.type !== "error" && (
+                                    <button style={styles.modalCancelBtn} onClick={closePopup}>ยกเลิก</button>
+                                )}
                                 <button
                                     style={styles.modalConfirmBtn}
                                     onClick={() => {
                                         if (popup.type === "input") {
                                             const val = document.getElementById("modalInputCode").value;
                                             popup.onConfirm(val);
-                                        } else {
+                                        } else if (popup.onConfirm) {
                                             popup.onConfirm();
+                                        } else {
+                                            closePopup();
                                         }
                                     }}
                                 >
-                                    ยืนยัน
+                                    ตกลง
                                 </button>
                             </div>
                         )}
@@ -1391,6 +1425,19 @@ const styles = {
     },
     modalHeader: {
         marginBottom: "12px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+    },
+    modalHeaderIcon: {
+        width: "56px",
+        height: "56px",
+        borderRadius: "50%",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: "12px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
     },
     modalTitle: {
         fontSize: "18px",

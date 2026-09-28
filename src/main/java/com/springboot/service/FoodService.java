@@ -71,7 +71,7 @@ public class FoodService {
         }
 
         if (currentUserId != null && currentUserId > 0) {
-            boolean hasBooked = bookingRepository.existsByFood_FoodIdAndRecipient_UserId(food.getFoodId(), currentUserId);
+            boolean hasBooked = bookingRepository.existsCompletedBooking(food.getFoodId(), currentUserId);
             dto.setHasUserBooked(hasBooked);
         } else {
             dto.setHasUserBooked(false); // ถ้าไม่ได้ล็อกอิน (Guest) ค่าจะเป็น false เสมอ

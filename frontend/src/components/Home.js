@@ -9,16 +9,21 @@ export default function Home() {
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
-    const [userLocation, setUserLocation] = useState(null);
 
-    // State สำหรับตัวกรองระยะทางและวันหมดอายุ
+    // ตัวกรองสถานะ
+    const [filterStatus, setFilterStatus] = useState("all"); // 'all', 'available', 'mine', 'booked'
+
+    // State สำหรับการแบ่งหน้า (Pagination)
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 9; // กำหนดแสดงสูงสุด 9 รายการต่อหน้า
+
+    const [userLocation, setUserLocation] = useState(null);
     const [maxDistance, setMaxDistance] = useState("all");
     const [maxExpiryDays, setMaxExpiryDays] = useState("all");
 
     const navigate = useNavigate();
     const BASE_URL = "http://localhost:8082";
 
-    // ดึง ID ของผู้ใช้ปัจจุบันจาก LocalStorage (สำหรับเช็คอาหารของตัวเองหรือประวัติการจอง)
     const token = localStorage.getItem("accessToken");
     let currentUserId = 0;
 
@@ -27,7 +32,6 @@ export default function Home() {
         currentUserId = Number(decoded?.sub) || 0;
     }
 
-    // ขอพิกัดตำแหน่งปัจจุบันของผู้ใช้งาน (GPS)
     useEffect(() => {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -44,7 +48,6 @@ export default function Home() {
         }
     }, []);
 
-    // 1. โหลดหมวดหมู่
     useEffect(() => {
         fetch(`${BASE_URL}/food-categories`)
             .then(res => {
@@ -63,7 +66,6 @@ export default function Home() {
             .finally(() => setLoading(false));
     }, []);
 
-    // 2. โหลดรายการอาหาร
     useEffect(() => {
         if (categories.length === 0) return;
 
@@ -91,6 +93,7 @@ export default function Home() {
             .then(resData => {
                 if (resData.success) {
                     setFoods(resData.data || []);
+                    setCurrentPage(1); // Reset หน้าเมื่อเปลี่ยนหมวดหมู่
                 } else {
                     throw new Error(resData.message || "โหลดข้อมูลอาหารไม่สำเร็จ");
                 }
@@ -100,7 +103,24 @@ export default function Home() {
 
     }, [selectedCategory, categories]);
 
-    // คำนวณระยะทางแบบ Haversine Formula
+    const isPickupTimeEnded = (pickupEndTime) => {
+        if (!pickupEndTime) return false;
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const [endH, endM] = pickupEndTime.substring(0, 5).split(':').map(Number);
+        return currentMinutes > (endH * 60 + endM);
+    };
+
+    const isUpcomingPickupTime = (pickupStartTime) => {
+        if (!pickupStartTime) return false;
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const [startH, startM] = pickupStartTime.substring(0, 5).split(':').map(Number);
+        return currentMinutes < (startH * 60 + startM);
+    };
+
     const getDistanceKm = (lat1, lon1, lat2, lon2) => {
         if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
         const R = 6371;
@@ -120,7 +140,6 @@ export default function Home() {
         return `${distance.toFixed(1)} กม.`;
     };
 
-    // คำนวณจำนวนวันที่เหลือก่อนหมดอายุ
     const getDaysRemaining = (expiryDateString) => {
         if (!expiryDateString) return null;
         const now = new Date();
@@ -145,15 +164,28 @@ export default function Home() {
         }
     };
 
-    // 3. กรองข้อมูล + เรียงลำดับตามวันหมดอายุ
+    // 3. กรองข้อมูลทั้งหมด
     const filteredFoods = foods
         .filter(f => {
             const matchesSearch = f.foodName.toLowerCase().includes(search.toLowerCase());
             if (!matchesSearch) return false;
 
             const daysInfo = getDaysRemaining(f.expiryDate);
-
             if (!daysInfo || daysInfo.isExpired || daysInfo.days < 0) {
+                return false;
+            }
+
+            const isMyFood = f.donorId === currentUserId || (f.donor && f.donor.userId === currentUserId);
+            const hasBooked = f.hasUserBooked || false;
+            const timeEnded = isPickupTimeEnded(f.pickupEndTime);
+            const isUpcoming = isUpcomingPickupTime(f.pickupStartTime);
+            const isSoldOut = f.remainingQuantity <= 0 || f.foodStatus === "booked";
+
+            if (filterStatus === "available") {
+                if (isMyFood || hasBooked || timeEnded || isUpcoming || isSoldOut) return false;
+            } else if (filterStatus === "mine" && !isMyFood) {
+                return false;
+            } else if (filterStatus === "booked" && !hasBooked) {
                 return false;
             }
 
@@ -175,6 +207,17 @@ export default function Home() {
             return dateA - dateB;
         });
 
+    // คำนวณข้อมูลสำหรับการแบ่งหน้า (Pagination)
+    const totalPages = Math.ceil(filteredFoods.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentFoods = filteredFoods.slice(indexOfFirstItem, indexOfLastItem);
+
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        scrollToFoodSection();
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -191,7 +234,7 @@ export default function Home() {
             hour12: false
         }).format(date);
 
-        return `${formattedDate} (${formattedTime} น.)`;
+        return `${formattedDate} เวลา ${formattedTime} น.`;
     };
 
     if (loading) {
@@ -246,11 +289,11 @@ export default function Home() {
                             type="text"
                             placeholder="ค้นหารายการอาหารบริจาคที่คุณสนใจ..."
                             value={search}
-                            onChange={e => setSearch(e.target.value)}
+                            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
                             style={styles.searchInput}
                         />
                         {search && (
-                            <button onClick={() => setSearch('')} style={styles.clearBtn}>
+                            <button onClick={() => { setSearch(''); setCurrentPage(1); }} style={styles.clearBtn}>
                                 <i className="material-icons-outlined" style={{ fontSize: '18px' }}>close</i>
                             </button>
                         )}
@@ -266,7 +309,7 @@ export default function Home() {
                         <i className="material-icons-outlined" style={{ color: '#c48ffd' }}>grid_view</i>
                         หมวดหมู่รายการ
                     </h2>
-                    <span style={styles.itemCount}>พบ {filteredFoods.length} รายการ</span>
+                    <span style={styles.itemCount}>พบทั้งหมด {filteredFoods.length} รายการ</span>
                 </div>
 
                 <div style={styles.categoryContainer}>
@@ -293,17 +336,36 @@ export default function Home() {
                             ตัวกรองข้อมูล:
                         </span>
 
+                        {/* ตัวกรองสถานะอาหาร */}
+                        <div style={styles.selectWrapper}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#c084fc' }}>
+                                category
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>ประเภทรายการ:</span>
+                            <select
+                                value={filterStatus}
+                                onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                                style={styles.filterSelect}
+                            >
+                                <option value="all">อาหารทั้งหมด</option>
+                                <option value="available">อาหารที่ยังสามารถรับได้</option>
+                                <option value="mine">อาหารที่ฉันบริจาค</option>
+                                <option value="booked">อาหารที่ฉันจองแล้ว</option>
+                            </select>
+                        </div>
+
                         {/* กรองระยะทาง */}
                         <div style={styles.selectWrapper}>
                             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#0284c7' }}>
                                 distance
                             </span>
+                            <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>ระยะทาง:</span>
                             <select
                                 value={maxDistance}
-                                onChange={(e) => setMaxDistance(e.target.value)}
-                                style={styles.filterSelect}
+                                onChange={(e) => { setMaxDistance(e.target.value); setCurrentPage(1); }}
+                                style={{ ...styles.filterSelect, paddingRight: '30px' }}
                             >
-                                <option value="all">ทั้งหมด</option>
+                                <option value="all">ทุกระยะทาง</option>
                                 <option value="1">ไม่เกิน 1 กม.</option>
                                 <option value="3">ไม่เกิน 3 กม.</option>
                                 <option value="5">ไม่เกิน 5 กม.</option>
@@ -316,19 +378,18 @@ export default function Home() {
                             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ea580c' }}>
                                 schedule
                             </span>
+                            <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>ช่วงเวลาหมดอายุ:</span>
                             <select
                                 value={maxExpiryDays}
-                                onChange={(e) => setMaxExpiryDays(e.target.value)}
+                                onChange={(e) => { setMaxExpiryDays(e.target.value); setCurrentPage(1); }}
                                 style={{ ...styles.filterSelect, paddingRight: '30px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
-                                <option value="0">วันนี้เท่านั้น</option>
-                                <option value="1">ไม่เกิน 1 วัน</option>
-                                <option value="3">ไม่เกิน 3 วัน</option>
-                                <option value="5">ไม่เกิน 5 วัน</option>
-                                <option value="7">ไม่เกิน 7 วัน</option>
-                                <option value="14">ไม่เกิน 14 วัน</option>
-                                <option value="30">ไม่เกิน 30 วัน</option>
+                                <option value="0">หมดอายุวันนี้</option>
+                                <option value="1">ภายใน 1 วัน</option>
+                                <option value="3">ภายใน 3 วัน</option>
+                                <option value="5">ภายใน 5 วัน</option>
+                                <option value="7">ภายใน 7 วัน</option>
                             </select>
                         </div>
                     </div>
@@ -336,17 +397,16 @@ export default function Home() {
 
                 {/* Food Grid */}
                 <div style={styles.foodGrid}>
-                    {filteredFoods.length > 0 ? (
-                        filteredFoods.map(food => {
+                    {currentFoods.length > 0 ? (
+                        currentFoods.map(food => {
                             const daysInfo = getDaysRemaining(food.expiryDate);
 
-                            // ตรวจสอบเงื่อนไข: อาหารของตัวเองหรือไม่
                             const isMyFood = food.donorId === currentUserId || (food.donor && food.donor.userId === currentUserId);
-
-                            // ตรวจสอบเงื่อนไข: เคยจองแล้วหรือไม่ (รองรับฟิลด์ hasUserBooked จาก Backend)
                             const hasBooked = food.hasUserBooked || false;
+                            const timeEnded = isPickupTimeEnded(food.pickupEndTime);
+                            const isUpcoming = isUpcomingPickupTime(food.pickupStartTime);
 
-                            const isBooked = food.isBooked || food.foodStatus === "booked" || food.remainingQuantity <= 0 || hasBooked || isMyFood;
+                            const isSoldOut = food.remainingQuantity <= 0 || food.foodStatus === "booked";
                             const unitName = food.unit || "ชิ้น";
 
                             const distKm = userLocation && food.latitude && food.longitude
@@ -356,13 +416,9 @@ export default function Home() {
                             return (
                                 <div
                                     key={food.id || food.foodId}
-                                    style={{
-                                        ...styles.foodCard,
-                                        ...(isBooked ? styles.bookedCard : {})
-                                    }}
+                                    style={styles.foodCard}
                                     onClick={() => navigate('/food-detail', { state: { id: food.id || food.foodId, fromPage: '/' } })}
                                 >
-                                    {/* Image Box */}
                                     <div style={styles.cardImageWrapper}>
                                         <img
                                             src={food.foodImage && food.foodImage.startsWith("http") ? food.foodImage : `${BASE_URL}${food.foodImage}`}
@@ -376,21 +432,30 @@ export default function Home() {
 
                                         <div style={styles.imageOverlay} />
 
-                                        {/* Tag สถานะ: อาหารของคุณ / คุณจองแล้ว / จองแล้ว / ใกล้หมดอายุ */}
                                         {isMyFood ? (
                                             <span style={{ ...styles.bookedBadge, backgroundColor: "#0284c7" }}>
                                                 <i className="material-icons-outlined" style={{ fontSize: '14px' }}>person</i>
-                                                บริจาคของคุณ
+                                                อาหารของคุณ
                                             </span>
                                         ) : hasBooked ? (
                                             <span style={{ ...styles.bookedBadge, backgroundColor: "#059669" }}>
                                                 <i className="material-icons-outlined" style={{ fontSize: '14px' }}>done_all</i>
-                                                คุณจองแล้ว
+                                                คุณได้จองรายการนี้แล้ว
                                             </span>
-                                        ) : isBooked ? (
+                                        ) : isUpcoming ? (
+                                            <span style={{ ...styles.bookedBadge, backgroundColor: "#d97706" }}>
+                                                <i className="material-icons-outlined" style={{ fontSize: '14px' }}>hourglass_empty</i>
+                                                ยังไม่ถึงเวลารับอาหาร
+                                            </span>
+                                        ) : timeEnded ? (
+                                            <span style={{ ...styles.bookedBadge, backgroundColor: "#64748b" }}>
+                                                <i className="material-icons-outlined" style={{ fontSize: '14px' }}>schedule</i>
+                                                หมดเวลารับอาหารวันนี้แล้ว
+                                            </span>
+                                        ) : isSoldOut ? (
                                             <span style={styles.bookedBadge}>
                                                 <i className="material-icons-outlined" style={{ fontSize: '14px' }}>check_circle</i>
-                                                จองแล้ว / สิทธิ์เต็ม
+                                                จองเต็มแล้ว
                                             </span>
                                         ) : daysInfo && (
                                             <span style={{
@@ -403,32 +468,28 @@ export default function Home() {
                                         )}
                                     </div>
 
-                                    {/* Content Box */}
                                     <div style={styles.cardContent}>
                                         <h3 style={styles.foodNameText}>{food.foodName}</h3>
 
                                         <div style={styles.infoStack}>
-                                            {/* วันหมดอายุ */}
                                             <div style={styles.infoLine}>
                                                 <i className="material-icons-outlined" style={styles.iconStyle}>event_available</i>
                                                 <div style={styles.infoTextGroup}>
-                                                    <span style={styles.labelSpan}>หมดอายุ</span>
+                                                    <span style={styles.labelSpan}>วันหมดอายุ</span>
                                                     <span style={styles.valueSpan}>{formatDate(food.expiryDate)}</span>
                                                 </div>
                                             </div>
 
-                                            {/* ช่วงเวลารับของ */}
                                             {(food.pickupStartTime && food.pickupEndTime) && (
                                                 <div style={styles.infoLine}>
                                                     <i className="material-icons-outlined" style={styles.iconStyle}>access_time</i>
                                                     <div style={styles.infoTextGroup}>
-                                                        <span style={styles.labelSpan}>เวลารับอาหาร</span>
+                                                        <span style={styles.labelSpan}>ช่วงเวลารับอาหาร</span>
                                                         <span style={styles.valueSpan}>{food.pickupStartTime} - {food.pickupEndTime} น.</span>
                                                     </div>
                                                 </div>
                                             )}
 
-                                            {/* จำนวนคงเหลือ & ทั้งหมด */}
                                             <div style={styles.infoLine}>
                                                 <i className="material-icons-outlined" style={styles.iconStyle}>inventory_2</i>
                                                 <div style={styles.infoTextGroup}>
@@ -439,16 +500,14 @@ export default function Home() {
                                                 </div>
                                             </div>
 
-                                            {/* จำนวนจำกัดต่อคน */}
                                             <div style={styles.infoLine}>
                                                 <i className="material-icons-outlined" style={styles.iconStyle}>person_outline</i>
                                                 <div style={styles.infoTextGroup}>
-                                                    <span style={styles.labelSpan}>จำกัดต่อคน</span>
+                                                    <span style={styles.labelSpan}>จำนวนจำกัดต่อคน</span>
                                                     <span style={styles.valueSpan}>{food.limitPerPerson} {unitName}</span>
                                                 </div>
                                             </div>
 
-                                            {/* ระยะทาง */}
                                             <div style={styles.infoLine}>
                                                 <i className="material-icons-outlined" style={styles.iconStyle}>near_me</i>
                                                 <div style={styles.infoTextGroup}>
@@ -460,22 +519,27 @@ export default function Home() {
                                             </div>
                                         </div>
 
-                                        {/* ปุ่มการทำงาน */}
                                         <button
                                             type="button"
                                             style={{
                                                 ...styles.detailBtn,
-                                                backgroundColor: isMyFood ? "#0284c7" : hasBooked ? "#059669" : food.remainingUnit <= 0 ? "#64748b" : "#a855f7"
+                                                backgroundColor: isMyFood ? "#0284c7" : hasBooked ? "#059669" : isUpcoming ? "#d97706" : timeEnded ? "#64748b" : isSoldOut ? "#64748b" : "#a855f7"
                                             }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 navigate('/food-detail', { state: { id: food.id || food.foodId, fromPage: '/', preloadedHasBooked: food.hasUserBooked } });
                                             }}
                                         >
-                                            <span>
-                                                {isMyFood ? "ดูรายละเอียด" : hasBooked ? "ดูรายละเอียด" : food.remainingUnit <= 0 ? "หมดแล้ว (ดูรายละเอียด)" : "ขอรับบริจาค"}
+                                            <span style={{ color: "#ffffff", fontWeight: "600" }}>
+                                                {isMyFood ? "ดูรายละเอียด" :
+                                                    hasBooked ? "ดูรายละเอียด" :
+                                                        isUpcoming ? "ดูรายละเอียด" :
+                                                            timeEnded ? "ดูรายละเอียด" :
+                                                                isSoldOut ? "ดูรายละเอียด" : "ขอรับบริจาค"}
                                             </span>
-                                            <i className="material-icons-outlined" style={{ fontSize: "18px" }}>arrow_forward</i>
+                                            <i className="material-icons-outlined" style={{ fontSize: "18px", color: "#ffffff" }}>
+                                                arrow_forward
+                                            </i>
                                         </button>
                                     </div>
                                 </div>
@@ -485,10 +549,54 @@ export default function Home() {
                         <div style={styles.noDataCard}>
                             <i className="material-icons-outlined" style={{ fontSize: '56px', color: '#cbd5e1' }}>search_off</i>
                             <h3 style={{ margin: '12px 0 4px 0', color: '#475569', fontSize: '18px' }}>ไม่พบรายการอาหาร</h3>
-                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px' }}>ลองปรับเปลี่ยนเงื่อนไขระยะทางหรือวันหมดอายุดูนะครับ</p>
+                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px' }}>ลองปรับเปลี่ยนตัวกรองสถานะหรือเงื่อนไขการค้นหาดูนะครับ</p>
                         </div>
                     )}
                 </div>
+
+                {/* --- Pagination (ปุ่มเลื่อนหน้า) --- */}
+                {totalPages > 1 && (
+                    <div style={styles.paginationContainer}>
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            style={{
+                                ...styles.pageBtn,
+                                ...(currentPage === 1 ? styles.pageBtnDisabled : {})
+                            }}
+                        >
+                            <i className="material-icons-outlined" style={{ fontSize: '18px' }}>chevron_left</i>
+                            ก่อนหน้า
+                        </button>
+
+                        <div style={styles.pageNumbers}>
+                            {Array.from({ length: totalPages }, (_, index) => index + 1).map(number => (
+                                <button
+                                    key={number}
+                                    onClick={() => handlePageChange(number)}
+                                    style={{
+                                        ...styles.pageNumBtn,
+                                        ...(currentPage === number ? styles.pageNumBtnActive : {})
+                                    }}
+                                >
+                                    {number}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            style={{
+                                ...styles.pageBtn,
+                                ...(currentPage === totalPages ? styles.pageBtnDisabled : {})
+                            }}
+                        >
+                            ถัดไป
+                            <i className="material-icons-outlined" style={{ fontSize: '18px' }}>chevron_right</i>
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -737,10 +845,6 @@ const styles = {
         display: "flex",
         flexDirection: "column",
     },
-    bookedCard: {
-        opacity: 0.85,
-        backgroundColor: "#fafafa",
-    },
     cardImageWrapper: {
         position: "relative",
         width: "100%",
@@ -869,12 +973,6 @@ const styles = {
         gap: "8px",
         boxShadow: "0 4px 10px rgba(168, 85, 247, 0.2)",
     },
-    disabledBtn: {
-        backgroundColor: "#cbd5e1",
-        color: "#64748b",
-        cursor: "not-allowed",
-        boxShadow: "none",
-    },
     noDataCard: {
         gridColumn: "1 / -1",
         backgroundColor: "#ffffff",
@@ -882,6 +980,61 @@ const styles = {
         padding: "60px 20px",
         textAlign: "center",
         border: "1px solid #f1f5f9",
+    },
+    paginationContainer: {
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "12px",
+        marginTop: "40px",
+    },
+    pageBtn: {
+        padding: "8px 16px",
+        borderRadius: "10px",
+        border: "1px solid #cbd5e1",
+        backgroundColor: "#ffffff",
+        color: "#334155",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        outline: "none",
+    },
+    pageBtnDisabled: {
+        opacity: 0.5,
+        cursor: "not-allowed",
+        backgroundColor: "#f1f5f9",
+        outline: "none",
+    },
+    pageNumbers: {
+        display: "flex",
+        gap: "6px",
+        outline: "none",
+    },
+    pageNumBtn: {
+        width: "38px",
+        height: "38px",
+        borderRadius: "10px",
+        border: "1px solid #cbd5e1",
+        backgroundColor: "#ffffff",
+        color: "#334155",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        outline: "none",
+    },
+    pageNumBtnActive: {
+        backgroundColor: "#c48ffd",
+        borderColor: "#c48ffd",
+        border: "1px solid #c48ffd",
+        color: "#ffffff",
+        boxShadow: "0 4px 10px rgba(196, 143, 253, 0.3)",
+        outline: "none",
     },
     centerState: {
         display: "flex",

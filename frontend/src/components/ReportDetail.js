@@ -17,6 +17,13 @@ export default function ReportDetail() {
         onConfirm: null
     });
 
+    // State สำหรับจัดการ Modal ขยายรูปภาพ
+    const [imageModal, setImageModal] = useState({
+        isOpen: false,
+        imageUrl: "",
+        title: ""
+    });
+
     const [isMobile, setIsMobile] = useState(
         typeof window !== 'undefined' ? window.innerWidth <= 768 : false
     );
@@ -167,14 +174,6 @@ export default function ReportDetail() {
         return `${formattedDate} ${formattedTime}`;
     };
 
-    const formatPickupDate = (dateString) => {
-        if (!dateString) return "-";
-        const cleanDate = dateString.split("T")[0];
-        const date = new Date(cleanDate);
-        if (isNaN(date.getTime())) return dateString;
-        return date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
-    };
-
     const formatPickupTime = (timeString) => {
         if (!timeString) return "-";
         return timeString.substring(0, 5);
@@ -245,7 +244,7 @@ export default function ReportDetail() {
 
                 {/* โครงสร้างเลย์เอ้าต์หลัก 2 คอลัมน์ */}
                 <div style={{ ...styles.contentWrapper, flexDirection: isMobile ? "column" : "row", gap: "24px" }}>
-                    
+
                     {/* คอลัมน์ซ้าย: รายละเอียดปัญหาที่แจ้ง + ข้อมูลการขอรับบริจาค */}
                     <div style={styles.columnSection}>
                         {/* การ์ดรายละเอียดปัญหา */}
@@ -265,13 +264,27 @@ export default function ReportDetail() {
                                 </div>
                                 <div style={styles.reportItemBlock}>
                                     <span style={styles.reportLabelTitle}>รูปภาพหลักฐานปัญหา:</span>
-                                    <div style={{ marginTop: '8px' }}>
+                                    <div style={{ marginTop: '8px', position: 'relative' }}>
                                         {report.reportImage ? (
-                                            <img
-                                                src={`http://localhost:8082${report.reportImage}`}
-                                                alt="Evidence"
-                                                style={styles.reportImage}
-                                            />
+                                            <>
+                                                <img
+                                                    src={`http://localhost:8082${report.reportImage}`}
+                                                    alt="Evidence"
+                                                    style={styles.reportImage}
+                                                />
+                                                <button
+                                                    onClick={() => setImageModal({
+                                                        isOpen: true,
+                                                        imageUrl: `http://localhost:8082${report.reportImage}`,
+                                                        title: "รูปภาพหลักฐานปัญหา"
+                                                    })}
+                                                    style={styles.floatingZoomBtn}
+                                                    title="ขยายรูปภาพ"
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>zoom_in</span>
+                                                    ขยาย
+                                                </button>
+                                            </>
                                         ) : (
                                             <span style={{ color: '#94A3B8', fontSize: '13px' }}>- ไม่มีรูปภาพหลักฐาน -</span>
                                         )}
@@ -289,7 +302,7 @@ export default function ReportDetail() {
                             <div style={styles.metaBody}>
                                 <div style={styles.metaRow}>
                                     <span style={styles.metaLabel}>จำนวนที่รับบริจาค :</span>
-                                    <span style={styles.metaValue}>{report.bookingDetail?.bookingQuantity|| 0} {report.bookingDetail?.bookingUnit || "ชิ้น"}</span>
+                                    <span style={styles.metaValue}>{report.bookingDetail?.bookingQuantity || 0} {report.bookingDetail?.bookingUnit || "ชิ้น"}</span>
                                 </div>
                                 <div style={styles.metaRow}>
                                     <span style={styles.metaLabel}>วันที่ทำการขอรับ :</span>
@@ -306,11 +319,25 @@ export default function ReportDetail() {
                                 <span className="material-symbols-outlined" style={styles.sectionTitleIcon}>fastfood</span>
                                 ข้อมูลรายการอาหาร
                             </h3>
-                            <img
-                                src={`http://localhost:8082${report.foodDetail?.foodImage}`}
-                                alt="Food"
-                                style={styles.mainImage}
-                            />
+                            <div style={{ position: 'relative', marginBottom: '16px' }}>
+                                <img
+                                    src={`http://localhost:8082${report.foodDetail?.foodImage}`}
+                                    alt="Food"
+                                    style={styles.mainImage}
+                                />
+                                <button
+                                    onClick={() => setImageModal({
+                                        isOpen: true,
+                                        imageUrl: `http://localhost:8082${report.foodDetail?.foodImage}`,
+                                        title: report.foodDetail?.foodName || "รูปภาพรายการอาหาร"
+                                    })}
+                                    style={styles.floatingZoomBtn}
+                                    title="ขยายรูปภาพ"
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>zoom_in</span>
+                                    ขยาย
+                                </button>
+                            </div>
                             <div style={styles.infoList}>
                                 <div>
                                     <span style={{ fontSize: "11px", color: "#9333EA", fontWeight: "600", backgroundColor: "#F3E8FF", padding: "3px 10px", borderRadius: "6px" }}>
@@ -363,8 +390,6 @@ export default function ReportDetail() {
                                         <div style={styles.infoValue}>{report.foodDetail?.locationName}</div>
                                     </div>
                                 </div>
-
-                                
                             </div>
                         </div>
                     </div>
@@ -411,7 +436,31 @@ export default function ReportDetail() {
 
             </div>
 
-            {/* Custom Modal Popup */}
+            {/* Modal สำหรับขยายรูปภาพ */}
+            {imageModal.isOpen && (
+                <div style={styles.modalOverlay} onClick={() => setImageModal({ isOpen: false, imageUrl: '', title: '' })}>
+                    <div style={styles.imageModalCard} onClick={(e) => e.stopPropagation()}>
+                        <div style={styles.imageModalHeader}>
+                            <h3 style={styles.modalTitle}>{imageModal.title}</h3>
+                            <button
+                                style={styles.closeBtn}
+                                onClick={() => setImageModal({ isOpen: false, imageUrl: '', title: '' })}
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div style={styles.imageModalBody}>
+                            <img
+                                src={imageModal.imageUrl}
+                                alt="Expanded Preview"
+                                style={styles.expandedImage}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Modal Popup สำหรับยืนยันการทำงาน */}
             {modalConfig.isOpen && (
                 <div style={styles.modalOverlay}>
                     <div style={styles.modalCard}>
@@ -556,19 +605,39 @@ const styles = {
         height: "100%",
         boxSizing: "border-box"
     },
-    mainImage: { 
-        width: '100%', 
-        height: '180px', 
-        objectFit: 'cover', 
+    mainImage: {
+        width: '100%',
+        height: '180px',
+        objectFit: 'cover',
         borderRadius: '14px',
-        marginBottom: '16px'
+        display: 'block'
     },
-    reportImage: { 
-        width: '100%', 
-        maxHeight: '180px', 
-        objectFit: 'cover', 
+    reportImage: {
+        width: '100%',
+        maxHeight: '180px',
+        objectFit: 'cover',
         borderRadius: '12px',
-        border: '1px solid #F1F5F9'
+        border: '1px solid #F1F5F9',
+        display: 'block'
+    },
+    floatingZoomBtn: {
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#FFFFFF',
+        border: 'none',
+        borderRadius: '8px',
+        padding: '6px 10px',
+        fontSize: '12px',
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        cursor: 'pointer',
+        backdropFilter: 'blur(4px)',
+        transition: 'background 0.2s',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
     },
     infoList: {
         display: "flex",
@@ -685,14 +754,16 @@ const styles = {
     buttonGroup: {
         display: 'flex',
         gap: '12px',
-        flexWrap: 'wrap'
+        flexWrap: 'nowrap',
+        alignItems: 'center'
     },
     btnAction: {
-        padding: '12px 20px',
+        padding: '12px 16px',
         borderRadius: '12px',
         border: 'none',
-        fontSize: '13px',
+        fontSize: '12px',
         fontWeight: '600',
+        whiteSpace: 'nowrap',
         transition: 'all 0.2s ease',
         cursor: 'pointer'
     },
@@ -719,11 +790,54 @@ const styles = {
         boxShadow: '0 10px 25px rgba(192, 132, 252, 0.2)',
         border: '1.5px solid #F3E8FF'
     },
+    imageModalCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: '20px',
+        width: '90%',
+        maxWidth: '650px',
+        overflow: 'hidden',
+        boxShadow: '0 15px 35px rgba(0, 0, 0, 0.25)',
+        border: '1.5px solid #F3E8FF',
+        display: 'flex',
+        flexDirection: 'column'
+    },
+    imageModalHeader: {
+        padding: '16px 20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottom: '1px solid #F1F5F9'
+    },
+    closeBtn: {
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#64748B',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '4px',
+        borderRadius: '50%',
+        transition: 'background 0.2s'
+    },
+    imageModalBody: {
+        padding: '20px',
+        backgroundColor: '#0F172A',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        maxHeight: '75vh'
+    },
+    expandedImage: {
+        maxWidth: '100%',
+        maxHeight: '70vh',
+        objectFit: 'contain',
+        borderRadius: '8px'
+    },
     modalTitle: {
         fontSize: '18px',
         fontWeight: 'bold',
         color: '#1E293B',
-        margin: '0 0 8px 0'
+        margin: 0
     },
     modalMessage: {
         fontSize: '13px',

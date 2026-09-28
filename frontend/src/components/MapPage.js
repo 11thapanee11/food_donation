@@ -56,6 +56,7 @@ const MapPage = () => {
 
     const [foods, setFoods] = useState([]);
     const [filteredFoods, setFilteredFoods] = useState([]);
+    const [categories, setCategories] = useState([{ id: 0, name: "ทั้งหมด" }]);
     const [isPageLoading, setIsPageLoading] = useState(true);
     const [hoveredFood, setHoveredFood] = useState(null);
 
@@ -67,9 +68,7 @@ const MapPage = () => {
     const [maxDistance, setMaxDistance] = useState("all");
     const [timeRangeFilter, setTimeRangeFilter] = useState("all");
 
-    const categories = ["ทั้งหมด", "อาหารคาว", "อาหารหวาน", "เครื่องดื่ม", "ผลไม้/ผัก", "เบเกอรี่"];
-
-    // คำนวณหาพิกัดและข้อมูลของจุดที่มีการบริจาคหนาแน่นที่สุด[cite: 4]
+    // คำนวณหาพิกัดและข้อมูลของจุดที่มีการบริจาคหนาแน่นที่สุด
     const topHotspot = useMemo(() => {
         if (!foods || foods.length === 0) return null;
 
@@ -93,7 +92,7 @@ const MapPage = () => {
         return best;
     }, [foods]);
 
-    // ฟังก์ชันเลื่อนแผนที่ไปที่ตำแหน่งต่างๆ[cite: 4]
+    // ฟังก์ชันเลื่อนแผนที่ไปที่ตำแหน่งต่างๆ
     const panToLocation = (type) => {
         if (!mapInstanceRef.current) return;
         const view = mapInstanceRef.current.getView();
@@ -113,7 +112,7 @@ const MapPage = () => {
         }
     };
 
-    // 1. Geolocation[cite: 4]
+    // Geolocation
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -137,7 +136,26 @@ const MapPage = () => {
         }
     }, []);
 
-    // 2. Fetch Foods API[cite: 4]
+    // Fetch Categories API จากฐานข้อมูล
+    useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+        fetch("http://localhost:8082/food-categories", {
+            method: "GET",
+            headers: {
+                Authorization: token ? `Bearer ${token}` : "",
+                "Content-Type": "application/json",
+            },
+        })
+            .then((res) => res.json())
+            .then((resData) => {
+                if (resData.success && resData.data) {
+                    setCategories([{ id: 0, name: "ทั้งหมด" }, ...resData.data]);
+                }
+            })
+            .catch((err) => console.error("Error fetching categories:", err));
+    }, []);
+
+    // 3. Fetch Foods API
     useEffect(() => {
         setIsPageLoading(true);
         const token = localStorage.getItem("accessToken");
@@ -168,7 +186,7 @@ const MapPage = () => {
             });
     }, []);
 
-    // 3. Init OpenLayers Map[cite: 4]
+    // Init OpenLayers Map
     useEffect(() => {
         if (isPageLoading || !mapElement.current || mapInstanceRef.current) return;
 
@@ -228,9 +246,9 @@ const MapPage = () => {
             const feature = map.forEachFeatureAtPixel(e.pixel, (feat) => feat);
             if (feature) {
                 const foodData = feature.get("foodData");
-                if (foodData && foodData.id) {
+                if (foodData && (foodData.id || foodData.foodId)) {
                     navigate("/food-detail", {
-                        state: { id: foodData.id, fromPage: "/map" },
+                        state: { id: foodData.id || foodData.foodId, fromPage: "/map" },
                     });
                 }
             }
@@ -244,13 +262,18 @@ const MapPage = () => {
         };
     }, [isPageLoading]);
 
-    // 4. Filtering Logic[cite: 4]
+    // Filtering Logic
     useEffect(() => {
         let result = [...foods];
 
         if (selectedCategory !== "ทั้งหมด") {
+            const selectedCatObj = categories.find(c => c.name === selectedCategory);
             result = result.filter(
-                (item) => item.category === selectedCategory || item.foodType === selectedCategory
+                (item) =>
+                    item.category === selectedCategory ||
+                    item.foodType === selectedCategory ||
+                    item.foodCateName === selectedCategory ||
+                    (selectedCatObj && item.categoryId === selectedCatObj.id)
             );
         }
 
@@ -279,28 +302,23 @@ const MapPage = () => {
 
         if (timeRangeFilter !== "all") {
             result = result.filter((item) => {
-                if (!item.pickupTime) return true;
+                const startTimeStr = item.pickupStartTime || item.pickupTime;
+                if (!startTimeStr) return false;
 
-                let hour = -1;
-                if (item.pickupTime.includes("T")) {
-                    hour = new Date(item.pickupTime).getHours();
-                } else if (item.pickupTime.includes(":")) {
-                    hour = parseInt(item.pickupTime.split(":")[0], 10);
-                }
-
-                if (isNaN(hour) || hour === -1) return true;
+                const [h] = startTimeStr.substring(0, 5).split(":").map(Number);
+                if (isNaN(h)) return false;
 
                 switch (timeRangeFilter) {
                     case "08-10":
-                        return hour >= 8 && hour < 10;
+                        return h >= 8 && h < 10;
                     case "10-12":
-                        return hour >= 10 && hour < 12;
+                        return h >= 10 && h < 12;
                     case "13-15":
-                        return hour >= 13 && hour < 15;
+                        return h >= 13 && h < 15;
                     case "15-18":
-                        return hour >= 15 && hour < 18;
+                        return h >= 15 && h < 18;
                     case "18-21":
-                        return hour >= 18;
+                        return h >= 18 && h <= 21;
                     default:
                         return true;
                 }
@@ -308,9 +326,9 @@ const MapPage = () => {
         }
 
         setFilteredFoods(result);
-    }, [foods, selectedCategory, maxDistance, timeRangeFilter, userCoords]);
+    }, [foods, selectedCategory, maxDistance, timeRangeFilter, userCoords, categories]);
 
-    // 5. Render Markers[cite: 4]
+    // Render Markers
     useEffect(() => {
         if (!vectorSourceRef.current) return;
 
@@ -347,7 +365,7 @@ const MapPage = () => {
             {/* Control Panel ด้านบน */}
             <div style={styles.filterControlPanel}>
 
-                {/* ปุ่มสลับมุมมองด่วน (ตำแหน่งปัจจุบัน vs จุดบริจาคหนาแน่นสุด)[cite: 4] */}
+                {/* ปุ่มสลับมุมมองด่วน (ตำแหน่งปัจจุบัน vs จุดบริจาคหนาแน่นสุด) */}
                 <div style={styles.quickFocusRow}>
                     <button
                         style={styles.focusBtn}
@@ -362,13 +380,33 @@ const MapPage = () => {
                             onClick={() => panToLocation("hotspot")}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "#9333ea" }}>local_fire_department</span>
-                            จุดหนาแน่นสูงสุด ({topHotspot.count} รายการ)
+                            จุดหนาแน่นสูงสุด
                         </button>
                     )}
                 </div>
 
+                {/* แถวตัวกรองทั้งหมด (หมวดหมู่, ระยะทาง, ช่วงเวลารับ) ให้อยู่ในระนาบเดียวกัน */}
                 <div style={styles.dropdownRow}>
-                    {/* ตัวกรองระยะทาง[cite: 4] */}
+                    {/* ตัวกรองหมวดหมู่อาหาร (เปลี่ยนเป็น Dropdown) */}
+                    <div style={styles.selectGroup}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#c084fc' }}>
+                            category
+                        </span>
+                        <label style={styles.selectLabel}>หมวดหมู่:</label>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            style={{ ...styles.selectInput, paddingRight: '30px' }}
+                        >
+                            {categories.map((cat) => (
+                                <option key={cat.id || cat.name} value={cat.name}>
+                                    {cat.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* ตัวกรองระยะทาง */}
                     <div style={styles.selectGroup}>
                         <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#0284c7' }}>
                             distance
@@ -387,7 +425,7 @@ const MapPage = () => {
                         </select>
                     </div>
 
-                    {/* ตัวกรองช่วงชั่วโมงรับของ[cite: 4] */}
+                    {/* ตัวกรองช่วงชั่วโมงรับของ */}
                     <div style={styles.selectGroup}>
                         <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ea580c' }}>
                             schedule
@@ -403,34 +441,16 @@ const MapPage = () => {
                             <option value="10-12">10:00 - 12:00 น.</option>
                             <option value="13-15">13:00 - 15:00 น.</option>
                             <option value="15-18">15:00 - 18:00 น.</option>
-                            <option value="18-21">18:00 น. เป็นต้นไป</option>
+                            <option value="18-21">18:00 - 21:00 น.</option>
                         </select>
                     </div>
                 </div>
-
-                {/* แถบหมวดหมู่อาหาร[cite: 4] */}
-                <div style={styles.categoryChipsGroup}>
-                    {categories.map((cat) => (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            style={{
-                                ...styles.chipBtn,
-                                backgroundColor: selectedCategory === cat ? "#c084fc" : "#ffffff",
-                                color: selectedCategory === cat ? "#ffffff" : "#64748b",
-                                border: selectedCategory === cat ? "1px solid #c084fc" : "1px solid #e2e8f0",
-                            }}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
             </div>
 
-            {/* แผนที่[cite: 4] */}
+            {/* แผนที่ */}
             <div ref={mapElement} style={styles.mapCanvas} />
 
-            {/* Hover Tooltip Card[cite: 4] */}
+            {/* Hover Tooltip Card */}
             <div ref={tooltipContainerRef} style={{ display: hoveredFood ? "block" : "none" }}>
                 {hoveredFood && (
                     <div
@@ -465,18 +485,22 @@ const MapPage = () => {
                             {hoveredFood.expiryDate && (
                                 <p style={styles.cardExpiryText}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#9333ea', verticalAlign: 'middle', marginRight: '6px' }}>schedule</span>
-                                    หมดอายุ: {new Date(hoveredFood.expiryDate).toLocaleDateString("th-TH", {
+                                    วันหมดอายุ: {new Date(hoveredFood.expiryDate).toLocaleDateString("th-TH", {
                                         year: "numeric",
                                         month: "long",
                                         day: "numeric"
-                                    })}
+                                    })} เวลา {new Date(hoveredFood.expiryDate).toLocaleTimeString("th-TH", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false
+                                    })} น.
                                 </p>
                             )}
 
-                            {hoveredFood.pickupTime && (
+                            {(hoveredFood.pickupStartTime || hoveredFood.pickupEndTime) && (
                                 <p style={styles.cardTimeText}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#0284c7', verticalAlign: 'middle', marginRight: '6px' }}>alarm</span>
-                                    เวลารับ: {hoveredFood.pickupTime}
+                                    ช่วงเวลารับอาหาร: {hoveredFood.pickupStartTime} - {hoveredFood.pickupEndTime} น.
                                 </p>
                             )}
 
@@ -497,7 +521,7 @@ const MapPage = () => {
                             <div style={styles.cardFooter}>
                                 <span style={styles.cardQuantityBadge}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#10b981', verticalAlign: 'middle', marginRight: '4px' }}>package_2</span>
-                                    เหลือ {hoveredFood.quantity || 1} รายการ
+                                    เหลือ {hoveredFood.remainingQuantity ?? hoveredFood.quantity ?? 1} รายการ
                                 </span>
                                 <span style={styles.clickHint}>
                                     แตะเพื่อจอง
@@ -587,22 +611,6 @@ const styles = {
         color: "#334155",
         outline: "none",
         cursor: "pointer",
-    },
-    categoryChipsGroup: {
-        display: "flex",
-        gap: "6px",
-        overflowX: "auto",
-        paddingBottom: "2px",
-    },
-    chipBtn: {
-        padding: "4px 12px",
-        borderRadius: "14px",
-        fontSize: "12px",
-        fontWeight: "500",
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        outline: "none",
-        transition: "all 0.2s ease",
     },
     mapCanvas: {
         width: "100%",

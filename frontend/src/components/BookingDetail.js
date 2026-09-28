@@ -15,7 +15,9 @@ export default function BookingDetail() {
     // State สำหรับ Modal รายงานปัญหา
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportReason, setReportReason] = useState("EXPIRED");
-    const [reportDetail, setReportDetail] = useState("");
+    const [reportDescription, setReportDescription] = useState("");
+    const [reportImage, setReportImage] = useState(null);
+    const [reportImagePreview, setReportImagePreview] = useState(null);
     const [submittingReport, setSubmittingReport] = useState(false);
 
     // State สำหรับ Modal รีวิว
@@ -53,7 +55,6 @@ export default function BookingDetail() {
                 if (resData.success) {
                     let bookingData = resData.data;
 
-                    // 1. ดึงข้อมูลอาหารเพิ่มเติม (ถ้ามี)
                     const targetFoodId = bookingData.foodId || bookingData.food?.foodId || bookingData.food?.id;
                     if (targetFoodId) {
                         try {
@@ -69,7 +70,6 @@ export default function BookingDetail() {
                         }
                     }
 
-                    // 2. เรียกเช็คสถานะรีวิวด้วย API ที่มีอยู่
                     try {
                         const reviewCheckRes = await fetch(`${BASE_URL}/reviews/check/${bookingId}`, {
                             headers: { Authorization: `Bearer ${token}` }
@@ -80,9 +80,8 @@ export default function BookingDetail() {
                         bookingData.hasReviewed = false;
                     }
 
-                    // 3. เรียกเช็คสถานะรายงานด้วย API ที่มีอยู่
                     try {
-                        const reportCheckRes = await fetch(`${BASE_URL}/reports/check/${bookingId}`, {
+                        const reportCheckRes = await fetch(`${BASE_URL}/report/check/${bookingId}`, {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                         const reportCheckData = await reportCheckRes.json();
@@ -132,7 +131,7 @@ export default function BookingDetail() {
                 const token = localStorage.getItem("accessToken");
                 setSubmitting(true);
                 fetch(`${BASE_URL}/bookings/${bookingId}/cancel`, {
-                    method: "PATCH",
+                    method: "PUT",
                     headers: { Authorization: `Bearer ${token}` }
                 })
                     .then((res) => res.json())
@@ -152,31 +151,48 @@ export default function BookingDetail() {
         );
     };
 
-    // ฟังก์ชันส่งรายงานปัญหา
+    const handleReportImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setReportImage(file);
+            setReportImagePreview(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmitReport = () => {
+        if (!reportDescription || reportDescription.trim() === "") {
+            showAlert("กรุณากรอกข้อมูล", "กรุณากรอกรายละเอียดเพิ่มเติมก่อนส่งรายงาน", "error");
+            return;
+        }
+
         const token = localStorage.getItem("accessToken");
         if (!token) return;
 
         setSubmittingReport(true);
-        fetch(`${BASE_URL}/reports`, {
+        const formData = new FormData();
+        formData.append("bookingId", bookingId);
+        formData.append("reason", reportReason);
+        formData.append("description", reportDescription);
+        if (reportImage) {
+            formData.append("fileImage", reportImage);
+        }
+
+        fetch(`${BASE_URL}/report`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
             },
-            body: JSON.stringify({
-                bookingId: bookingId,
-                reason: reportReason,
-                detail: reportDetail
-            })
+            body: formData
         })
             .then(res => res.json())
             .then(resData => {
                 setShowReportModal(false);
-                setReportDetail("");
+                setReportDescription("");
+                setReportImage(null);
+                setReportImagePreview(null);
                 if (resData.success || resData) {
                     showAlert("ส่งรายงานสำเร็จ", "เจ้าหน้าที่ได้รับเรื่องร้องเรียนของคุณแล้ว จะทำการตรวจสอบโดยเร็วที่สุด", "success");
-                    fetchBookingDetail(); // โหลดข้อมูลใหม่เพื่ออัปเดตสถานะปุ่ม
+                    fetchBookingDetail();
                 } else {
                     showAlert("เกิดข้อผิดพลาด", resData.message || "ไม่สามารถส่งรายงานได้", "error");
                 }
@@ -188,7 +204,6 @@ export default function BookingDetail() {
             .finally(() => setSubmittingReport(false));
     };
 
-    // ฟังก์ชันส่งรีวิว
     const handleSubmitReview = () => {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
@@ -219,7 +234,7 @@ export default function BookingDetail() {
                 setReviewComment("");
                 if (resData.success || resData) {
                     showAlert("รีวิวสำเร็จ", "ขอบคุณสำหรับการประเมินและรีวิวอาหารบริจาคค่ะ", "success");
-                    fetchBookingDetail(); // โหลดข้อมูลใหม่เพื่ออัปเดตสถานะปุ่ม
+                    fetchBookingDetail();
                 } else {
                     showAlert("เกิดข้อผิดพลาด", resData.message || "ไม่สามารถบันทึกรีวิวได้", "error");
                 }
@@ -261,6 +276,7 @@ export default function BookingDetail() {
     const statusValue = (booking.bookingStatus || booking.status || "").toLowerCase();
     const isPending = statusValue === "pending" || statusValue === "booked";
     const isCompleted = statusValue === "completed" || statusValue === "received";
+    const isCancelled = statusValue === "cancelled";
 
     const foodInfo = booking.food || {};
     const foodName = foodInfo.foodName || booking.foodName || "รายการอาหาร";
@@ -362,20 +378,22 @@ export default function BookingDetail() {
                                     </button>
                                 )}
 
-                                <button
-                                    onClick={() => setShowReportModal(true)}
-                                    disabled={booking.hasReported}
-                                    style={{
-                                        ...styles.reportBtn,
-                                        backgroundColor: booking.hasReported ? "#f8fafc" : "#fff1f2",
-                                        color: booking.hasReported ? "#94a3b8" : "#e11d48",
-                                        borderColor: booking.hasReported ? "#e2e8f0" : "#fecdd3",
-                                        cursor: booking.hasReported ? "not-allowed" : "pointer"
-                                    }}
-                                >
-                                    <i className="material-icons-outlined" style={{ fontSize: "16px" }}>flag</i>
-                                    {booking.hasReported ? "รายงานปัญหาแล้ว" : "รายงานปัญหาการรับบริจาค"}
-                                </button>
+                                {!isCancelled && (
+                                    <button
+                                        onClick={() => setShowReportModal(true)}
+                                        disabled={booking.hasReported}
+                                        style={{
+                                            ...styles.reportBtn,
+                                            backgroundColor: booking.hasReported ? "#f8fafc" : "#fff1f2",
+                                            color: booking.hasReported ? "#94a3b8" : "#e11d48",
+                                            borderColor: booking.hasReported ? "#e2e8f0" : "#fecdd3",
+                                            cursor: booking.hasReported ? "not-allowed" : "pointer"
+                                        }}
+                                    >
+                                        <i className="material-icons-outlined" style={{ fontSize: "16px" }}>flag</i>
+                                        {booking.hasReported ? "รายงานปัญหาแล้ว" : "รายงานปัญหาการรับบริจาค"}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -549,7 +567,7 @@ export default function BookingDetail() {
                 </div>
             )}
 
-            {/* --- Modal รายงานปัญหา --- */}
+            {/* --- Modal รายงานปัญหา (พร้อมดอกจันทร์บังคับกรอก) --- */}
             {showReportModal && (
                 <div style={styles.centerModalBackdrop} onClick={() => setShowReportModal(false)}>
                     <div style={styles.centerModalCard} onClick={(e) => e.stopPropagation()}>
@@ -565,9 +583,10 @@ export default function BookingDetail() {
                             </p>
                         </div>
 
+                        {/* หัวข้อปัญหา */}
                         <div style={{ marginBottom: "14px", textAlign: "left" }}>
                             <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "6px" }}>
-                                หัวข้อปัญหา
+                                หัวข้อปัญหา <span style={{ color: "#EF4444", marginLeft: "4px" }}>*</span>
                             </label>
                             <select
                                 value={reportReason}
@@ -582,17 +601,59 @@ export default function BookingDetail() {
                             </select>
                         </div>
 
-                        <div style={{ marginBottom: "20px", textAlign: "left" }}>
+                        {/* รายละเอียดเพิ่มเติม */}
+                        <div style={{ marginBottom: "14px", textAlign: "left" }}>
                             <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "6px" }}>
-                                รายละเอียดเพิ่มเติม
+                                รายละเอียดเพิ่มเติม <span style={{ color: "#EF4444", marginLeft: "4px" }}>*</span>
                             </label>
                             <textarea
                                 rows="3"
                                 placeholder="อธิบายรายละเอียดเพิ่มเติม..."
-                                value={reportDetail}
-                                onChange={(e) => setReportDetail(e.target.value)}
+                                value={reportDescription}
+                                onChange={(e) => setReportDescription(e.target.value)}
                                 style={styles.textAreaInput}
                             />
+                        </div>
+
+                        {/* แนบรูปภาพหลักฐาน (อยู่ล่างสุด แสดงเป็นชื่อไฟล์แทนภาพใหญ่) */}
+                        <div style={{ marginBottom: "20px", textAlign: "left" }}>
+                            <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "6px" }}>
+                                แนบรูปภาพหลักฐาน (ถ้ามี)
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                id="reportImageInput"
+                                onChange={handleReportImageChange}
+                                style={{ display: "none" }}
+                            />
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <label htmlFor="reportImageInput" style={styles.uploadFileBtn}>
+                                    <i className="material-icons-outlined" style={{ fontSize: "16px" }}>attach_file</i>
+                                    {reportImage ? "เปลี่ยนไฟล์" : "เลือกไฟล์รูปภาพ"}
+                                </label>
+                                {reportImage && (
+                                    <div style={styles.fileInfoRow}>
+                                        <a
+                                            href={reportImagePreview}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={styles.fileNameLink}
+                                            title="คลิกเพื่อดูรูปภาพเต็ม"
+                                        >
+                                            {reportImage.name}
+                                        </a>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setReportImage(null); setReportImagePreview(null); }}
+                                            style={styles.removeFileBtn}
+                                            title="ลบไฟล์รูปภาพ"
+                                        >
+                                            <i className="material-icons-outlined" style={{ fontSize: "12px", lineHeight: 1 }}>close</i>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div style={{ display: "flex", gap: "12px" }}>
@@ -931,6 +992,55 @@ const styles = {
         color: "#334155",
         boxSizing: "border-box",
         resize: "vertical",
+    },
+    uploadFileBtn: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "8px 14px",
+        borderRadius: "10px",
+        border: "1px solid #f43f5e",
+        backgroundColor: "#fff1f2",
+        color: "#f43f5e",
+        fontSize: "12px",
+        fontWeight: "600",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+    },
+    fileInfoRow: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flex: 1,
+        padding: "6px 10px",
+        borderRadius: "10px",
+        backgroundColor: "#f8fafc",
+        border: "1px solid #e2e8f0",
+        overflow: "hidden",
+    },
+    fileNameLink: {
+        fontSize: "12px",
+        color: "#0284c7",
+        textDecoration: "underline",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        maxWidth: "180px",
+        cursor: "pointer",
+    },
+    removeFileBtn: {
+        width: "20px",
+        height: "20px",
+        borderRadius: "50%",
+        backgroundColor: "#fee2e2",
+        color: "#ef4444",
+        border: "none",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        flexShrink: 0,
+        padding: 0,
     },
     loading: {
         textAlign: "center",

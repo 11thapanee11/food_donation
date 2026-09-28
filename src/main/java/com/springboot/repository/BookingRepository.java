@@ -54,6 +54,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         @Query("SELECT SUM(b.bookingUnit) FROM Booking b WHERE b.bookingStatus = 'completed'")
         Double sumCompletedBookingUnits();
 
+        @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.food.foodId = :foodId AND b.recipient.user.userId = :userId AND LOWER(b.bookingStatus) = 'completed'")
+        boolean existsCompletedBooking(@Param("foodId") Integer foodId, @Param("userId") Integer userId);
+
         boolean existsByFood_FoodIdAndRecipient_UserId(Integer foodId, Integer userId);
 
         List<Booking> findByBookingStatusAndPickupDeadlineBefore(String bookingStatus, LocalDateTime dateTime);
