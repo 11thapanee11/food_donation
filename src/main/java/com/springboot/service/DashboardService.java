@@ -1,17 +1,16 @@
 package com.springboot.service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.springframework.stereotype.Service;
 
 import com.springboot.dto.BookingStatsDto;
 import com.springboot.dto.DashboardStatsDto;
 import com.springboot.dto.FoodStatsDto;
-import com.springboot.dto.MonthlyStatDto;
+import com.springboot.dto.DailyStatDto;
 import com.springboot.dto.ReportStatsDto;
 import com.springboot.repository.BookingRepository;
+import com.springboot.service.DashboardService;
 
 @Service
 public class DashboardService {
@@ -76,63 +75,39 @@ public class DashboardService {
         dto.setCategories(categoryStats);
 
         // ดึงและเซ็ตสถิติรายเดือนสำหรับกราฟ
-        List<MonthlyStatDto> monthlyStats = getMonthlyStats();
-        dto.setMonthlyStats(monthlyStats);
+        List<DailyStatDto> dailylyStats = getCurrentMonthDailyStats();
+        dto.setDailyStats(dailylyStats);
 
         return dto;
     }
 
-    public List<MonthlyStatDto> getMonthlyStats() {
-        List<MonthlyStatDto> stats = new ArrayList<>();
+    public List<DailyStatDto> getCurrentMonthDailyStats() {
+        List<DailyStatDto> stats = new ArrayList<>();
 
-        List<Object[]> rawStats = bookingRepository.getMonthlyBookingStatsRaw();
+        // สมมติเรียก Repository ที่ดึงข้อมูลแยกตามวันในเดือนปัจจุบัน (เช่น WHERE
+        // MONTH(booking_date) = MONTH(CURRENT_DATE()))
+        List<Object[]> rawStats = bookingRepository.getCurrentMonthDailyStatsRaw();
 
+        // สร้าง Map เก็บข้อมูลที่มีการจองจริง
+        Map<String, Object[]> statsMap = new HashMap<>();
         for (Object[] row : rawStats) {
-            String monthYear = (String) row[0]; // รูปแบบเช่น "2026-05"
-            long total = ((Number) row[1]).longValue();
-            long completed = ((Number) row[2]).longValue();
+            String dayStr = String.valueOf(row[0]); // เช่น "1", "2"
+            statsMap.put(dayStr, row);
+        }
 
-            // แปลงเป็นชื่อเดือนไทย (เช่น "พ.ค.")
-            String thaiMonthName = formatMonthToThai(monthYear);
-
-            stats.add(new MonthlyStatDto(thaiMonthName, total, completed));
+        // สมมติให้แสดงผลครบ 31 วันในเดือน (หรือตามจำนวนวันจริงของเดือนนั้นๆ)
+        for (int i = 1; i <= 31; i++) {
+            String dayKey = String.valueOf(i);
+            if (statsMap.containsKey(dayKey)) {
+                Object[] row = statsMap.get(dayKey);
+                long total = ((Number) row[1]).longValue();
+                long completed = ((Number) row[2]).longValue();
+                stats.add(new DailyStatDto(dayKey, total, completed));
+            } else {
+                stats.add(new DailyStatDto(dayKey, 0, 0));
+            }
         }
 
         return stats;
-    }
-
-    // ฟังก์ชันช่วยแปลงปี-เดือน (2026-05) เป็นชื่อเดือนไทย
-    private String formatMonthToThai(String yearMonth) {
-        if (yearMonth == null || !yearMonth.contains("-"))
-            return yearMonth;
-        String monthPart = yearMonth.split("-")[1];
-        switch (monthPart) {
-            case "01":
-                return "ม.ค.";
-            case "02":
-                return "ก.พ.";
-            case "03":
-                return "มี.ค.";
-            case "04":
-                return "เม.ย.";
-            case "05":
-                return "พ.ค.";
-            case "06":
-                return "มิ.ย.";
-            case "07":
-                return "ก.ค.";
-            case "08":
-                return "ส.ค.";
-            case "09":
-                return "ก.ย.";
-            case "10":
-                return "ต.ค.";
-            case "11":
-                return "พ.ย.";
-            case "12":
-                return "ธ.ค.";
-            default:
-                return monthPart;
-        }
     }
 }

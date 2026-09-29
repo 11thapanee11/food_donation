@@ -3,6 +3,7 @@ package com.springboot.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -15,9 +16,9 @@ public class FoodDto {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime expiryDate;
 
-    private Double quantity;
+    private Integer quantity;
     private String unit;
-    private Double remainingQuantity;
+    private Integer remainingQuantity;
     private String locationName;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -30,7 +31,7 @@ public class FoodDto {
     @JsonFormat(pattern = "HH:mm")
     private LocalTime pickupEndTime;
 
-    private Double limitPerPerson;
+    private Integer limitPerPerson;
     private Double latitude;
     private Double longitude;
     private String foodStatus;
@@ -44,6 +45,7 @@ public class FoodDto {
     private String donorName;
     private String donorPhoneNum;
 
+    private List<BookingDto> bookings;
     private boolean hasUserBooked;
 
     public String getFoodName() {
@@ -70,11 +72,11 @@ public class FoodDto {
         this.expiryDate = expiryDate;
     }
 
-    public Double getQuantity() {
+    public Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Double quantity) {
+    public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
 
@@ -86,11 +88,11 @@ public class FoodDto {
         this.unit = unit;
     }
 
-    public Double getRemainingQuantity() {
+    public Integer getRemainingQuantity() {
         return remainingQuantity;
     }
 
-    public void setRemainingQuantity(Double remainingQuantity) {
+    public void setRemainingQuantity(Integer remainingQuantity) {
         this.remainingQuantity = remainingQuantity;
     }
 
@@ -134,11 +136,11 @@ public class FoodDto {
         this.pickupEndTime = pickupEndTime;
     }
 
-    public Double getLimitPerPerson() {
+    public Integer getLimitPerPerson() {
         return limitPerPerson;
     }
 
-    public void setLimitPerPerson(Double limitPerPerson) {
+    public void setLimitPerPerson(Integer limitPerPerson) {
         this.limitPerPerson = limitPerPerson;
     }
 
@@ -229,4 +231,14 @@ public class FoodDto {
     public void setHasUserBooked(boolean hasUserBooked) {
         this.hasUserBooked = hasUserBooked;
     }
+
+    public List<BookingDto> getBookings() {
+        return bookings;
+    }
+
+    public void setBookings(List<BookingDto> bookings) {
+        this.bookings = bookings;
+    }
+
+    
 }

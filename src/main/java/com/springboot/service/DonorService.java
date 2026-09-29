@@ -6,7 +6,6 @@ import com.springboot.exception.ApplicationException;
 import com.springboot.repository.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

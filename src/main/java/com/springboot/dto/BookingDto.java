@@ -4,17 +4,19 @@ import java.time.LocalDateTime;
 
 public class BookingDto {
     private Integer foodId;
-    private double quantity;
+    private Integer quantity;
     private String unit;
 
     private Integer bookingId;
-    private Double bookingQuantity;
+    private Integer bookingQuantity;
     private String bookingUnit;
 
     private LocalDateTime bookingDate;
     private Integer confirmationCode;
     private LocalDateTime pickupDeadline;
+    private LocalDateTime bookingCompleted;
     private String bookingStatus;
+    private String recipientName;
 
     public Integer getFoodId() {
         return foodId;
@@ -24,11 +26,11 @@ public class BookingDto {
         this.foodId = foodId;
     }
 
-    public double getQuantity() {
+    public Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(double quantity) {
+    public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
 
@@ -40,11 +42,11 @@ public class BookingDto {
         this.bookingId = bookingId;
     }
 
-    public Double getBookingQuantity() {
+    public Integer getBookingQuantity() {
         return bookingQuantity;
     }
 
-    public void setBookingQuantity(Double bookingQuantity) {
+    public void setBookingQuantity(Integer bookingQuantity) {
         this.bookingQuantity = bookingQuantity;
     }
 
@@ -96,4 +98,21 @@ public class BookingDto {
         this.unit = unit;
     }
 
+    public LocalDateTime getBookingCompleted() {
+        return bookingCompleted;
+    }
+
+    public void setBookingCompleted(LocalDateTime bookingCompleted) {
+        this.bookingCompleted = bookingCompleted;
+    }
+
+    public String getRecipientName() {
+        return recipientName;
+    }
+
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
+    }
+
+    
 }

@@ -113,7 +113,7 @@ public class FoodService {
         food.setUnit(foodDto.getUnit());
 
         // แปลง quantity (Double) เป็น remainingQuantity (Integer) สำหรับค่าเริ่มต้น
-        double initialRemaining = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
+        Integer initialRemaining = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
         food.setRemainingQuantity(initialRemaining);
 
         food.setDescription(foodDto.getDescription());
@@ -165,18 +165,18 @@ public class FoodService {
         }
 
         // การจัดการจำนวน
-        double oldTotal = food.getQuantity() != null ? food.getQuantity().intValue() : 0;
-        double currentRemaining = food.getRemainingQuantity() != null ? food.getRemainingQuantity() : 0;
-        double reservedUnit = oldTotal - currentRemaining;
-        double newTotal = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
+        Integer oldTotal = food.getQuantity() != null ? food.getQuantity().intValue() : 0;
+        Integer currentRemaining = food.getRemainingQuantity() != null ? food.getRemainingQuantity() : 0;
+        Integer reservedUnit = oldTotal - currentRemaining;
+        Integer newTotal = foodDto.getQuantity() != null ? foodDto.getQuantity().intValue() : 0;
 
         if (newTotal < reservedUnit) {
             throw new ApplicationException("ไม่สามารถปรับลดจำนวนทั้งหมดเป็น " + newTotal +
                     " เนื่องจากมีผู้จองอาหารไปแล้ว " + reservedUnit, HttpStatus.BAD_REQUEST);
         }
 
-        double totalDifference = newTotal - oldTotal;
-        double newRemaining = currentRemaining + totalDifference;
+        Integer totalDifference = newTotal - oldTotal;
+        Integer newRemaining = currentRemaining + totalDifference;
 
         // บันทึกจำนวนลง Entity
         food.setFoodName(foodDto.getFoodName());

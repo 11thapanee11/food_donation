@@ -89,6 +89,9 @@ public class BookingService {
                     dto.setConfirmationCode(booking.getConfirmationCode());
                     dto.setBookingStatus(booking.getBookingStatus());
                     dto.setFoodId(booking.getFood().getFoodId());
+
+                    dto.setBookingCompleted(booking.getBookingCompleted());
+
                     return dto;
                 })
                 .toList();
@@ -107,6 +110,8 @@ public class BookingService {
         dto.setConfirmationCode(booking.getConfirmationCode());
         dto.setPickupDeadline(booking.getPickupDeadline());
         dto.setBookingStatus(booking.getBookingStatus());
+
+        dto.setBookingCompleted(booking.getBookingCompleted());
 
         if (booking.getFood() != null) {
             dto.setFoodId(booking.getFood().getFoodId());
@@ -137,7 +142,8 @@ public class BookingService {
     public Booking verifyConfirmCodeByFoodId(Integer foodId, String verificationCode) {
         Booking booking = bookingRepository
                 .findByFoodFoodIdAndBookingStatus(foodId, "pending")
-                .orElseThrow(() -> new ApplicationException("ไม่พบรายการจองที่อยู่ระหว่างรอดำเนินการสำหรับอาหารชิ้นนี้", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException("ไม่พบรายการจองที่อยู่ระหว่างรอดำเนินการสำหรับอาหารชิ้นนี้",
+                        HttpStatus.NOT_FOUND));
 
         Integer codeAsInt;
         try {
@@ -151,6 +157,7 @@ public class BookingService {
         }
 
         booking.setBookingStatus("completed");
+        booking.setBookingCompleted(LocalDateTime.now());
 
         return bookingRepository.save(booking);
     }
@@ -167,6 +174,10 @@ public class BookingService {
         Long cancelled = bookingRepository.countByBookingStatus("cancelled");
 
         return new BookingStatsDto(completedWeight, completed, pending, cancelled);
+    }
+
+    public List<Booking> getBookingsByFoodIds(List<Integer> foodIds) {
+        return bookingRepository.findByFood_FoodIdIn(foodIds);
     }
 
 }

@@ -6,8 +6,8 @@ export default function ListReport() {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // State สำหรับการกรองและค้นหา
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    // State สำหรับการกรองและค้นหา (ตั้งค่าเริ่มต้น statusFilter เป็น 'PENDING' เพื่อแสดงเฉพาะรอดำเนินการ)
+    const [statusFilter, setStatusFilter] = useState('PENDING');
     const [categoryFilter, setCategoryFilter] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDate, setSelectedDate] = useState(''); // เลือกเฉพาะเจาะจงวันเดียว
@@ -180,17 +180,6 @@ export default function ListReport() {
                     <button
                         style={{
                             ...styles.filterTabBtn,
-                            backgroundColor: statusFilter === 'ALL' ? '#C084FC' : '#FFFFFF',
-                            color: statusFilter === 'ALL' ? '#FFFFFF' : '#64748B',
-                            borderColor: statusFilter === 'ALL' ? '#C084FC' : '#F3E8FF'
-                        }}
-                        onClick={() => setStatusFilter('ALL')}
-                    >
-                        ทั้งหมด ({reports.length})
-                    </button>
-                    <button
-                        style={{
-                            ...styles.filterTabBtn,
                             backgroundColor: statusFilter === 'PENDING' ? '#C084FC' : '#FFFFFF',
                             color: statusFilter === 'PENDING' ? '#FFFFFF' : '#64748B',
                             borderColor: statusFilter === 'PENDING' ? '#C084FC' : '#F3E8FF'
@@ -209,6 +198,17 @@ export default function ListReport() {
                         onClick={() => setStatusFilter('CHECKED')}
                     >
                         ตรวจสอบแล้ว ({reports.filter(r => r.reportStatus === 'checked').length})
+                    </button>
+                    <button
+                        style={{
+                            ...styles.filterTabBtn,
+                            backgroundColor: statusFilter === 'ALL' ? '#C084FC' : '#FFFFFF',
+                            color: statusFilter === 'ALL' ? '#FFFFFF' : '#64748B',
+                            borderColor: statusFilter === 'ALL' ? '#C084FC' : '#F3E8FF'
+                        }}
+                        onClick={() => setStatusFilter('ALL')}
+                    >
+                        ทั้งหมด ({reports.length})
                     </button>
                 </div>
 

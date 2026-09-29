@@ -9,6 +9,10 @@ export default function CommunityImpactPage() {
     });
     const [loading, setLoading] = useState(true);
 
+    // State สำหรับการแบ่งหน้า (Pagination)
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
     const BASE_URL = "http://localhost:8082";
 
     useEffect(() => {
@@ -17,7 +21,21 @@ export default function CommunityImpactPage() {
             .then((res) => res.json())
             .then((resData) => {
                 if (resData.success && resData.data) {
-                    setImpactData(resData.data);
+                    // กรองเฉพาะรายการที่ส่งมอบสำเร็จ และปรับข้อความให้กระชับ อ่านง่าย ไม่ซ้ำซ้อน
+                    const completedActivities = (resData.data.recentActivities || [])
+                        .filter(act => act.status === "completed" || (act.text && act.text.includes("สำเร็จ")))
+                        .map(act => ({
+                            ...act,
+                            text: act.text
+                                .replace(/ผู้รับได้ดำเนินการจองและรับมอบ/g, "ผู้รับบริจาคได้ดำเนินขอรับบริจาคและรับมอบ")
+                                .replace(/สำเร็จ/g, "")
+                                .trim() + " สำเร็จ"
+                        }));
+
+                    setImpactData({
+                        ...resData.data,
+                        recentActivities: completedActivities
+                    });
                 }
             })
             .catch((err) => {
@@ -25,6 +43,25 @@ export default function CommunityImpactPage() {
             })
             .finally(() => setLoading(false));
     }, []);
+
+    // คำนวณข้อมูลสำหรับการแบ่งหน้า
+    const allActivities = impactData.recentActivities || [];
+    const totalPages = Math.ceil(allActivities.length / itemsPerPage) || 1;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentActivities = allActivities.slice(indexOfFirstItem, indexOfLastItem);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
 
     return (
         <div style={styles.fullWidthWrapper}>
@@ -107,9 +144,9 @@ export default function CommunityImpactPage() {
                             </span>
                         </div>
                         <div>
-                            <h3 style={styles.sectionTitle}>การส่งต่อล่าสุดในระบบ (Live Feed)</h3>
+                            <h3 style={styles.sectionTitle}>การเคลื่อนไหวล่าสุดในระบบ (Live Feed)</h3>
                             <p style={{ margin: 0, fontSize: "13px", color: "#94A3B8" }}>
-                                ความเคลื่อนไหวการบริจาคอาหารแบบเรียลไทม์
+                                รายการที่มีการส่งมอบอาหารสำเร็จเรียบร้อยแล้ว
                             </p>
                         </div>
                     </div>
@@ -117,8 +154,8 @@ export default function CommunityImpactPage() {
                     <div style={styles.feedList}>
                         {loading ? (
                             <p style={{ textAlign: "center", color: "#94A3B8", padding: "20px 0" }}>กำลังโหลดข้อมูล...</p>
-                        ) : impactData.recentActivities && impactData.recentActivities.length > 0 ? (
-                            impactData.recentActivities.map((act) => (
+                        ) : currentActivities.length > 0 ? (
+                            currentActivities.map((act) => (
                                 <div key={act.id} style={styles.feedItem}>
                                     <div style={styles.feedDot} />
                                     <div style={{ flex: 1 }}>
@@ -138,9 +175,42 @@ export default function CommunityImpactPage() {
                                 </div>
                             ))
                         ) : (
-                            <p style={{ textAlign: "center", color: "#94A3B8", padding: "20px 0" }}>ยังไม่มีกิจกรรมล่าสุดในระบบ</p>
+                            <p style={{ textAlign: "center", color: "#94A3B8", padding: "20px 0" }}>ยังไม่มีกิจกรรมการส่งมอบอาหารสำเร็จในระบบ</p>
                         )}
                     </div>
+
+                    {/* Pagination Controls */}
+                    {allActivities.length > itemsPerPage && (
+                        <div style={styles.paginationContainer}>
+                            <button
+                                style={{
+                                    ...styles.pageButton,
+                                    opacity: currentPage === 1 ? 0.5 : 1,
+                                    cursor: currentPage === 1 ? "not-allowed" : "pointer"
+                                }}
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 1}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>chevron_left</span>
+                                ก่อนหน้า
+                            </button>
+                            <span style={styles.pageInfo}>
+                                หน้า {currentPage} จาก {totalPages}
+                            </span>
+                            <button
+                                style={{
+                                    ...styles.pageButton,
+                                    opacity: currentPage === totalPages ? 0.5 : 1,
+                                    cursor: currentPage === totalPages ? "not-allowed" : "pointer"
+                                }}
+                                onClick={handleNextPage}
+                                disabled={currentPage === totalPages}
+                            >
+                                ถัดไป
+                                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>chevron_right</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
             </div>
@@ -262,7 +332,6 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: "14px",
-        marginBottom: "0px",
         paddingBottom: "16px",
         borderBottom: "1px solid #F8FAFC",
     },
@@ -320,5 +389,31 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: "3px",
+    },
+    paginationContainer: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: "24px",
+        paddingTop: "16px",
+        borderTop: "1px solid #F1F5F9",
+    },
+    pageButton: {
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        backgroundColor: "#FAF5FF",
+        color: "#9333EA",
+        border: "1.5px solid #F3E8FF",
+        padding: "8px 16px",
+        borderRadius: "12px",
+        fontSize: "13px",
+        fontWeight: "600",
+        transition: "all 0.2s",
+    },
+    pageInfo: {
+        fontSize: "13px",
+        fontWeight: "600",
+        color: "#64748B",
     },
 };

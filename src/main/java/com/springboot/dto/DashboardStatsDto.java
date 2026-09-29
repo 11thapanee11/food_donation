@@ -20,7 +20,7 @@ public class DashboardStatsDto {
     private Long totalBookings;
     private List<CategoryStatDto> categories;
 
-    private List<MonthlyStatDto> monthlyStats;
+    private List<DailyStatDto> dailyStats;
 
     // Default Constructor
     public DashboardStatsDto() {
@@ -172,12 +172,12 @@ public class DashboardStatsDto {
         this.categories = categories;
     }
 
-    public List<MonthlyStatDto> getMonthlyStats() {
-        return monthlyStats;
+    public List<DailyStatDto> getDailyStats() {
+        return dailyStats;
     }
 
-    public void setMonthlyStats(List<MonthlyStatDto> monthlyStats) {
-        this.monthlyStats = monthlyStats;
+    public void setDailyStats(List<DailyStatDto> dailyStats) {
+        this.dailyStats = dailyStats;
     }
 
     

@@ -37,5 +37,4 @@ public interface FoodRepository extends JpaRepository<Food, Integer> {
 
     Long countByFoodCategory_FoodCateId(Integer foodCateId);
 
-
 }

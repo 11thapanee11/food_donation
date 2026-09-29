@@ -135,13 +135,20 @@ export default function FoodForm() {
     };
 
     const UNIT_OPTIONS = [
-        { label: 'ชิ้น', value: 'ชิ้น' },
-        { label: 'กิโลกรัม', value: 'กิโลกรัม' },
-        { label: 'แพ็ค', value: 'แพ็ค' },
         { label: 'กล่อง', value: 'กล่อง' },
-        { label: 'ขวด', value: 'ขวด' },
-        { label: 'ซอง', value: 'ซอง' },
+        { label: 'แพ็ค', value: 'แพ็ค' },
         { label: 'ถุง', value: 'ถุง' },
+        { label: 'ชิ้น', value: 'ชิ้น' },
+        { label: 'โหล', value: 'โหล' },
+        { label: 'กิโลกรัม', value: 'กิโลกรัม' },
+        { label: 'กรัม', value: 'กรัม' },
+        { label: 'ลิตร', value: 'ลิตร' },
+        { label: 'มิลลิลิตร', value: 'มิลลิลิตร' },
+        { label: 'ขวด', value: 'ขวด' },
+        { label: 'แก้ว', value: 'แก้ว' },
+        { label: 'กระป๋อง', value: 'กระป๋อง' },
+        { label: 'กระปุก', value: 'กระปุก' },
+        { label: 'ซอง', value: 'ซอง' },
         { label: 'แผง', value: 'แผง' },
     ];
 
@@ -364,7 +371,6 @@ export default function FoodForm() {
     const handleNextStep = (e) => {
         if (e) e.preventDefault();
 
-        // ถ้าไม่ได้อยู่ในโหมดแก้ไข ให้ข้ามการตรวจฟิลด์แล้วไปสเต็ปถัดไปได้เลย
         if (!isEditable) {
             setErrors({});
             setCurrentStep((prev) => Math.min(prev + 1, 3));
@@ -398,6 +404,22 @@ export default function FoodForm() {
             if (!formData.quantity) newErrors.quantity = "กรุณากรอกข้อมูล";
             if (!formData.unit) newErrors.unit = "กรุณากรอกข้อมูล";
             if (!formData.limitPerPerson) newErrors.limitPerPerson = "กรุณากรอกข้อมูล";
+        } else if (currentStep === 3) {
+            if (!formData.locationName) newErrors.locationName = "กรุณากรอกข้อมูล";
+            if (!formData.pickupStartTime) newErrors.pickupStartTime = "กรุณากรอกข้อมูล";
+            if (!formData.pickupEndTime) {
+                newErrors.pickupEndTime = "กรุณากรอกข้อมูล";
+            } else if (formData.pickupStartTime) {
+                // ตรวจสอบเวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้นอย่างน้อย 1 ชั่วโมง
+                const [startH, startM] = formData.pickupStartTime.split(':').map(Number);
+                const [endH, endM] = formData.pickupEndTime.split(':').map(Number);
+                const startTotalMinutes = startH * 60 + startM;
+                const endTotalMinutes = endH * 60 + endM;
+
+                if (endTotalMinutes < startTotalMinutes + 60) {
+                    newErrors.pickupEndTime = "เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้นอย่างน้อย 1 ชั่วโมง";
+                }
+            }
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -416,6 +438,19 @@ export default function FoodForm() {
 
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
+
+        // ตรวจสอบเวลาซ้ำอีกรอบก่อนส่งข้อมูลจริง
+        if (formData.pickupStartTime && formData.pickupEndTime) {
+            const [startH, startM] = formData.pickupStartTime.split(':').map(Number);
+            const [endH, endM] = formData.pickupEndTime.split(':').map(Number);
+            const startTotalMinutes = startH * 60 + startM;
+            const endTotalMinutes = endH * 60 + endM;
+
+            if (endTotalMinutes < startTotalMinutes + 60) {
+                setErrors(prev => ({ ...prev, pickupEndTime: "เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้นอย่างน้อย 1 ชั่วโมง" }));
+                return;
+            }
+        }
 
         const token = localStorage.getItem("accessToken");
 
@@ -611,30 +646,42 @@ export default function FoodForm() {
 
                     {isEditMode && (
                         <div style={styles.step1HeaderRow}>
-                            {!isExpired && (
+                            {/* ปุ่มยืนยันการส่งมอบ (ถ้ามีเงื่อนไขถึงจะแสดง) */}
+                            {!isExpired && formData.foodStatus !== 'closed' && formData.foodStatus !== 'disable' ? (
                                 <button
                                     type="button"
-                                    style={{
-                                        ...styles.confirmDeliveryBtn,
-                                        ...((isEditable || formData.foodStatus === 'closed') ? {
-                                            backgroundColor: '#d1d5db',
-                                            color: '#9ca3af',
-                                            cursor: 'not-allowed',
-                                            opacity: 0.7
-                                        } : {})
-                                    }}
-                                    onClick={(isEditable || formData.foodStatus === 'closed') ? undefined : handleConfirmDelivery}
-                                    disabled={isEditable || formData.foodStatus === 'closed'}
+                                    style={styles.confirmDeliveryBtn}
+                                    onClick={handleConfirmDelivery}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
                                     ยืนยันการส่งมอบ
                                 </button>
+                            ) : (
+                                <div /> /* ใส่ div เปล่าไว้จองพื้นที่เพื่อให้ฝั่งขวาดันไปอยู่ขวาโดยอัตโนมัติ */
                             )}
 
-                            <div style={styles.topRightControls}>
+                            {/* ปุ่ม แก้ไข และ ลบ จะถูกดันไปชิดขวาเสมอ */}
+                            <div style={{ ...styles.topRightControls, marginLeft: 'auto' }}>
                                 {!isEditable ? (
                                     <>
-                                        <button type="button" onClick={(e) => { e.preventDefault(); setIsEditable(true); }} style={styles.editBtn}>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                if (isExpired || formData.foodStatus === 'closed' || formData.foodStatus === 'disable') return;
+                                                e.preventDefault();
+                                                setIsEditable(true);
+                                            }}
+                                            style={{
+                                                ...styles.editBtn,
+                                                ...((isExpired || formData.foodStatus === 'closed' || formData.foodStatus === 'disable') ? {
+                                                    backgroundColor: '#d1d5db',
+                                                    color: '#9ca3af',
+                                                    cursor: 'not-allowed',
+                                                    opacity: 0.7
+                                                } : {})
+                                            }}
+                                            disabled={isExpired || formData.foodStatus === 'closed' || formData.foodStatus === 'disable'}
+                                        >
                                             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
                                             แก้ไข
                                         </button>
@@ -886,6 +933,7 @@ export default function FoodForm() {
                                     {errors.locationName && <span style={styles.errorText}>{errors.locationName}</span>}
                                 </div>
                             </div>
+
                             <div style={{
                                 backgroundColor: "#fff9f5",
                                 border: "1.5px solid #ffdfd5",
@@ -907,7 +955,7 @@ export default function FoodForm() {
                                     lineHeight: "1.6",
                                     fontWeight: "500",
                                 }}>
-                                    ช่วงเวลานี้จะเปิดให้ผู้รับมารับอาหารบริจาคตามรอบประจำวัน ท่านสามารถปรับเปลี่ยนสถานะรายการได้ตามความสะดวกในภายหลัง
+                                    ช่วงเวลานี้จะเปิดให้ผู้รับมารับอาหารบริจาคตามรอบประจำวัน <strong>ท่านสามารถปรับเปลี่ยนแก้ไขเวลาหรือสถานะรายการได้ภายหลังตามความสะดวก</strong>
                                 </p>
                             </div>
 

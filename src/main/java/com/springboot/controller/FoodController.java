@@ -21,14 +21,16 @@ public class FoodController {
     private final UserService userService;
     private final BookingService bookingService;
     private final DonorService donorService;
+    private final DonationService donationService;
     private final JwtUtil jwtUtil;
 
     public FoodController(FoodService foodService, UserService userService, BookingService bookingService,
-            DonorService donorService, JwtUtil jwtUtil) {
+            DonorService donorService, DonationService donationService, JwtUtil jwtUtil) {
         this.foodService = foodService;
         this.userService = userService;
         this.bookingService = bookingService;
         this.donorService = donorService;
+        this.donationService = donationService;
         this.jwtUtil = jwtUtil;
     }
 
@@ -158,6 +160,20 @@ public class FoodController {
         foodService.updateFoodStatus(foodId, newStatus);
 
         return ResponseEntity.ok(ApiResponse.success("อัปเดตสถานะเป็น " + newStatus + " สำเร็จ"));
+    }
+
+    @GetMapping("/my-activity-history")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getDonationHistory(
+            @RequestHeader("Authorization") String authHeader) {
+
+        User user = userService.authenticate(authHeader);
+        List<Map<String, Object>> historyList = donationService.getDonorDonationHistory(user.getUserId());
+
+        if (historyList.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success("ยังไม่มีประวัติกิจกรรม", new ArrayList<>()));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("ดึงประวัติกิจกรรมสำเร็จ", historyList));
     }
 
 }

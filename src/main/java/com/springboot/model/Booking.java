@@ -13,7 +13,7 @@ public class Booking {
     private Integer bookingId;
 
     @Column(name = "booking_quantity", nullable = false)
-    private Double bookingQuantity;
+    private Integer bookingQuantity;
 
     @Column(name = "booking_unit", nullable = false, length = 45)
     private String bookingUnit;
@@ -21,11 +21,14 @@ public class Booking {
     @Column(name = "booking_date", nullable = false)
     private LocalDateTime bookingDate;
 
+    @Column(name = "pickup_deadline", nullable = false)
+    private LocalDateTime pickupDeadline;
+
     @Column(name = "confirmation_code", nullable = false, length = 6)
     private Integer confirmationCode;
 
-    @Column(name = "pickup_deadline", nullable = false)
-    private LocalDateTime pickupDeadline;
+    @Column(name = "booking_completed")
+    private LocalDateTime bookingCompleted;
 
     @Column(name = "booking_status", nullable = false, length = 45)
     private String bookingStatus = "pending";
@@ -48,11 +51,11 @@ public class Booking {
         this.bookingId = bookingId;
     }
 
-    public Double getBookingQuantity() {
+    public Integer getBookingQuantity() {
         return bookingQuantity;
     }
 
-    public void setBookingQuantity(Double bookingQuantity) {
+    public void setBookingQuantity(Integer bookingQuantity) {
         this.bookingQuantity = bookingQuantity;
     }
 
@@ -110,6 +113,14 @@ public class Booking {
 
     public void setRecipient(Recipient recipient) {
         this.recipient = recipient;
+    }
+
+    public LocalDateTime getBookingCompleted() {
+        return bookingCompleted;
+    }
+
+    public void setBookingCompleted(LocalDateTime bookingCompleted) {
+        this.bookingCompleted = bookingCompleted;
     }
 
 }

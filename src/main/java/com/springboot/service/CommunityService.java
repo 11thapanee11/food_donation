@@ -33,21 +33,18 @@ public class CommunityService {
     public Map<String, Object> calculateCommunityImpact() {
         Map<String, Object> data = new HashMap<>();
 
-        // 1. คำนวณยอดการแบ่งปันทั้งหมด (นับจำนวน Booking ที่สำเร็จแล้ว เช่นสถานะ
-        // RECEIVED หรือ completed)
+        // คำนวณยอดการแบ่งปันทั้งหมด (นับจำนวน Booking ที่สำเร็จแล้ว เช่นสถานะ หรือ completed)
         long totalDonations = bookingRepository.countByBookingStatus("completed");
         // if (totalDonations == 0) {
         // totalDonations = bookingRepository.count(); // เผื่อกรณีใช้ข้อมูลทั้งหมดจำลอง
         // }
 
-        // 2. นับจำนวนผู้ร่วมบริจาคที่ไม่ซ้ำกัน (Active Donors)
+        // นับจำนวนผู้ร่วมบริจาคที่ไม่ซ้ำกัน (Active Donors)
         long activeDonors = donorRepository.count();
 
-        // 3. นับจำนวนจุดรับ-ส่งมอบอาหารที่ไม่ซ้ำกันจากสถานที่จริง
+        // นับจำนวนจุดรับ-ส่งมอบอาหารที่ไม่ซ้ำกันจากสถานที่จริง
         long pickupLocations = foodRepository.count();
 
-        // 4. จำลองหรือดึงรายการกิจกรรมล่าสุด (Live Feed)
-        // จากการจองหรือการเพิ่มอาหารล่าสุด
         List<Map<String, Object>> recentActivities = new ArrayList<>();
         List<Booking> latestBookings = bookingRepository.findLatestBookings();
 

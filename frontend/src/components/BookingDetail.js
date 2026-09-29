@@ -284,6 +284,7 @@ export default function BookingDetail() {
     const foodCateName = foodInfo.foodCateName || booking.foodCateName || "อาหารทั่วไป";
     const expiryDate = foodInfo.expiryDate || booking.expiryDate;
     const unitWeightKg = foodInfo.unitWeightKg || booking.unitWeightKg || 0;
+    const pickupDeadline = booking.pickupDeadline || "ไม่ระบุ";
 
     const address = foodInfo.address || foodInfo.locationName || booking.address || "ไม่ระบุที่อยู่";
     const latitude = foodInfo.latitude || booking.latitude;
@@ -378,7 +379,8 @@ export default function BookingDetail() {
                                     </button>
                                 )}
 
-                                {!isCancelled && (
+                                {/* แสดงปุ่มรายงานปัญหาเฉพาะเมื่อสถานะเป็น completed เท่านั้น */}
+                                {isCompleted && !isCancelled && (
                                     <button
                                         onClick={() => setShowReportModal(true)}
                                         disabled={booking.hasReported}
@@ -435,7 +437,7 @@ export default function BookingDetail() {
                                 <div>
                                     <div style={{ fontSize: "11px", color: "#64748b" }}>ควรไปรับก่อนเวลา (หมดอายุ)</div>
                                     <div style={{ fontSize: "13px", fontWeight: "600", color: "#e11d48" }}>
-                                        {formatDate(expiryDate)}
+                                        {formatDate(pickupDeadline)}
                                     </div>
                                 </div>
                             </div>

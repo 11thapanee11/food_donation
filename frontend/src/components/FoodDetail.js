@@ -172,7 +172,7 @@ export default function FoodDetail() {
     const formatExpiryDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
-        return `${date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })} (${date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.)`;
+        return `${date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })} เวลา ${date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.`;
     };
 
     const handleOpenReserveModal = () => {
@@ -403,7 +403,11 @@ export default function FoodDetail() {
                         <div style={styleOne.ratingBarsList}>
                             {[5, 4, 3, 2, 1].map(starCount => {
                                 const countForStar = reviews.filter(r => Math.round(r.ratingScore) === starCount).length;
-                                const percentage = totalReviews > 0 ? (countForStar / totalReviews) * 100 : 0;
+
+                                // หาจำนวนรีวิวที่มากที่สุดในบรรดา 5 ดาว เพื่อใช้เป็นฐาน 100%
+                                const maxCount = Math.max(...[5, 4, 3, 2, 1].map(s => reviews.filter(r => Math.round(r.ratingScore) === s).length), 1);
+                                const percentage = (countForStar / maxCount) * 100;
+
                                 return (
                                     <div key={starCount} style={styleOne.barRow}>
                                         <span style={{ fontSize: "12px", color: "#64748b", width: "24px" }}>{starCount}★</span>
@@ -534,7 +538,7 @@ export default function FoodDetail() {
                                 </button>
                             </div>
 
-                            {maxLimit > 1 && (
+                            {/* {maxLimit > 1 && (
                                 <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
                                     {Array.from({ length: maxLimit }, (_, i) => i + 1).map((qty) => (
                                         <button
@@ -552,7 +556,7 @@ export default function FoodDetail() {
                                         </button>
                                     ))}
                                 </div>
-                            )}
+                            )} */}
                         </div>
 
                         <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>

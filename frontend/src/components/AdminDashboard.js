@@ -29,28 +29,26 @@ export default function ImpactDashboard() {
                     setStats(result.data);
                 }
 
-                // 1. กำหนดรายชื่อเดือนทั้งหมดที่ต้องการให้แสดงบนกราฟ (เช่น ม.ค. ถึง ธ.ค.)
-                const allMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-
-                // 2. แปลงข้อมูลที่ Backend ส่งมา (เช่น ส่งมาเฉพาะเดือนที่มีข้อมูล) ให้เป็น Map เพื่อค้นหาง่าย
-                const rawMonthlyStats = result.data.monthlyStats || [];
+                // 1. ดึงข้อมูล dailyStats ที่ส่งมาจาก Backend
+                const rawDailyStats = result.data.dailyStats || [];
                 const statsMap = {};
-                rawMonthlyStats.forEach(item => {
-                    // สมมติว่า Backend ส่งชื่อเดือนมาตรงกัน เช่น item.month คือ "ก.ย." หรือแปลงมาจาก Backend
-                    statsMap[item.month] = item;
+                rawDailyStats.forEach(item => {
+                    statsMap[item.day] = item; // item.day จะเก็บค่า "1" ถึง "31"
                 });
 
-                // 3. วนลูปสร้างข้อมูลครบ 12 เดือน ถ้าเดือนไหนไม่มี ให้ใส่ค่า 0
-                const completeMonthlyData = allMonths.map(monthName => {
-                    if (statsMap[monthName]) {
-                        return statsMap[monthName]; // ถ้ามีข้อมูลจริงใช้อันเดิม
+                // 2. วนลูปสร้างข้อมูลครบ 31 วัน ถ้าวันไหนไม่มีข้อมูล ให้เซ็ตค่า total และ completed เป็น 0
+                const completeDailyData = [];
+                for (let i = 1; i <= 31; i++) {
+                    const dayStr = String(i);
+                    if (statsMap[dayStr]) {
+                        completeDailyData.push(statsMap[dayStr]);
                     } else {
-                        return { month: monthName, total: 0, completed: 0 }; // ถ้าไม่มี เซ็ตเป็น 0
+                        completeDailyData.push({ day: dayStr, total: 0, completed: 0 });
                     }
-                });
+                }
 
-                // 4. เซ็ตข้อมูลที่เติมเต็มแล้วเข้า State ของกราฟ
-                setMonthlyData(completeMonthlyData);
+                // 3. เซ็ตข้อมูลรายวันเข้า State ของกราฟ
+                setMonthlyData(completeDailyData);
 
             } catch (err) {
                 console.error("Error fetching dashboard stats:", err);
@@ -93,7 +91,6 @@ export default function ImpactDashboard() {
                         <h1 style={styles.mainTitle}>สถิติและภาพรวมระบบ</h1>
                         <p style={styles.subHeaderDesc}>สรุปสถิติด้านการแบ่งปันอาหาร อัตราการขอรับบริจาค และการจัดการระบบ</p>
                     </div>
-
                 </div>
 
                 {/* ส่วนที่ 1: ตัวชี้วัดหลัก (KPIs) */}
@@ -115,7 +112,7 @@ export default function ImpactDashboard() {
                             <span className="material-symbols-outlined">volunteer_activism</span>
                         </div>
                         <div>
-                            <p style={styles.kpiLabel}>จำนวนครั้งที่มีการส่งมอบอาหาร</p>
+                            <p style={styles.kpiLabel}>จำนวนครั้งที่มีการส่งมอบอาหารสำเร็จ</p>
                             <h3 style={{ ...styles.kpiValue, color: '#0369a1' }}>
                                 {stats.completed || 0} <span style={styles.kpiUnit}>ครั้ง</span>
                             </h3>
@@ -135,22 +132,25 @@ export default function ImpactDashboard() {
 
                 {/* ส่วนที่ 2: กราฟแสดงผล */}
                 <div style={styles.mainChartsGrid}>
-                    {/* กราฟแท่ง */}
+                    {/* กราฟแท่ง (แสดงผลรายวันภายใน 1 เดือน) */}
                     <div style={styles.cardBox}>
                         <div style={styles.cardHeaderFlex}>
                             <div>
-                                <h3 style={styles.cardHeading}>สถิติการแบ่งปันอาหารรายเดือน</h3>
-                                <p style={styles.cardSubHeading}>แสดงปริมาณรายการอาหารที่ส่งมอบสำเร็จในแต่ละเดือน</p>
+                                <h3 style={styles.cardHeading}>สถิติการแบ่งปันอาหารภายใน 1 เดือน</h3>
+                                <p style={styles.cardSubHeading}>แสดงปริมาณรายการอาหารที่ส่งมอบสำเร็จในแต่ละวันของเดือนนี้</p>
                             </div>
                         </div>
                         <div style={{ width: '100%', height: '260px', marginTop: '16px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                    <XAxis dataKey="month" stroke="#94A3B8" fontSize={12} tickLine={false} />
+                                    <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} interval={2} />
                                     <YAxis stroke="#94A3B8" fontSize={12} tickLine={false} />
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1.5px solid #F3E8FF', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.1)' }} />
-                                    <Bar dataKey="completed" name="ส่งมอบสำเร็จ" fill="#C084FC" radius={[6, 6, 0, 0]} barSize={28} />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '12px', border: '1.5px solid #F3E8FF', boxShadow: '0 4px 12px rgba(192, 132, 252, 0.1)' }}
+                                        labelFormatter={(label) => `วันที่ ${label}`}
+                                    />
+                                    <Bar dataKey="completed" name="ส่งมอบสำเร็จ" fill="#C084FC" radius={[4, 4, 0, 0]} barSize={16} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -243,11 +243,11 @@ export default function ImpactDashboard() {
                                 <span style={styles.reportNumBadge}>{stats.totalReports || 0} เคส</span>
                             </div>
                             <div style={{ ...styles.reportRowItem, backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }}>
-                                <span style={{ ...styles.reportTextLabel, color: '#DC2626' }}>รอดำเนินการแก้ไข</span>
+                                <span style={{ ...styles.reportTextLabel, color: '#DC2626' }}>รอดำเนินการ</span>
                                 <span style={{ ...styles.reportNumBadge, color: '#DC2626', backgroundColor: '#FFFFFF' }}>{stats.pendingReport || 0} เคส</span>
                             </div>
                             <div style={{ ...styles.reportRowItem, backgroundColor: '#F0FDF4', borderColor: '#86EFAC' }}>
-                                <span style={{ ...styles.reportTextLabel, color: '#16A34A' }}>ตรวจสอบและแก้ไขแล้ว</span>
+                                <span style={{ ...styles.reportTextLabel, color: '#16A34A' }}>ตรวจสอบแล้ว</span>
                                 <span style={{ ...styles.reportNumBadge, color: '#16A34A', backgroundColor: '#FFFFFF' }}>{stats.checkedReport || 0} เคส</span>
                             </div>
                         </div>

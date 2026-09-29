@@ -16,6 +16,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         // List<Booking> findByRecipient_UserIdOrderByBookingDateDesc(String email);
         List<Booking> findByRecipient_UserIdOrderByBookingDateDesc(Integer userId);
 
+        List<Booking> findByFood_FoodId(Integer foodId);
+
         // ค้นหาใบจองล่าสุดของอาหารชิ้นนี้ ที่สถานะยังรอการส่งมอบอยู่ (เงื่อนไขตรงตาม
         // Entity เป๊ะๆ)
         Optional<Booking> findByFoodFoodIdAndBookingStatus(Integer foodId,
@@ -65,11 +67,14 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         @Query("SELECT b FROM Booking b ORDER BY b.bookingId DESC")
         List<Booking> findLatestBookings();
 
-        @Query("SELECT FUNCTION('DATE_FORMAT', b.bookingDate, '%Y-%m') as monthKey, " +
-                        "COUNT(b.bookingId) as total, " +
-                        "SUM(CASE WHEN b.bookingStatus = 'completed' THEN 1 ELSE 0 END) as completed " +
-                        "FROM Booking b " +
-                        "GROUP BY FUNCTION('DATE_FORMAT', b.bookingDate, '%Y-%m') " +
-                        "ORDER BY monthKey ASC")
-        List<Object[]> getMonthlyBookingStatsRaw();
+        @Query(value = "SELECT DATE_FORMAT(b.booking_date, '%e') as dayKey, " +
+                        "COUNT(b.booking_id) as total, " +
+                        "SUM(CASE WHEN b.booking_status = 'completed' THEN 1 ELSE 0 END) as completed " +
+                        "FROM booking b " +
+                        "WHERE DATE_FORMAT(b.booking_date, '%Y-%m') = DATE_FORMAT(CURRENT_DATE(), '%Y-%m') " +
+                        "GROUP BY DATE_FORMAT(b.booking_date, '%e') " +
+                        "ORDER BY CAST(DATE_FORMAT(b.booking_date, '%e') AS UNSIGNED) ASC", nativeQuery = true)
+        List<Object[]> getCurrentMonthDailyStatsRaw();
+
+        List<Booking> findByFood_FoodIdIn(List<Integer> foodIds);
 }

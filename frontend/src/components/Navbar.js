@@ -415,7 +415,7 @@ export default function Navbar() {
                                 <>
                                     <Link to="/receive" style={getChipStyle(isReceiveActive)}>รับบริจาค</Link>
                                     <Link to="/my-foods" style={getChipStyle(isMyFoodsActive)}>บริจาคของฉัน</Link>
-                                    {/* <Link to="/activity-history" style={getChipStyle(isActivityHistoryActive)}>สถิติการแบ่งปัน</Link> */}
+                                    <Link to="/activity-history" style={getChipStyle(isActivityHistoryActive)}>ประวัติการบริจาค</Link>
                                 </>
                             )}
                         </>

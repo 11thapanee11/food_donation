@@ -145,16 +145,11 @@ export default function Home() {
         const now = new Date();
         const expiry = new Date(expiryDateString);
 
-        now.setHours(0, 0, 0, 0);
-        const expiryZero = new Date(expiry);
-        expiryZero.setHours(0, 0, 0, 0);
-
-        const diffTime = expiryZero - now;
+        const diffTime = expiry - now;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 0) return { text: "หมดอายุแล้ว", isExpired: true, days: diffDays };
-        if (diffDays === 0) return { text: "หมดอายุวันนี้", isUrgent: true, days: 0 };
-        return { text: `หมดอายุในอีก ${diffDays} วัน`, isUrgent: diffDays <= 2, days: diffDays };
+        if (diffTime < 0) return { text: "หมดอายุแล้ว", isExpired: true, days: diffDays };
+        return { text: `หมดอายุในอีก ${diffDays} วัน`, isUrgent: false, days: diffDays };
     };
 
     const scrollToFoodSection = () => {
@@ -164,9 +159,11 @@ export default function Home() {
         }
     };
 
-    // 3. กรองข้อมูลทั้งหมด
+    // กรองข้อมูล: แสดงเฉพาะสถานะ available และต้องไม่หมดอายุ[cite: 8]
     const filteredFoods = foods
         .filter(f => {
+            if (f.foodStatus !== "available") return false;
+
             const matchesSearch = f.foodName.toLowerCase().includes(search.toLowerCase());
             if (!matchesSearch) return false;
 
@@ -179,7 +176,7 @@ export default function Home() {
             const hasBooked = f.hasUserBooked || false;
             const timeEnded = isPickupTimeEnded(f.pickupEndTime);
             const isUpcoming = isUpcomingPickupTime(f.pickupStartTime);
-            const isSoldOut = f.remainingQuantity <= 0 || f.foodStatus === "booked";
+            const isSoldOut = f.remainingQuantity <= 0;
 
             if (filterStatus === "available") {
                 if (isMyFood || hasBooked || timeEnded || isUpcoming || isSoldOut) return false;
@@ -207,7 +204,6 @@ export default function Home() {
             return dateA - dateB;
         });
 
-    // คำนวณข้อมูลสำหรับการแบ่งหน้า (Pagination)
     const totalPages = Math.ceil(filteredFoods.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -336,7 +332,6 @@ export default function Home() {
                             ตัวกรองข้อมูล:
                         </span>
 
-                        {/* ตัวกรองสถานะอาหาร */}
                         <div style={styles.selectWrapper}>
                             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#c084fc' }}>
                                 category
@@ -345,7 +340,7 @@ export default function Home() {
                             <select
                                 value={filterStatus}
                                 onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-                                style={styles.filterSelect}
+                                style={{ ...styles.filterSelect, paddingRight: '30px' }}
                             >
                                 <option value="all">อาหารทั้งหมด</option>
                                 <option value="available">อาหารที่ยังสามารถรับได้</option>
@@ -354,7 +349,6 @@ export default function Home() {
                             </select>
                         </div>
 
-                        {/* กรองระยะทาง */}
                         <div style={styles.selectWrapper}>
                             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#0284c7' }}>
                                 distance
@@ -373,7 +367,6 @@ export default function Home() {
                             </select>
                         </div>
 
-                        {/* กรองช่วงวันหมดอายุ */}
                         <div style={styles.selectWrapper}>
                             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ea580c' }}>
                                 schedule
@@ -385,7 +378,6 @@ export default function Home() {
                                 style={{ ...styles.filterSelect, paddingRight: '30px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
-                                <option value="0">หมดอายุวันนี้</option>
                                 <option value="1">ภายใน 1 วัน</option>
                                 <option value="3">ภายใน 3 วัน</option>
                                 <option value="5">ภายใน 5 วัน</option>
@@ -406,7 +398,7 @@ export default function Home() {
                             const timeEnded = isPickupTimeEnded(food.pickupEndTime);
                             const isUpcoming = isUpcomingPickupTime(food.pickupStartTime);
 
-                            const isSoldOut = food.remainingQuantity <= 0 || food.foodStatus === "booked";
+                            const isSoldOut = food.remainingQuantity <= 0;
                             const unitName = food.unit || "ชิ้น";
 
                             const distKm = userLocation && food.latitude && food.longitude
@@ -458,10 +450,7 @@ export default function Home() {
                                                 จองเต็มแล้ว
                                             </span>
                                         ) : daysInfo && (
-                                            <span style={{
-                                                ...styles.expiryBadge,
-                                                ...(daysInfo.isUrgent ? styles.badgeUrgent : {})
-                                            }}>
+                                            <span style={styles.expiryBadge}>
                                                 <i className="material-icons-outlined" style={{ fontSize: '14px' }}>schedule</i>
                                                 {daysInfo.text}
                                             </span>
@@ -531,11 +520,11 @@ export default function Home() {
                                             }}
                                         >
                                             <span style={{ color: "#ffffff", fontWeight: "600" }}>
-                                                {isMyFood ? "ดูรายละเอียด" :
-                                                    hasBooked ? "ดูรายละเอียด" :
-                                                        isUpcoming ? "ดูรายละเอียด" :
-                                                            timeEnded ? "ดูรายละเอียด" :
-                                                                isSoldOut ? "ดูรายละเอียด" : "ขอรับบริจาค"}
+                                                {isMyFood ? "ดูรายละเอียดอาหารของคุณ" :
+                                                    hasBooked ? "ดูรายละเอียด (จองแล้ว)" :
+                                                        isUpcoming ? "ดูรายละเอียด (ยังไม่ถึงเวลารับ)" :
+                                                            timeEnded ? "ดูรายละเอียด (หมดเวลารับ)" :
+                                                                isSoldOut ? "อาหารหมดแล้ว" : "ขอรับบริจาค"}
                                             </span>
                                             <i className="material-icons-outlined" style={{ fontSize: "18px", color: "#ffffff" }}>
                                                 arrow_forward
@@ -554,7 +543,6 @@ export default function Home() {
                     )}
                 </div>
 
-                {/* --- Pagination (ปุ่มเลื่อนหน้า) --- */}
                 {totalPages > 1 && (
                     <div style={styles.paginationContainer}>
                         <button
@@ -879,9 +867,6 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: "5px",
-    },
-    badgeUrgent: {
-        backgroundColor: "#ff6200",
     },
     bookedBadge: {
         position: "absolute",

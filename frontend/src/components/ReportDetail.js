@@ -358,9 +358,9 @@ export default function ReportDetail() {
                                 <div style={styles.infoRow}>
                                     <span className="material-symbols-outlined" style={styles.icon}>package_2</span>
                                     <div>
-                                        <div style={styles.infoLabel}>จำนวนหน่วย (คงเหลือ / ทั้งหมด)</div>
+                                        <div style={styles.infoLabel}>จำนวนคงเหลือ / ทั้งหมด</div>
                                         <div style={styles.infoValue}>
-                                            <span style={{ color: '#9333EA', fontWeight: 'bold' }}>{report.foodDetail?.remainingQuantity}</span> / {report.foodDetail?.quantity} หน่วย
+                                            <span style={{ color: '#9333EA', fontWeight: 'bold' }}>{report.foodDetail?.remainingQuantity}</span> / {report.foodDetail?.quantity} {report.foodDetail?.unit}
                                         </div>
                                     </div>
                                 </div>
@@ -415,7 +415,7 @@ export default function ReportDetail() {
                                     boxShadow: isChecked ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.25)'
                                 }}
                             >
-                                {isChecked ? '✓ ตรวจสอบเรียบร้อยแล้ว' : 'ทำเครื่องหมายว่า: ตรวจสอบแล้ว'}
+                                {isChecked ? '✓ ตรวจสอบเรียบร้อยแล้ว' : 'แก้ไขสถานะเป็นตรวจสอบแล้ว'}
                             </button>
                             <button
                                 onClick={handleDisableFood}

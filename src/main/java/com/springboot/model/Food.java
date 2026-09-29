@@ -23,16 +23,16 @@ public class Food {
     private String description;
 
     @Column(name = "quantity", nullable = false)
-    private Double quantity;
+    private Integer quantity;
 
     @Column(name = "unit", length = 45, nullable = false)
     private String unit;
 
     @Column(name = "remaining_quantity", nullable = false)
-    private Double remainingQuantity = 0.0;
+    private Integer remainingQuantity = 0;
 
     @Column(name = "limit_per_person", nullable = false)
-    private Double limitPerPerson;
+    private Integer limitPerPerson;
 
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
@@ -101,11 +101,11 @@ public class Food {
         this.description = description;
     }
 
-    public Double getQuantity() {
+    public Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Double quantity) {
+    public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
 
@@ -117,19 +117,19 @@ public class Food {
         this.unit = unit;
     }
 
-    public Double getRemainingQuantity() {
+    public Integer getRemainingQuantity() {
         return remainingQuantity;
     }
 
-    public void setRemainingQuantity(Double remainingQuantity) {
+    public void setRemainingQuantity(Integer remainingQuantity) {
         this.remainingQuantity = remainingQuantity;
     }
 
-    public Double getLimitPerPerson() {
+    public Integer getLimitPerPerson() {
         return limitPerPerson;
     }
 
-    public void setLimitPerPerson(Double limitPerPerson) {
+    public void setLimitPerPerson(Integer limitPerPerson) {
         this.limitPerPerson = limitPerPerson;
     }
 
