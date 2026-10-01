@@ -52,7 +52,7 @@ public class DonationService {
                     statusText = "เสร็จสิ้น";
                 } else if (rawStatus.contains("cancel") || rawStatus.contains("ยกเลิก")) {
                     status = "cancelled";
-                    statusText = "ยกเลิกแล้ว";
+                    statusText = "ยกเลิก";
                 }
 
                 item.put("status", status);

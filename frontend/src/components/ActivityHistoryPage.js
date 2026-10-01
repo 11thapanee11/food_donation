@@ -158,7 +158,7 @@ export default function ActivityHistoryPage() {
                             <option value="all">ทุกสถานะ</option>
                             <option value="pending">รอดำเนินการ</option>
                             <option value="completed">เสร็จสิ้น</option>
-                            <option value="cancelled">ยกเลิกแล้ว</option>
+                            <option value="cancelled">ยกเลิก</option>
                         </select>
                     </div>
 
