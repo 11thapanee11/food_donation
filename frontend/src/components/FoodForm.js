@@ -650,8 +650,18 @@ export default function FoodForm() {
                             {!isExpired && formData.foodStatus !== 'closed' && formData.foodStatus !== 'disable' ? (
                                 <button
                                     type="button"
-                                    style={styles.confirmDeliveryBtn}
+                                    style={{
+                                        ...styles.confirmDeliveryBtn,
+                                        ...(isEditable ? {
+                                            backgroundColor: '#d1d5db',
+                                            color: '#9ca3af',
+                                            cursor: 'not-allowed',
+                                            boxShadow: 'none',
+                                            opacity: 0.7
+                                        } : {})
+                                    }}
                                     onClick={handleConfirmDelivery}
+                                    disabled={isEditable}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
                                     ยืนยันการส่งมอบ
