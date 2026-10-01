@@ -573,7 +573,7 @@ export default function Navbar() {
                                                                     if (!rawDate) return "";
                                                                     const parsedDate = new Date(rawDate);
                                                                     return !isNaN(parsedDate)
-                                                                        ? parsedDate.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })
+                                                                        ? `${parsedDate.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })} เวลา ${parsedDate.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false })} น.`
                                                                         : rawDate;
                                                                 })()}
                                                             </span>
