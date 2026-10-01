@@ -515,13 +515,14 @@ const styles = {
         backgroundColor: '#f8fafc',
         padding: '12px 16px',
         borderRadius: '14px',
-        color: '#334155',
+        color: '#9aa5b6',
         fontSize: '15px',
         fontWeight: '500',
         border: '1px solid #f1f5f9',
         minHeight: '22px',
         display: 'flex',
         alignItems: 'center',
+        cursor: 'not-allowed'
     },
     disabledBox: {
         backgroundColor: '#f1f5f9',
