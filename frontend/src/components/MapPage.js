@@ -34,8 +34,8 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 // Custom SVG Marker สีพาสเทล
 const smallPastelMarkerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" fill="#c084fc" stroke="#ffffff" stroke-width="2.5"/>
-        <circle cx="12" cy="12" r="3.5" fill="#ffffff"/>
+        <circle cx="12" cy="12" r="9" fill="#3de81b" stroke="#ffffff" stroke-width="2.5"/>
+        <circle cx="12" cy="12" r="3.5" fill="#3de81b"/>
     </svg>
 `)}`;
 

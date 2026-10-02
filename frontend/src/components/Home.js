@@ -159,7 +159,7 @@ export default function Home() {
         }
     };
 
-    // กรองข้อมูล: แสดงเฉพาะสถานะ available และต้องไม่หมดอายุ[cite: 8]
+    // กรองข้อมูล: แสดงเฉพาะสถานะ available และต้องไม่หมดอายุ
     const filteredFoods = foods
         .filter(f => {
             if (f.foodStatus !== "available") return false;
@@ -285,6 +285,7 @@ export default function Home() {
                             type="text"
                             placeholder="ค้นหารายการอาหารบริจาคที่คุณสนใจ..."
                             value={search}
+                            maxLength={155}
                             onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
                             style={styles.searchInput}
                         />
@@ -294,6 +295,12 @@ export default function Home() {
                             </button>
                         )}
                     </div>
+                    {/* แสดงข้อความแจ้งเตือนเมื่อพิมพ์ครบ 155 ตัวอักษร */}
+                    {search.length >= 155 && (
+                        <span style={{ color: '#e53935', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                            * กรอกคำค้นหาได้สูงสุดไม่เกิน 155 ตัวอักษร
+                        </span>
+                    )}
                 </div>
             </div>
 

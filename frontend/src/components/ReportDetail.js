@@ -196,7 +196,7 @@ export default function ReportDetail() {
     if (error) return <div style={styles.error}>เกิดข้อผิดพลาด: {error}</div>;
     if (!report) return null;
 
-    const reporterName = report.reporterName || report.userName || "คุณสมชาย ใจดี";
+    const reporterName = report.reporterName || report.userName || "ไม่ราบชื่อผู้บริจาค";
     const reportDate = report.reportDate ? formatExpiryDate(report.reportDate) : "26 กันยายน 2569 - 14:30 น.";
 
     return (

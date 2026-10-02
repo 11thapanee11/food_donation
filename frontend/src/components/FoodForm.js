@@ -38,8 +38,8 @@ export default function FoodForm() {
         address: "",
         pickupStartTime: "",
         pickupEndTime: "",
-        latitude: "18.8925",
-        longitude: "99.0142",
+        latitude: "",
+        longitude: "",
         foodStatus: "available",
         foodCateId: "",
         donorUserId: ""
@@ -95,6 +95,18 @@ export default function FoodForm() {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setErrors({ ...errors, fileImage: "รองรับเฉพาะไฟล์ PNG, JPG หรือ WEBP เท่านั้น" });
+                return;
+            }
+
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                setErrors({ ...errors, fileImage: "ขนาดไฟล์ต้องไม่เกิน 5MB" });
+                return;
+            }
+
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
             setErrors({ ...errors, fileImage: "" });
@@ -176,8 +188,8 @@ export default function FoodForm() {
     useEffect(() => {
         if (!mapElementRef.current || currentStep !== 3) return;
 
-        const lon = Number(formData.longitude) || 99.0142;
-        const lat = Number(formData.latitude) || 18.8925;
+        const lon = Number(formData.longitude) || 98.9853;
+        const lat = Number(formData.latitude) || 18.7883;
 
         if (!mapInstanceRef.current) {
             vectorSourceRef.current = new VectorSource();
@@ -196,7 +208,7 @@ export default function FoodForm() {
                 layers: [googleLayer, vectorLayer],
                 view: new View({
                     center: fromLonLat([lon, lat]),
-                    zoom: 15
+                    zoom: 13
                 })
             });
 
@@ -215,13 +227,15 @@ export default function FoodForm() {
         } else {
             mapInstanceRef.current.setTarget(mapElementRef.current);
             mapInstanceRef.current.updateSize();
-            mapInstanceRef.current.getView().setCenter(fromLonLat([lon, lat]));
+            if (formData.longitude && formData.latitude) {
+                mapInstanceRef.current.getView().setCenter(fromLonLat([Number(formData.longitude), Number(formData.latitude)]));
+            }
         }
 
-        if (vectorSourceRef.current) {
+        if (vectorSourceRef.current && formData.longitude && formData.latitude) {
             vectorSourceRef.current.clear();
             const markerFeature = new Feature({
-                geometry: new Point(fromLonLat([lon, lat]))
+                geometry: new Point(fromLonLat([Number(formData.longitude), Number(formData.latitude)]))
             });
 
             const pinSvg = `
@@ -388,8 +402,19 @@ export default function FoodForm() {
                 newErrors.fileImage = "กรุณาเพิ่มรูปภาพ";
             }
         } else if (currentStep === 2) {
-            if (!formData.foodName) newErrors.foodName = "กรุณากรอกข้อมูล";
+            if (!formData.foodName) {
+                newErrors.foodName = "กรุณากรอกข้อมูล";
+            } else if (formData.foodName.length < 2) {
+                newErrors.foodName = "ชื่ออาหารต้องมีความยาวตั้งแต่ 2 ตัวอักษรขึ้นไป";
+            } else if (formData.foodName.length > 155) {
+                newErrors.foodName = "ความยาวต้องไม่เกิน 155 ตัวอักษร";
+            }
+
             if (!formData.foodCateId) newErrors.foodCateId = "กรุณากรอกข้อมูล";
+
+            if (formData.description && formData.description.length > 255) {
+                newErrors.description = "ความยาวต้องไม่เกิน 255 ตัวอักษร";
+            }
 
             if (!formData.expiryDate) {
                 newErrors.expiryDate = "กรุณากรอกข้อมูล";
@@ -403,22 +428,40 @@ export default function FoodForm() {
 
             if (!formData.quantity) newErrors.quantity = "กรุณากรอกข้อมูล";
             if (!formData.unit) newErrors.unit = "กรุณากรอกข้อมูล";
-            if (!formData.limitPerPerson) newErrors.limitPerPerson = "กรุณากรอกข้อมูล";
+
+            const qty = Number(formData.quantity);
+            const limit = Number(formData.limitPerPerson);
+            if (!formData.limitPerPerson) {
+                newErrors.limitPerPerson = "กรุณากรอกข้อมูล";
+            } else if (qty && limit > qty) {
+                newErrors.limitPerPerson = "จำนวนจำกัดการรับต้องไม่เกินจำนวนที่บริจาค";
+            }
         } else if (currentStep === 3) {
-            if (!formData.locationName) newErrors.locationName = "กรุณากรอกข้อมูล";
+            if (!formData.locationName) {
+                newErrors.locationName = "กรุณากรอกข้อมูล";
+            } else if (formData.locationName.length < 2) {
+                newErrors.locationName = "ชื่อสถานที่ต้องมีความยาวตั้งแต่ 2 ตัวอักษรขึ้นไป";
+            } else if (formData.locationName.length > 255) {
+                newErrors.locationName = "ความยาวต้องไม่เกิน 255 ตัวอักษร";
+            }
+
             if (!formData.pickupStartTime) newErrors.pickupStartTime = "กรุณากรอกข้อมูล";
+
             if (!formData.pickupEndTime) {
                 newErrors.pickupEndTime = "กรุณากรอกข้อมูล";
             } else if (formData.pickupStartTime) {
-                // ตรวจสอบเวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้นอย่างน้อย 1 ชั่วโมง
                 const [startH, startM] = formData.pickupStartTime.split(':').map(Number);
                 const [endH, endM] = formData.pickupEndTime.split(':').map(Number);
                 const startTotalMinutes = startH * 60 + startM;
                 const endTotalMinutes = endH * 60 + endM;
 
-                if (endTotalMinutes < startTotalMinutes + 60) {
-                    newErrors.pickupEndTime = "เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้นอย่างน้อย 1 ชั่วโมง";
+                if (endTotalMinutes < startTotalMinutes + 30) {
+                    newErrors.pickupEndTime = "ต้องเป็นเวลาที่มากกว่าเวลาที่เริ่มรับได้ 30 นาที";
                 }
+            }
+
+            if (!formData.latitude || !formData.longitude) {
+                newErrors.location = "กรุณากดใช้ตำแหน่งปัจจุบันหรือเลือกพิกัดบนแผนที่";
             }
         }
 
@@ -439,17 +482,93 @@ export default function FoodForm() {
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
 
-        // ตรวจสอบเวลาซ้ำอีกรอบก่อนส่งข้อมูลจริง
-        if (formData.pickupStartTime && formData.pickupEndTime) {
+        // ตรวจสอบความถูกต้องของข้อมูลทุกขั้นตอนทั้งหมดก่อนบันทึกจริง
+        const newErrors = {};
+
+        // ตรวจสอบ Step 1 (รูปภาพ)
+        if (isEditMode) {
+            if (!imagePreview && !imageFile && !formData.fileImage && !formData.foodImage) {
+                newErrors.fileImage = "กรุณาเพิ่มรูปภาพ";
+            }
+        } else if (!imageFile) {
+            newErrors.fileImage = "กรุณาเพิ่มรูปภาพ";
+        }
+
+        // ตรวจสอบ Step 2 (ข้อมูลรายละเอียดอาหาร)
+        if (!formData.foodName) {
+            newErrors.foodName = "กรุณากรอกข้อมูล";
+        } else if (formData.foodName.length < 2) {
+            newErrors.foodName = "ชื่ออาหารต้องมีความยาวตั้งแต่ 2 ตัวอักษรขึ้นไป";
+        } else if (formData.foodName.length > 155) {
+            newErrors.foodName = "ความยาวต้องไม่เกิน 155 ตัวอักษร";
+        }
+
+        if (!formData.foodCateId) newErrors.foodCateId = "กรุณากรอกข้อมูล";
+
+        if (formData.description && formData.description.length > 255) {
+            newErrors.description = "ความยาวต้องไม่เกิน 255 ตัวอักษร";
+        }
+
+        if (!formData.expiryDate) {
+            newErrors.expiryDate = "กรุณากรอกข้อมูล";
+        } else {
+            const nowPlus24H = new Date().getTime() + (24 * 60 * 60 * 1000);
+            const selectedExpiry = new Date(formData.expiryDate).getTime();
+            if (selectedExpiry < nowPlus24H) {
+                newErrors.expiryDate = "วันหมดอายุต้องมากกว่าเวลาปัจจุบันอย่างน้อย 24 ชั่วโมง";
+            }
+        }
+
+        if (!formData.quantity) newErrors.quantity = "กรุณากรอกข้อมูล";
+        if (!formData.unit) newErrors.unit = "กรุณากรอกข้อมูล";
+
+        const qty = Number(formData.quantity);
+        const limit = Number(formData.limitPerPerson);
+        if (!formData.limitPerPerson) {
+            newErrors.limitPerPerson = "กรุณากรอกข้อมูล";
+        } else if (qty && limit > qty) {
+            newErrors.limitPerPerson = "จำนวนจำกัดการรับต้องไม่เกินจำนวนที่บริจาค";
+        }
+
+        // ตรวจสอบ Step 3 (สถานที่และเวลา)
+        if (!formData.locationName) {
+            newErrors.locationName = "กรุณากรอกข้อมูล";
+        } else if (formData.locationName.length < 2) {
+            newErrors.locationName = "ชื่อสถานที่ต้องมีความยาวตั้งแต่ 2 ตัวอักษรขึ้นไป";
+        } else if (formData.locationName.length > 255) {
+            newErrors.locationName = "ความยาวต้องไม่เกิน 255 ตัวอักษร";
+        }
+
+        if (!formData.pickupStartTime) newErrors.pickupStartTime = "กรุณากรอกข้อมูล";
+
+        if (!formData.pickupEndTime) {
+            newErrors.pickupEndTime = "กรุณากรอกข้อมูล";
+        } else if (formData.pickupStartTime) {
             const [startH, startM] = formData.pickupStartTime.split(':').map(Number);
             const [endH, endM] = formData.pickupEndTime.split(':').map(Number);
             const startTotalMinutes = startH * 60 + startM;
             const endTotalMinutes = endH * 60 + endM;
 
-            if (endTotalMinutes < startTotalMinutes + 60) {
-                setErrors(prev => ({ ...prev, pickupEndTime: "เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้นอย่างน้อย 1 ชั่วโมง" }));
-                return;
+            if (endTotalMinutes < startTotalMinutes + 30) {
+                newErrors.pickupEndTime = "ต้องเป็นเวลาที่มากกว่าเวลาที่เริ่มรับได้ 30 นาที";
             }
+        }
+
+        if (!formData.latitude || !formData.longitude) {
+            newErrors.location = "กรุณากดใช้ตำแหน่งปัจจุบันหรือเลือกพิกัดบนแผนที่";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            // หากมีข้อผิดพลาดในสเต็ปไหน ให้พาผู้ใช้เด้งกลับไปที่สเต็ปนั้น
+            if (newErrors.fileImage) {
+                setCurrentStep(1);
+            } else if (newErrors.foodName || newErrors.foodCateId || newErrors.description || newErrors.expiryDate || newErrors.quantity || newErrors.unit || newErrors.limitPerPerson) {
+                setCurrentStep(2);
+            } else {
+                setCurrentStep(3);
+            }
+            return;
         }
 
         const token = localStorage.getItem("accessToken");
@@ -575,18 +694,37 @@ export default function FoodForm() {
                     />
                 </div>
                 {isEditable && (
-                    <div style={styles.previewActionRow}>
-                        <button type="button" onClick={handleClickUpload} style={styles.changeImgBtn}>
-                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>edit</span>
-                            เปลี่ยนรูปภาพ
-                        </button>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            style={{ display: "none" }}
-                            ref={fileInputRef}
-                        />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={styles.previewActionRow}>
+                            <button type="button" onClick={handleClickUpload} style={styles.changeImgBtn}>
+                                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>edit</span>
+                                เปลี่ยนรูปภาพ
+                            </button>
+                            <input
+                                type="file"
+                                accept="image/png, image/jpeg, image/webp"
+                                onChange={handleImageChange}
+                                style={{ display: "none" }}
+                                ref={fileInputRef}
+                            />
+                        </div>
+
+                        {errors && errors.fileImage && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                color: '#e53935',
+                                fontSize: '12px',
+                                marginTop: '6px',
+                                backgroundColor: '#ffebee',
+                                padding: '4px 8px',
+                                borderRadius: '4px'
+                            }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>error</span>
+                                <span>{errors.fileImage}</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -646,7 +784,6 @@ export default function FoodForm() {
 
                     {isEditMode && (
                         <div style={styles.step1HeaderRow}>
-                            {/* ปุ่มยืนยันการส่งมอบ (ถ้ามีเงื่อนไขถึงจะแสดง) */}
                             {!isExpired && formData.foodStatus !== 'closed' && formData.foodStatus !== 'disable' ? (
                                 <button
                                     type="button"
@@ -667,10 +804,9 @@ export default function FoodForm() {
                                     ยืนยันการส่งมอบ
                                 </button>
                             ) : (
-                                <div /> /* ใส่ div เปล่าไว้จองพื้นที่เพื่อให้ฝั่งขวาดันไปอยู่ขวาโดยอัตโนมัติ */
+                                <div />
                             )}
 
-                            {/* ปุ่ม แก้ไข และ ลบ จะถูกดันไปชิดขวาเสมอ */}
                             <div style={{ ...styles.topRightControls, marginLeft: 'auto' }}>
                                 {!isEditable ? (
                                     <>
@@ -714,7 +850,7 @@ export default function FoodForm() {
                         </div>
                     )}
 
-                    {/* Stage 1: รูปภาพอาหาร พร้อมสถานะอาหาร และปุ่มยืนยันการส่งมอบอาหาร */}
+                    {/* Stage 1: รูปภาพอาหาร */}
                     {currentStep === 1 && (
                         <>
                             <div style={styles.cardSection}>
@@ -761,6 +897,7 @@ export default function FoodForm() {
                                     <input
                                         name="foodName"
                                         value={formData.foodName}
+                                        maxLength={155}
                                         placeholder="เช่น ข้าวกล่องกระเพราไก่"
                                         disabled={!isEditable}
                                         style={{
@@ -803,16 +940,20 @@ export default function FoodForm() {
                                 <textarea
                                     name="description"
                                     value={formData.description}
+                                    maxLength={255}
                                     placeholder="ระบุส่วนผสม หรือข้อแนะนำเพิ่มเติม..."
                                     disabled={!isEditable}
                                     style={{
                                         ...styles.inputField,
                                         height: "80px",
                                         resize: "vertical",
+                                        borderColor: errors.description ? "#EF4444" : "#E2E8F0",
+                                        backgroundColor: errors.description ? "#FEF2F2" : "#F8FAFC",
                                         color: !isEditable ? "#94A3B8" : "#1E293B"
                                     }}
                                     onChange={handleChange}
                                 />
+                                {errors.description && <span style={styles.errorText}>{errors.description}</span>}
                             </div>
 
                             {/* แยกวันหมดอายุออกมาอยู่แถวเดี่ยวเต็มความกว้าง */}
@@ -872,9 +1013,7 @@ export default function FoodForm() {
                                         <select
                                             name="unit"
                                             value={formData.unit}
-                                            onChange={(e) => {
-                                                handleChange(e);
-                                            }}
+                                            onChange={handleChange}
                                             disabled={!isEditable}
                                             style={{
                                                 ...styles.inputField,
@@ -930,6 +1069,7 @@ export default function FoodForm() {
                                     <input
                                         name="locationName"
                                         value={formData.locationName}
+                                        maxLength={255}
                                         placeholder="เช่น หอพักโซน A หน้ามหาวิทยาลัย"
                                         disabled={!isEditable}
                                         style={{
@@ -1020,6 +1160,7 @@ export default function FoodForm() {
                                     </button>
                                 )}
                             </div>
+                            {errors.location && <span style={{ ...styles.errorText, marginTop: '8px', display: 'block' }}>{errors.location}</span>}
                         </div>
                     )}
 
@@ -1362,7 +1503,7 @@ const styles = {
         right: "16px",
         padding: "8px 14px",
         backgroundColor: "#FFFFFF",
-        border: "1px solid #E2E8F0",
+        border: "1.5px solid #E2E8F0",
         borderRadius: "10px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         cursor: "pointer",

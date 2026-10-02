@@ -330,7 +330,7 @@ export default function BookingDetail() {
                                         color: isPending ? "#d97706" : isCompleted ? "#15803d" : "#e11d48",
                                         border: isPending ? "1px solid #fde68a" : isCompleted ? "1px solid #bbf7d0" : "1px solid #fecdd3"
                                     }}>
-                                        {isPending ? "รอรับอาหารบริจาค" : isCompleted ? "รับอาหารเรียบร้อย" : "ยกเลิกแล้ว"}
+                                        {isPending ? "รอรับอาหารบริจาค" : isCompleted ? "เสร็จสิ้น" : "ยกเลิก"}
                                     </span>
                                 </div>
                             </div>

@@ -81,7 +81,7 @@ public class ReportController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<String>> updateStatus(
+    public ResponseEntity<ApiResponse<String>> updateReportStatus(
             @PathVariable Integer id,
             @RequestBody Map<String, String> body) {
 
