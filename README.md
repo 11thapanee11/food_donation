@@ -20,7 +20,6 @@
 - 👤 **User Roles Management:** Role-based access control system tailored for Donors, Recipients, and Admins.
 - 🍱 **Donation Post Creation:** Enables donors to create food donation listings complete with details, expiration dates, and pickup locations.
 - 🗺️ **Location & Food Tracking:** Features location-based search and tracking to discover available food donations nearby.
-- 📊 **Impact Analytics:** Tracks, collects, and processes user activity data and food waste reduction metrics.
 
 ---
 
