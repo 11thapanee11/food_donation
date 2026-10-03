@@ -1,0 +1,329 @@
+-- MySQL dump 10.13  Distrib 5.7.9, for Win64 (x86_64)
+--
+-- Host: localhost    Database: food_donation_db
+-- ------------------------------------------------------
+-- Server version	5.7.10-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `admin`
+--
+
+DROP TABLE IF EXISTS `admin`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `admin` (
+  `user_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `FK8ahhk8vqegfrt6pd1p9i03aej` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `admin`
+--
+
+LOCK TABLES `admin` WRITE;
+/*!40000 ALTER TABLE `admin` DISABLE KEYS */;
+INSERT INTO `admin` VALUES (1);
+/*!40000 ALTER TABLE `admin` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `booking`
+--
+
+DROP TABLE IF EXISTS `booking`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `booking` (
+  `booking_id` int(11) NOT NULL AUTO_INCREMENT,
+  `booking_date` datetime(6) NOT NULL,
+  `booking_quantity` int(11) NOT NULL,
+  `booking_status` varchar(45) COLLATE utf8_unicode_ci NOT NULL,
+  `booking_unit` varchar(45) COLLATE utf8_unicode_ci NOT NULL,
+  `confirmation_code` int(6) NOT NULL,
+  `pickup_deadline` datetime(6) NOT NULL,
+  `food_food_id` int(11) NOT NULL,
+  `recipient_user_id` int(11) NOT NULL,
+  `booking_completed` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`booking_id`),
+  KEY `FK6fm7jrn9jdgnc5ck824ipa6sg` (`food_food_id`),
+  KEY `FKegw0eh52soat93rarkh972sm6` (`recipient_user_id`),
+  CONSTRAINT `FK6fm7jrn9jdgnc5ck824ipa6sg` FOREIGN KEY (`food_food_id`) REFERENCES `food` (`food_id`),
+  CONSTRAINT `FKegw0eh52soat93rarkh972sm6` FOREIGN KEY (`recipient_user_id`) REFERENCES `recipient` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `booking`
+--
+
+LOCK TABLES `booking` WRITE;
+/*!40000 ALTER TABLE `booking` DISABLE KEYS */;
+INSERT INTO `booking` VALUES (1,'2026-10-02 10:00:00.000000',2,'completed','กล่อง',111001,'2026-10-02 17:00:00.000000',2,4,'2026-10-02 12:00:00.000000'),(2,'2026-10-02 11:30:00.000000',2,'completed','กล่อง',222002,'2026-10-02 17:00:00.000000',2,5,'2026-10-02 13:30:00.000000'),(3,'2026-10-03 09:00:00.000000',3,'completed','ถุง',333003,'2026-10-03 16:00:00.000000',11,8,'2026-10-03 11:00:00.000000'),(4,'2026-10-03 10:15:00.000000',2,'cancelled','ถุง',444004,'2026-10-03 17:00:00.000000',11,9,NULL),(5,'2026-10-03 11:00:00.000000',2,'cancelled','ถุง',555005,'2026-10-03 17:00:00.000000',11,10,NULL),(6,'2026-10-03 08:30:00.000000',4,'completed','ลูก',666006,'2026-10-03 15:00:00.000000',20,3,'2026-10-03 10:00:00.000000'),(7,'2026-10-03 12:00:00.000000',2,'cancelled','ลูก',777007,'2026-10-03 17:00:00.000000',20,5,NULL);
+/*!40000 ALTER TABLE `booking` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `donor`
+--
+
+DROP TABLE IF EXISTS `donor`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `donor` (
+  `user_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `FK3xgxg6gu76couhuuwdv2kn6ei` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `donor`
+--
+
+LOCK TABLES `donor` WRITE;
+/*!40000 ALTER TABLE `donor` DISABLE KEYS */;
+INSERT INTO `donor` VALUES (2),(3),(6),(7);
+/*!40000 ALTER TABLE `donor` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `food`
+--
+
+DROP TABLE IF EXISTS `food`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `food` (
+  `food_id` int(11) NOT NULL AUTO_INCREMENT,
+  `description` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `expiry_date` datetime(6) NOT NULL,
+  `food_image` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `food_name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `food_status` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `latitude` double NOT NULL,
+  `limit_per_person` int(11) NOT NULL,
+  `location_name` varchar(225) COLLATE utf8_unicode_ci NOT NULL,
+  `longitude` double NOT NULL,
+  `pickup_end_time` time(6) NOT NULL,
+  `pickup_start_time` time(6) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `remaining_quantity` int(11) NOT NULL,
+  `unit` varchar(45) COLLATE utf8_unicode_ci NOT NULL,
+  `donor_user_id` int(11) NOT NULL,
+  `food_cate_id` int(11) NOT NULL,
+  PRIMARY KEY (`food_id`),
+  KEY `FKaaj1gjrl31j5onk5gehp6bscw` (`donor_user_id`),
+  KEY `FK3ruuyuesc5nsug8mhtgvrn1ei` (`food_cate_id`),
+  CONSTRAINT `FK3ruuyuesc5nsug8mhtgvrn1ei` FOREIGN KEY (`food_cate_id`) REFERENCES `food_category` (`food_cate_id`),
+  CONSTRAINT `FKaaj1gjrl31j5onk5gehp6bscw` FOREIGN KEY (`donor_user_id`) REFERENCES `donor` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `food`
+--
+
+LOCK TABLES `food` WRITE;
+/*!40000 ALTER TABLE `food` DISABLE KEYS */;
+INSERT INTO `food` VALUES (1,'ข้าวผัดหมูสับ สุกพร้อมทาน แพ็กใส่กล่องเรียบร้อย','2026-10-07 18:00:00.000000','/uploads/food/food1.png','ข้าวผัดหมูสับ','expired',18.8945,2,'โรงอาหารกลาง (แม่โจ้)',99.0142,'19:00:00.000000','10:00:00.000000',10,0,'กล่อง',2,1),(2,'ข้าวไก่กระเทียมพริกไทย รสชาติกลมกล่อม','2026-10-14 14:00:00.000000','/uploads/food/food2.png','ข้าวไก่กระเทียมพริกไทย','available',18.8938,2,'อาคารเรียนรวม 70 ปี',99.0162,'21:00:00.000000','11:00:00.000000',15,11,'กล่อง',3,1),(3,'ข้าวผัดกะเพราหมูสับไข่ดาว เผ็ดกำลังดี','2026-10-13 15:00:00.000000','/uploads/food/food3.png','ข้าวผัดกะเพราหมูสับไข่ดาว','available',18.8925,1,'โซนหอพักนักศึกษาชาย',99.017,'18:00:00.000000','11:00:00.000000',20,15,'กล่อง',6,1),(4,'ข้าวมันไก่ตอน พร้อมน้ำจิ้มและน้ำซุปบรรจุถุง','2026-10-08 13:00:00.000000','/uploads/food/food4.png','ข้าวมันไก่ตอน','expired',18.8905,2,'ตลาดสดหน้ามอ',99.0162,'15:00:00.000000','09:00:00.000000',12,0,'แพ็ค',7,1),(5,'บะหมี่แห้งหมูแดง เส้นเหนียวนุ่ม','2026-10-15 20:00:00.000000','/uploads/food/food5.png','บะหมี่แห้งหมูแดง','available',18.8895,3,'โรงอาหารคณะวิทย์ฯ',99.0142,'19:00:00.000000','16:00:00.000000',25,21,'ชาม',2,1),(6,'หมูสับอนามัย แพ็กสูญญากาศ 500 กรัม','2026-10-09 12:00:00.000000','/uploads/food/fresh1.png','หมูสับอนามัย','expired',18.8905,2,'ห้องเย็นสหกรณ์',99.0122,'16:00:00.000000','10:00:00.000000',10,0,'แพ็ค',3,2),(7,'เนื้อไก่ส่วนสะโพก สดสะอาด พร้อมปรุง','2026-10-16 12:00:00.000000','/uploads/food/fresh2.png','เนื้อไก่ส่วนสะโพก','available',18.8925,3,'ตลาดทับมา',99.0114,'17:00:00.000000','10:00:00.000000',15,7,'กิโลกรัม',6,2),(8,'ปลาทับทิมสด ผ่านการทำความสะอาดแล้ว','2026-10-10 18:00:00.000000','/uploads/food/fresh3.png','ปลาทับทิมสด','expired',18.8938,1,'ฟาร์มเกษตรมหาวิทยาลัย',99.0122,'18:00:00.000000','13:00:00.000000',8,8,'ตัว',7,2),(9,'ไข่ไก่สด เบอร์ 2 บรรจุแผง 10 ฟอง','2026-10-22 12:00:00.000000','/uploads/food/fresh4.png','ไข่ไก่สด เบอร์ 2','available',18.8952,2,'เล้าไก่คณะสัตวศาสตร์',99.0152,'17:00:00.000000','08:00:00.000000',30,25,'แผง',2,2),(10,'กุ้งขาวสด แกะเปลือกผ่าหลังแช่เย็น','2026-10-14 16:00:00.000000','/uploads/food/fresh5.png','กุ้งขาวสดแช่เย็น','available',18.8885,2,'ห้องอาหารประมง',99.0142,'18:00:00.000000','11:00:00.000000',12,12,'แพ็ค',3,2),(11,'ผักกาดขาวและคะน้าสด ชุดผักรวมทำต้มจืด','2026-10-12 15:00:00.000000','/uploads/food/veg1.jpg','ชุดผักรวมสด','available',18.8958,3,'แปลงเกษตรอินทรีย์',99.0132,'17:00:00.000000','09:00:00.000000',20,17,'ถุง',6,3),(12,'มะละกอสุกปอกเปลือก แพ็กใส่กล่องแช่เย็นพร้อมทาน','2026-10-09 20:00:00.000000','/uploads/food/veg2.jpg','มะละกอสุก','expired',18.8925,2,'หอพักหญิงโซน C',99.0182,'18:00:00.000000','12:00:00.000000',15,0,'กล่อง',7,3),(13,'สับปะรดภูเก็ตหั่นชิ้นพอดีคำ','2026-10-15 18:00:00.000000','/uploads/food/veg3.jpg','สับปะรดภูเก็ต','available',18.8855,3,'ตลาดนัดหน้ามอ',99.0108,'19:00:00.000000','12:00:00.000000',25,20,'แพ็ค',2,3),(14,'ฝรั่งกิมจูแช่เย็น หั่นชิ้นพร้อมพริกเกลือ','2026-10-13 19:00:00.000000','/uploads/food/veg4.jpg','ฝรั่งกิมจู','available',18.8945,2,'หน้าอาคารเรียนรวม',99.0142,'20:00:00.000000','11:00:00.000000',18,15,'ถุง',3,3),(15,'สลัดผักรวมออร์แกนิก พร้อมน้ำสลัดครีม','2026-10-10 17:00:00.000000','/uploads/food/veg5.jpg','สลัดผักรวม','expired',18.8938,2,'โรงอาหารพืชศาสตร์',99.0162,'16:00:00.000000','10:00:00.000000',10,0,'กล่อง',6,3),(16,'ขนมปังไส้สังขยาใบเตย แพ็ค 2 ชิ้น','2026-10-12 10:00:00.000000','/uploads/food/bakery1.jpg','ขนมปังไส้สังขยา','expired',18.8925,3,'ร้านเบเกอรี่สหกรณ์',99.017,'14:00:00.000000','08:00:00.000000',25,20,'แพ็ค',7,4),(17,'ขนมปังไส้ไก่หยองน้ำพริกเผา','2026-10-12 11:00:00.000000','/uploads/food/bakery2.jpg','ขนมปังไส้ไก่หยอง','available',18.8905,3,'ตึกอำนวยการ',99.0162,'22:00:00.000000','09:00:00.000000',20,18,'ชิ้น',2,4),(18,'ครัวซองต์เนยสดแท้ อบใหม่หอมกรุ่น','2026-10-09 15:00:00.000000','/uploads/food/bakery3.jpg','ครัวซองต์เนยสด','expired',18.8895,2,'คาเฟ่หน้ามอ',99.0142,'16:00:00.000000','10:00:00.000000',15,0,'ชิ้น',3,4),(19,'เค้กช็อกโกแลตหน้านิ่ม เนื้อนุ่มละมุน','2026-10-10 21:00:00.000000','/uploads/food/bakery4.jpg','เค้กช็อกโกแลต','expired',18.8905,2,'ห้องประชุมคณะบริหาร',99.0122,'18:00:00.000000','10:00:00.000000',10,5,'กล่อง',6,4),(20,'ซาลาเปาไส้หมูสับ นึ่งสุกแล้วพร้อมอุ่นทาน','2026-10-14 12:00:00.000000','/uploads/food/bakery5.jpg','ซาลาเปาหมูสับ','available',18.8925,4,'เซเว่นเดลิเวอรี',99.0114,'17:00:00.000000','11:00:00.000000',30,26,'ลูก',7,4),(21,'นมถั่วเหลือง น้ำเต้าหู้สูตรหวานน้อย บรรจุขวด','2026-10-10 23:00:00.000000','/uploads/food/bev1.jpg','นมถั่วเหลือง (น้ำเต้าหู้)','expired',18.8938,4,'โรงอาหารเคหะ',99.0122,'20:00:00.000000','07:00:00.000000',40,0,'ขวด',2,5),(22,'นมวัวแท้พาสเจอร์ไรส์ รสจืด บำรุงร่างกาย','2026-11-13 12:00:00.000000','/uploads/food/bev2.jpg','นมพาสเจอร์ไรส์รสจืด','available',18.8952,5,'สหกรณ์โคนมแม่โจ้',99.0152,'17:00:00.000000','09:00:00.000000',50,40,'ขวด',3,5),(23,'ชาเขียวมัทฉะลาเต้ สูตรหวานน้อย','2026-10-12 18:00:00.000000','/uploads/food/bev3.jpg','ชาเขียวมัทฉะลาเต้','available',18.8885,3,'ร้านกาแฟมวล.',99.0142,'18:00:00.000000','10:00:00.000000',20,15,'แก้ว',6,5),(24,'น้ำเก๊กฮวยสมุนไพร สูตรลดน้ำตาล','2026-10-17 16:00:00.000000','/uploads/food/bev4.jpg','น้ำเก๊กฮวย','available',18.8958,4,'โรงอาหารคณะศิลปศาสตร์',99.0132,'18:00:00.000000','11:00:00.000000',35,30,'ขวด',7,5),(25,'น้ำสมุนไพรตะไคร้ใบเตยหอมสดชื่น','2026-10-08 19:00:00.000000','/uploads/food/bev5.jpg','น้ำตะไคร้ใบเตย','expired',18.8925,4,'อาคารกิจกรรมนักศึกษา',99.0182,'18:00:00.000000','11:00:00.000000',25,0,'ขวด',2,5),(26,'บะหมี่กึ่งสำเร็จรูป รสหมูสับ แพ็ก 5 ซอง','2027-01-12 23:59:59.000000','/uploads/food/dry1.jpg','บะหมี่กึ่งสำเร็จรูป','available',18.8855,10,'คลังสินค้ากลาง',99.0108,'19:00:00.000000','09:00:00.000000',100,80,'แพ็ค',3,6),(27,'ข้าวสารเสาไห้ ถุงบรรจุ 1 กิโลกรัม','2027-07-12 12:00:00.000000','/uploads/food/dry2.jpg','ข้าวสารเสาไห้','available',18.8945,2,'ร้านค้าสวัสดิการ',99.0142,'17:00:00.000000','10:00:00.000000',50,47,'ถุง',6,6),(28,'ปลากระป๋องในซอสมะเขือเทศ คุณภาพดี','2027-05-27 12:00:00.000000','/uploads/food/dry3.jpg','ปลากระป๋อง','available',18.8938,5,'กองกิจการนักศึกษา',99.0162,'16:00:00.000000','09:00:00.000000',60,50,'กระป๋อง',7,6),(29,'วุ้นเส้นแห้ง ห่อขนาดกลาง สำหรับทำยำและต้มจืด','2027-11-12 12:00:00.000000','/uploads/food/dry4.jpg','วุ้นเส้นแห้ง','available',18.8925,3,'ร้านค้าชุมชน',99.017,'18:00:00.000000','10:00:00.000000',30,25,'ห่อ',2,6),(30,'ปลาช่อนแห้งเค็ม แพ็กซีลสุญญากาศ','2026-12-02 12:00:00.000000','/uploads/food/dry5.jpg','ปลาช่อนแห้งเค็ม','available',18.8905,2,'ตลาดสดชุมชน',99.0162,'17:00:00.000000','11:00:00.000000',15,12,'แพ็ค',3,6),(31,'เกี๊ยวกุ้งแช่แข็ง พร้อมนำไปลวกหรือเวฟทาน','2026-10-27 12:00:00.000000','/uploads/food/frozen1.jpg','เกี๊ยวกุ้งแช่แข็ง','available',18.8895,2,'ตู้แช่ห้องอาหารนิคม',99.0142,'18:00:00.000000','10:00:00.000000',25,20,'แพ็ค',6,7),(32,'ข้าวหน้าเนื้อยำเกาหลีแช่แข็ง แบบเวฟพร้อมทาน','2026-10-20 12:00:00.000000','/uploads/food/frozen2.jpg','ข้าวเนื้อยำเกาหลีแช่แข็ง','available',18.8905,2,'มินิมาร์ทหอพัก',99.0122,'20:00:00.000000','10:00:00.000000',20,16,'กล่อง',7,7),(33,'นักเก็ตไก่แช่แข็ง แพ็ก 12 ชิ้น','2026-11-01 12:00:00.000000','/uploads/food/frozen3.jpg','นักเก็ตไก่แช่แข็ง','available',18.8925,3,'ห้องแช่แข็งสหกรณ์',99.0114,'17:00:00.000000','09:00:00.000000',30,25,'ถุง',2,7),(34,'ซาลาเปาไส้ครีมแช่แข็ง','2026-10-24 12:00:00.000000','/uploads/food/frozen4.jpg','ซาลาเปาไส้ครีมแช่แข็ง','closed',18.8938,3,'ร้านสะดวกซื้อหน้ามอ',99.0122,'18:00:00.000000','10:00:00.000000',25,20,'แพ็ค',3,7),(35,'ข้าวเหนียวหมูย่างแช่แข็ง','2026-10-08 12:00:00.000000','/uploads/food/frozen5.jpg','ข้าวเหนียวหมูย่างแช่แข็ง','expired',18.8952,2,'ตู้แช่ตึกเรียนรวม',99.0152,'15:00:00.000000','09:00:00.000000',15,0,'แพ็ค',6,7),(36,'แกงเขียวหวานไก่พร้อมทาน ชนิดถุงรีทอร์ตพาวช์','2027-01-27 12:00:00.000000','/uploads/food/ready1.jpg','แกงเขียวหวานไก่พร้อมทาน','available',18.8958,2,'อาคารวิจัยอาหาร',99.0132,'17:00:00.000000','10:00:00.000000',20,15,'ถุง',7,8),(37,'ปลาทอดกระเทียมราดข้าวสำเร็จรูป บรรจุกล่องเวฟ','2026-10-10 14:00:00.000000','/uploads/food/ready2.jpg','ปลาทอดกระเทียมราดข้าว','expired',18.8925,2,'โรงอาหารศูนย์กลาง',99.0182,'16:00:00.000000','11:00:00.000000',15,15,'กล่อง',2,8),(38,'ข้าวต้มหมูสับสำเร็จรูป ชนิดซองสำเร็จรูป','2027-03-12 12:00:00.000000','/uploads/food/ready3.jpg','ข้าวต้มหมูสับซอง','available',18.8855,5,'ศูนย์พักพิงและบริจาค',99.0108,'18:00:00.000000','09:00:00.000000',40,35,'ซอง',3,8),(39,'น้ำพริกนรกปลาแห้ง กระปุกพร้อมทาน','2027-05-12 12:00:00.000000','/uploads/food/ready4.jpg','น้ำพริกนรกปลาแห้ง','available',18.8945,2,'ร้านOTOP มหาวิทยาลัย',99.0142,'17:00:00.000000','10:00:00.000000',25,20,'กระปุก',6,8),(40,'หมูทอดฝอยสำเร็จรูป กระปุกสุญญากาศ','2027-03-27 12:00:00.000000','/uploads/food/ready5.jpg','หมูทอดฝอย','available',18.8938,2,'สหกรณ์พาณิชย์',99.0162,'18:00:00.000000','10:00:00.000000',20,18,'กระปุก',7,8);
+/*!40000 ALTER TABLE `food` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `food_category`
+--
+
+DROP TABLE IF EXISTS `food_category`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `food_category` (
+  `food_cate_id` int(11) NOT NULL,
+  `food_cate_name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`food_cate_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `food_category`
+--
+
+LOCK TABLES `food_category` WRITE;
+/*!40000 ALTER TABLE `food_category` DISABLE KEYS */;
+INSERT INTO `food_category` VALUES (1,'อาหารพร้อมทาน'),(2,'วัตถุดิบสด'),(3,'ผักและผลไม้'),(4,'เบเกอรี่และขนมปัง'),(5,'เครื่องดื่ม'),(6,'อาหารแห้ง'),(7,'อาหารแช่แข็ง'),(8,'อาหารสำเร็จรูป');
+/*!40000 ALTER TABLE `food_category` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `notification`
+--
+
+DROP TABLE IF EXISTS `notification`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `notification` (
+  `notification_id` int(11) NOT NULL AUTO_INCREMENT,
+  `notification_date` datetime(6) NOT NULL,
+  `notification_message` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `notification_type` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `booking_booking_id` int(11) DEFAULT NULL,
+  `food_food_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`notification_id`),
+  KEY `FKrweyq794sf8x36aq2bvjsh7io` (`booking_booking_id`),
+  KEY `FK1f7nthhek6ibr1s0kibom6bdx` (`food_food_id`),
+  CONSTRAINT `FK1f7nthhek6ibr1s0kibom6bdx` FOREIGN KEY (`food_food_id`) REFERENCES `food` (`food_id`) ON DELETE CASCADE,
+  CONSTRAINT `FKrweyq794sf8x36aq2bvjsh7io` FOREIGN KEY (`booking_booking_id`) REFERENCES `booking` (`booking_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `notification`
+--
+
+LOCK TABLES `notification` WRITE;
+/*!40000 ALTER TABLE `notification` DISABLE KEYS */;
+INSERT INTO `notification` VALUES (1,'2026-10-02 10:00:00.000000','มีการจองอาหารบริจาค: ข้าวไก่กระเทียมพริกไทย สำเร็จ','booking',1,2),(2,'2026-10-03 09:00:00.000000','มีการจองอาหารบริจาค: ชุดผักรวมสด สำเร็จ','booking',3,11),(3,'2026-10-03 10:15:00.000000','มีการจองอาหารบริจาค: ชุดผักรวมสด รอดำเนินการ','booking',4,11),(4,'2026-10-03 11:00:00.000000','รายการจองอาหารบริจาคถูกยกเลิก: ชุดผักรวมสด','booking_cancel',5,11),(5,'2026-10-02 02:00:00.000000','รายการอาหาร: ข้าวผัดหมูสับ ใกล้จะหมดอายุในอีก 24 ชั่วโมง','info',NULL,1),(6,'2026-10-02 02:00:00.000000','รายการอาหาร: หมูสับอนามัย ใกล้จะหมดอายุในอีก 24 ชั่วโมง','info',NULL,6),(7,'2026-10-03 08:00:00.000000','รายการอาหาร: ข้าวผัดหมูสับ หมดอายุ รายการนี้ถูกระงับการแสดงผลแล้ว','warning',NULL,1),(8,'2026-10-03 08:00:00.000000','รายการอาหาร: หมูสับอนามัย หมดอายุ รายการนี้ถูกระงับการแสดงผลแล้ว','warning',NULL,6),(9,'2026-10-03 23:21:36.154729','รายการอาหาร: ชุดผักรวมสด ใกล้จะหมดอายุในอีก 24 ชั่วโมง','info',NULL,11),(10,'2026-10-03 23:21:36.207370','รายการอาหาร: ขนมปังไส้ไก่หยอง ใกล้จะหมดอายุในอีก 24 ชั่วโมง','info',NULL,17),(11,'2026-10-03 23:21:36.218782','รายการอาหาร: ชาเขียวมัทฉะลาเต้ ใกล้จะหมดอายุในอีก 24 ชั่วโมง','info',NULL,23);
+/*!40000 ALTER TABLE `notification` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `recipient`
+--
+
+DROP TABLE IF EXISTS `recipient`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `recipient` (
+  `user_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `FK3041ks22uyyuuw441k5671ah9` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `recipient`
+--
+
+LOCK TABLES `recipient` WRITE;
+/*!40000 ALTER TABLE `recipient` DISABLE KEYS */;
+INSERT INTO `recipient` VALUES (3),(4),(5),(8),(9),(10),(11);
+/*!40000 ALTER TABLE `recipient` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `report`
+--
+
+DROP TABLE IF EXISTS `report`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `report` (
+  `report_id` int(11) NOT NULL AUTO_INCREMENT,
+  `report_date` datetime(6) NOT NULL,
+  `report_description` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `report_image` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `report_reason` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `report_status` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `booking_booking_id` int(11) NOT NULL,
+  `recipient_user_id` int(11) NOT NULL,
+  PRIMARY KEY (`report_id`),
+  UNIQUE KEY `UKm6f039clow3dhp8h8cx7jmvdf` (`booking_booking_id`),
+  KEY `FK9d47xtaekgmc62dawmnnf8f4x` (`recipient_user_id`),
+  CONSTRAINT `FK9d47xtaekgmc62dawmnnf8f4x` FOREIGN KEY (`recipient_user_id`) REFERENCES `recipient` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `FKjgxftuoojeoie921ekwvv2lf0` FOREIGN KEY (`booking_booking_id`) REFERENCES `booking` (`booking_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `report`
+--
+
+LOCK TABLES `report` WRITE;
+/*!40000 ALTER TABLE `report` DISABLE KEYS */;
+INSERT INTO `report` VALUES (1,'2026-10-03 11:30:00.000000','อาหารมีกลิ่นเปรี้ยวเล็กน้อยไม่ตรงตามมาตรฐาน',NULL,'SPOILED','pending',3,8);
+/*!40000 ALTER TABLE `report` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `review`
+--
+
+DROP TABLE IF EXISTS `review`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `review` (
+  `review_id` int(11) NOT NULL AUTO_INCREMENT,
+  `rating_score` int(11) NOT NULL,
+  `review_comment` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `review_date` datetime(6) NOT NULL,
+  `booking_booking_id` int(11) NOT NULL,
+  `recipient_user_id` int(11) NOT NULL,
+  PRIMARY KEY (`review_id`),
+  UNIQUE KEY `UK6c4uvs8fqtok8yte39ct3gymb` (`booking_booking_id`),
+  KEY `FKai429xiwusnyqassxe5hi307t` (`recipient_user_id`),
+  CONSTRAINT `FKai429xiwusnyqassxe5hi307t` FOREIGN KEY (`recipient_user_id`) REFERENCES `recipient` (`user_id`),
+  CONSTRAINT `FKef9o4vqoyrv3yfmc04i8xbdse` FOREIGN KEY (`booking_booking_id`) REFERENCES `booking` (`booking_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `review`
+--
+
+LOCK TABLES `review` WRITE;
+/*!40000 ALTER TABLE `review` DISABLE KEYS */;
+INSERT INTO `review` VALUES (1,5,'ข้าวไก่กระเทียมอร่อยและสดใหม่มากครับ','2026-10-02 13:00:00.000000',1,4),(2,4,'ได้รับอาหารเรียบร้อยดี รสชาติใช้ได้','2026-10-02 14:00:00.000000',2,5),(3,5,'ซาลาเปานึ่งร้อนๆ อร่อยมากครับ ขอบคุณผู้แบ่งปัน','2026-10-03 10:30:00.000000',6,3);
+/*!40000 ALTER TABLE `review` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user`
+--
+
+DROP TABLE IF EXISTS `user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user` (
+  `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `first_name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `last_name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `password` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `phone_number` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `UKob8kqyqqgmefl0aco34akdtpe` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user`
+--
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'admin@fooddonation.com','ภู','วินทร์','fcad70048f73482c8c5f30af109374bcbe1416851a0966ecd7f0f8d7cb4ddbdb','0904847777'),(2,'test1@gmail.com','ปัง','ปอนด์','1302a338f67171b42cea23adbf65dc331cd578b0f4f0097e60c434c2986581df','0923456789'),(3,'test2@gmail.com','เพิ่ม','พูน','c5509d5955bd47cbe82e8e211829d98ed6307576dacc72416eca34caff4d7aea','0934567890'),(4,'test3@gmail.com','โพก้า','ซัง','db9ac006c6b380892cd65e56b3ea33a75d7ccd0155a36d2dbf4c92e96222c80d','0845678901'),(5,'test4@gmail.com','ลู','น่า','2c964bf1cb2278e34f064fca2dfce902ba7ebd9d51a8d3047f26c5c817874e13','0856789012'),(6,'test5@gmail.com','เอ','นี่','30ced96b38b92385eb7275b34dafc404945703d67a4167fdc40e5c806ae3244b','0856789013'),(7,'test10@gmail.com','ลิล','ลี่','10a3debfd6c931e589e71097a0c2f46d99546e073f7e4e9fbb9cdda5d2136ff2','0631230006'),(8,'test6@gmail.com','ดาว','เสาร์','ed2bd659676c10e859a72f444031639d4ef5d92ee47a5949066d6924670f205d','0601234567'),(9,'test7@gmail.com','ลา','เวนเดอร์','e4f6fbe29689c504d76733fb6f86c4f0778d6de33c15f2b4b983fbae3a798147','0610001234'),(10,'test8@gmail.com','แดฟ','โฟดิล','1afaeb8e49c57c9dd0f7995624875bd2b6e6d11501de5b2068fbca1bbb4f54a9','0620004321'),(11,'test9@gmail.com','ทิว','ลิป','10a3debfd6c931e589e71097a0c2f46d99546e073f7e4e9fbb9cdda5d2136ff2','0631230005');
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-10-03 23:30:14
